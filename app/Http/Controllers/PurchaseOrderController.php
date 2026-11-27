@@ -29,7 +29,7 @@ class PurchaseOrderController extends Controller {
             'order_date'=>['required','date'],'expected_date'=>['nullable','date','after_or_equal:order_date'],
             'notes'=>['nullable','string','max:2000'],
             'lines'=>['required','array','min:1'],
-            'lines.*.product_id'=>['required','integer',Rule::exists('products','id')->where('company_id',$companyId)],
+            'lines.*.product_id'=>['required','integer',Rule::exists('products','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true))],
             'lines.*.quantity'=>['required','numeric','gt:0'],
             'lines.*.unit_cost'=>['required','numeric','min:0'],
         ]);
