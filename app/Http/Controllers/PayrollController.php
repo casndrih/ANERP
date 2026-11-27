@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Employee;
+use App\Models\Company;
 use App\Models\PayrollLine;
 use App\Models\PayrollRun;
 use App\Services\PngPayrollCalculator;
@@ -31,7 +32,8 @@ class PayrollController extends Controller {
         }
         $employees=Employee::where('company_id',$companyId)->where('status','active')->where('pay_frequency',$data['pay_frequency'])->get();
         abort_if($employees->isEmpty(),422,'No active employees use this pay frequency.');
-        $employerVoluntary=(bool)Company::whereKey($companyId)->value('superannuation_voluntary_participant');\n        $companyHeadcount=Employee::where('company_id',$companyId)->where('status','active')
+        $employerVoluntary=(bool)Company::whereKey($companyId)->value('superannuation_voluntary_participant');
+        $companyHeadcount=Employee::where('company_id',$companyId)->where('status','active')
             ->whereDate('hire_date','<=',$end)->where(fn($q)=>$q->whereNull('termination_date')->orWhereDate('termination_date','>=',$start))->count();
         DB::transaction(function() use($data,$employees,$companyId,$request,$calculator,$days,$end,$companyHeadcount,$employerVoluntary) {
             $run=PayrollRun::create([
