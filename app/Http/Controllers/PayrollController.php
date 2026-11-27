@@ -12,11 +12,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 class PayrollController extends Controller {
     public function index(Request $request) {
+        CompanyAuthorizer::requirePermission($request,'payroll.view');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         return view('payroll.index',['runs'=>PayrollRun::with('lines.employee')->where('company_id',$companyId)->latest()->paginate(15),'employees'=>Employee::where('company_id',$companyId)->where('status','active')->orderBy('last_name')->get()]);
     }
     public function store(Request $request, PngPayrollCalculator $calculator) {
-        CompanyAuthorizer::requireRole($request,['owner','admin','payroll_manager']);
+        CompanyAuthorizer::requirePermission($request,'payroll.create');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $data=$request->validate([
             'period_start'=>'required|date','period_end'=>'required|date|after_or_equal:period_start',
@@ -72,7 +73,7 @@ class PayrollController extends Controller {
         return back()->with('status','Draft payroll run calculated with PNG statutory PAYE and superannuation rules. Review declarations, eligibility and each payslip before approval.');
     }
     public function approve(Request $request, PayrollRun $run) {
-        CompanyAuthorizer::requireRole($request,['owner','admin','payroll_manager']);
+        CompanyAuthorizer::requirePermission($request,'payroll.approve');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         abort_unless($run->company_id===$companyId,404);
         abort_unless($run->status==='draft',422,'Only draft payroll runs can be approved.');
@@ -82,6 +83,7 @@ class PayrollController extends Controller {
         return back()->with('status','Payroll run approved. Payment execution and statutory return filing are not enabled.');
     }
     public function payslip(Request $request, PayrollLine $line) {
+        CompanyAuthorizer::requirePermission($request,'payroll.view');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $line->load(['employee','run']);
         abort_unless($line->run->company_id===$companyId,404);
