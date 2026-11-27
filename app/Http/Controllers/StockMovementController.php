@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\StockTransfer;
 use App\Models\Warehouse;
 use App\Support\CompanyAuthorizer;
 use App\Support\InventoryLedger;
