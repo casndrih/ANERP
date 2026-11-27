@@ -34,7 +34,7 @@ The Bank of Papua New Guinea public notice states:
 
 ANERP calculates the 6% and 8.4% contributions on base pay only. Overtime, bonuses and commissions are not included in this base-pay calculation. The employee's 6% contribution is deducted from net pay after PAYE; the employer's 8.4% is an additional employer cost.
 
-The system uses the company-wide active headcount across branches. Below 15 employees, the employee's voluntary opt-in flag must be set. HR can mark a documented exemption; exemptions and special industries must be reviewed by the employer. The application does not automatically determine legal exemptions or employee nationality/residency eligibility.
+The system uses the company-wide active headcount across branches. Below 15 employees, the employer must elect voluntary participation at company level and the employee's voluntary opt-in flag must also be set. HR can mark a documented exemption; exemptions and special industries must be reviewed by the employer. The application does not automatically determine legal exemptions or employee nationality/residency eligibility.
 
 ## Implemented controls and exclusions
 
