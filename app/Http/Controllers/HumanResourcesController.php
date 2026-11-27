@@ -28,13 +28,13 @@ class HumanResourcesController extends Controller {
             'branch_id'=>['nullable','integer',Rule::exists('branches','id')->where('company_id',$companyId)],
             'department'=>'nullable|string|max:120','job_title'=>'nullable|string|max:120',
             'employment_type'=>'nullable|string|max:40','hire_date'=>'nullable|date',
-            'base_salary'=>'required|numeric|min:0','pay_frequency'=>'required|in:weekly,fortnightly,monthly',
+            'base_salary'=>'required|numeric|min:0','pay_frequency'=>'required|in:weekly,fortnightly,monthly',\n            'tax_residency'=>'required|in:resident,non_resident','employment_declaration_received'=>'sometimes|boolean',\n            'annual_dependant_tax_credit'=>'nullable|numeric|min:0|max:1050','superannuation_opt_in'=>'sometimes|boolean',\n            'superannuation_exempt'=>'sometimes|boolean','superannuation_exempt_reason'=>'nullable|string|max:255',\n            'superannuation_fund'=>'nullable|string|max:120','superannuation_member_number'=>'nullable|string|max:100',
         ]);
-        $data['company_id']=$companyId; $data['currency']='PGK'; $data['status']='active';
+        $data['company_id']=$companyId; $data['currency']='PGK'; $data['status']='active';\n        $data['employment_declaration_received']=$request->boolean('employment_declaration_received');\n        $data['superannuation_opt_in']=$request->boolean('superannuation_opt_in');\n        $data['superannuation_exempt']=$request->boolean('superannuation_exempt');
         Employee::create($data);
         return back()->with('status','Employee record created.');
     }
-    public function storeLeaveType(Request $request) {
+    public function setVoluntarySuperParticipation(Request $request) {\n        CompanyAuthorizer::requireRole($request,['owner','admin']);\n        $companyId=CompanyAuthorizer::activeCompanyId($request);\n        Company::whereKey($companyId)->update(['superannuation_voluntary_participant'=>$request->boolean('superannuation_voluntary_participant')]);\n        return back()->with('status','Company voluntary superannuation participation setting updated.');\n    }\n    public function storeLeaveType(Request $request) {
         CompanyAuthorizer::requireRole($request,['owner','admin','hr_manager']);
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $data=$request->validate([
