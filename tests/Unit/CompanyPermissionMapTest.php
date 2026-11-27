@@ -37,5 +37,6 @@ final class CompanyPermissionMapTest extends TestCase
         self::assertFalse(CompanyPermissionMap::allows('viewer', 'payroll.view'));
         self::assertFalse(CompanyPermissionMap::allows('unrecognized_role', 'inventory.view'));
         self::assertFalse(CompanyPermissionMap::allows('owner', ''));
+        self::assertFalse(CompanyPermissionMap::allows('owner', 'not.registered'));
     }
 }
