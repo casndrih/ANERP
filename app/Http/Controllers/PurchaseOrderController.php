@@ -13,6 +13,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 class PurchaseOrderController extends Controller {
     public function index(Request $request) {
+        CompanyAuthorizer::requirePermission($request,'procurement.view');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $orders=PurchaseOrder::where('company_id',$companyId)->with(['supplier','warehouse','lines.product'])->latest('order_date')->paginate(25);
         $suppliers=Supplier::where('company_id',$companyId)->where('is_active',true)->orderBy('name')->get();
@@ -21,7 +22,7 @@ class PurchaseOrderController extends Controller {
         return view('procurement.orders.index',compact('orders','suppliers','warehouses','products'));
     }
     public function store(Request $request) {
-        CompanyAuthorizer::requireRole($request,['owner','admin','procurement_manager']);
+        CompanyAuthorizer::requirePermission($request,'procurement.create');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $data=$request->validate([
             'supplier_id'=>['required','integer',Rule::exists('suppliers','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true))],
@@ -53,6 +54,7 @@ class PurchaseOrderController extends Controller {
         return back()->with('status','Draft purchase order created. Submit it for approval when ready.');
     }
     public function submit(Request $request, int $order) {
+        CompanyAuthorizer::requirePermission($request,'procurement.submit');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $po=PurchaseOrder::where('company_id',$companyId)->findOrFail($order);
         abort_unless($po->status==='draft',409,'Only draft purchase orders can be submitted.');
@@ -60,7 +62,7 @@ class PurchaseOrderController extends Controller {
         return back()->with('status','Purchase order submitted for approval.');
     }
     public function approve(Request $request, int $order) {
-        CompanyAuthorizer::requireRole($request,['owner','admin','procurement_approver']);
+        CompanyAuthorizer::requirePermission($request,'procurement.approve');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $po=PurchaseOrder::where('company_id',$companyId)->findOrFail($order);
         abort_unless($po->status==='submitted',409,'Only submitted purchase orders can be approved.');
@@ -69,7 +71,7 @@ class PurchaseOrderController extends Controller {
         return back()->with('status','Purchase order approved.');
     }
     public function receive(Request $request, int $order, int $line) {
-        CompanyAuthorizer::requireRole($request,['owner','admin','inventory_manager','procurement_manager']);
+        CompanyAuthorizer::requirePermission($request,'procurement.receive');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $data=$request->validate(['quantity'=>['required','numeric','gt:0']]);
         DB::transaction(function() use($request,$order,$line,$companyId,$data) {
