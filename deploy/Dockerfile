@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends git unzip libpq
 COPY --from=composer-bin /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 RUN composer create-project laravel/laravel:^12.0 . --no-interaction
+COPY app/ app/
 COPY routes/ routes/
 COPY database/ database/
 COPY resources/ resources/
