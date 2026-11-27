@@ -24,8 +24,8 @@ class PurchaseOrderController extends Controller {
         CompanyAuthorizer::requireRole($request,['owner','admin','procurement_manager']);
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $data=$request->validate([
-            'supplier_id'=>['required','integer',Rule::exists('suppliers','id')->where('company_id',$companyId)],
-            'warehouse_id'=>['required','integer',Rule::exists('warehouses','id')->where('company_id',$companyId)],
+            'supplier_id'=>['required','integer',Rule::exists('suppliers','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true))],
+            'warehouse_id'=>['required','integer',Rule::exists('warehouses','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true))],
             'order_date'=>['required','date'],'expected_date'=>['nullable','date','after_or_equal:order_date'],
             'notes'=>['nullable','string','max:2000'],
             'lines'=>['required','array','min:1'],
