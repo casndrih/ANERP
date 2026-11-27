@@ -28,17 +28,17 @@ jobs:
     name: PHP dependency audit
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
           tools: composer:v2
-      - name: Validate Composer manifest and lock file
-        run: composer validate --no-check-publish
+      - name: Create the same Laravel dependency baseline used by the image
+        run: composer create-project laravel/laravel:^12.0 /tmp/anerp-audit --no-interaction
+      - name: Validate generated Composer manifest and lock file
+        run: composer validate --no-check-publish --working-dir=/tmp/anerp-audit
       - name: Audit locked dependencies
-        run: composer audit --locked --no-interaction
+        run: composer audit --locked --no-interaction --working-dir=/tmp/anerp-audit
 
   container-scan:
     name: Container vulnerability scan
