@@ -39,7 +39,6 @@ Route::middleware(['auth', EnsureCompanyAccess::class])->group(function () {
     Route::get('/hr', [HumanResourcesController::class, 'index'])->name('hr.index');
     Route::post('/hr/employees', [HumanResourcesController::class, 'storeEmployee'])->name('hr.employees.store');
     Route::post('/hr/super-participation', [HumanResourcesController::class, 'setVoluntarySuperParticipation'])->name('hr.super-participation.store');
-    Route::post('/hr/super-participation', [HumanResourcesController::class, 'setVoluntarySuperParticipation'])->name('hr.super-participation.store');
     Route::post('/hr/leave-types', [HumanResourcesController::class, 'storeLeaveType'])->name('hr.leave-types.store');
     Route::post('/hr/leave', [HumanResourcesController::class, 'storeLeave'])->name('hr.leave.store');
     Route::post('/hr/leave/{leave}/decision', [HumanResourcesController::class, 'decideLeave'])->name('hr.leave.decision');
