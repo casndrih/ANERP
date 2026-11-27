@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 class PurchaseOrderController extends Controller {
     public function index(Request $request) {
         $companyId=CompanyAuthorizer::activeCompanyId($request);
-        $orders=PurchaseOrder::where('company_id',$companyId)->with(['supplier','warehouse'])->latest('order_date')->paginate(25);
+        $orders=PurchaseOrder::where('company_id',$companyId)->with(['supplier','warehouse','lines.product'])->latest('order_date')->paginate(25);
         $suppliers=Supplier::where('company_id',$companyId)->where('is_active',true)->orderBy('name')->get();
         $warehouses=Warehouse::where('company_id',$companyId)->where('is_active',true)->orderBy('name')->get();
         $products=Product::where('company_id',$companyId)->where('is_active',true)->orderBy('name')->get();
@@ -63,7 +63,7 @@ class PurchaseOrderController extends Controller {
         CompanyAuthorizer::requireRole($request,['owner','admin','procurement_approver']);
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $po=PurchaseOrder::where('company_id',$companyId)->findOrFail($order);
-        abort_unless($po->status==='submitted',409,'Only submitted purchase orders can be approved.');
+        abort_unless($po->status==='submitted',409,'Only submitted purchase orders can be approved.');\n        abort_unless((int)$po->created_by !== (int)$request->user()->id,403,'The purchase order creator cannot approve their own order.');
         $po->update(['status'=>'approved','approved_by'=>$request->user()->id,'approved_at'=>now()]);
         return back()->with('status','Purchase order approved.');
     }
