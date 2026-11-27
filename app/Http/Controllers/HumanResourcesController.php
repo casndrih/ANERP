@@ -52,7 +52,7 @@ class HumanResourcesController extends Controller {
         return back()->with('status','Company voluntary superannuation participation setting updated.');
     }
     public function storeLeaveType(Request $request) {
-        CompanyAuthorizer::requireRole($request,['owner','admin','hr_manager']);
+        CompanyAuthorizer::requirePermission($request,'hr.manage');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $data=$request->validate([
             'code'=>['required','string','max:30',Rule::unique('leave_types')->where(fn($q)=>$q->where('company_id',$companyId))],
@@ -64,7 +64,7 @@ class HumanResourcesController extends Controller {
         return back()->with('status','Leave type created.');
     }
     public function storeLeave(Request $request) {
-        CompanyAuthorizer::requireRole($request,['owner','admin','hr_manager','employee']);
+        CompanyAuthorizer::requirePermission($request,'hr.manage');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $data=$request->validate([
             'employee_id'=>['required','integer',Rule::exists('employees','id')->where('company_id',$companyId)],
