@@ -20,7 +20,7 @@ Section 13 imposes salary and wages tax for each fortnight on gross PNG-source e
 - With an employment declaration: apply the relevant progressive fortnightly rates and subtract the allowed annual dependant tax credit divided by 26.
 - Without an employment declaration: withhold at the maximum applicable rate (42%) on the fortnightly amount.
 
-Section 56 provides the dependant tax credit. The annual credit depends on eligible dependants and assessed tax, with per-dependant limits and an overall cap. ANERP stores the **approved annual credit amount** supplied by the employer/payroll administrator; it does not infer eligibility from a dependant count. The stored amount is capped at K1,050 and must be supported by the employee's declaration and IRC records.
+Section 56 provides the dependant tax credit. The annual credit is available to resident individuals only and depends on eligible dependants and assessed tax, with per-dependant limits and an overall cap. ANERP does not apply dependant credits to non-resident employees. ANERP stores the **approved annual credit amount** supplied by the employer/payroll administrator; it does not infer eligibility from a dependant count. The stored amount is capped at K1,050 and must be supported by the employee's declaration and IRC records.
 
 Schedule 6 clause 5 describes payments for periods longer than a fortnight by converting the payment into full fortnight or part-fortnight amounts using daily earnings. ANERP segments periods longer than 14 days and normalizes weekly periods to a fortnightly equivalent. The weekly proration method should be checked against the latest IRC payroll circular before production use.
 
