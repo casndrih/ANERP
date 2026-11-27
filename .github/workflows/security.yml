@@ -1,0 +1,58 @@
+name: ANERP Security Checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - feature/phase-7-production-readiness
+
+permissions:
+  contents: read
+
+jobs:
+  secret-scan:
+    name: Secret scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan for exposed secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-audit:
+    name: PHP dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+      - name: Validate Composer manifest and lock file
+        run: composer validate --no-check-publish
+      - name: Audit locked dependencies
+        run: composer audit --locked --no-interaction
+
+  container-scan:
+    name: Container vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Build ANERP image
+        run: docker build --file deploy/Dockerfile --tag anerp:security-scan .
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: anerp:security-scan
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+          ignore-unfixed: true
