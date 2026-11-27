@@ -40,7 +40,7 @@ class StockMovementController extends Controller {
                 $onHand=InventoryLedger::onHand($companyId,(int)$data['warehouse_id'],(int)$product->id);
                 if((float)$data['quantity']>$onHand) throw ValidationException::withMessages(['quantity'=>"Insufficient stock. Available: {$onHand}."]);
             }
-            InventoryLedger::record($companyId,(int)$data['warehouse_id'],(int)$product->id,$data['movement_type'],(float)$data['quantity'],(float)$data['unit_cost'],$request->user()->id,'manual',null);
+            InventoryLedger::record($companyId,(int)$data['warehouse_id'],(int)$product->id,$data['movement_type'],(float)$data['quantity'],(float)$data['unit_cost'],$request->user()->id,'manual',null,$data['notes']??null);
         });
         return back()->with('status','Stock movement recorded in the inventory ledger.');
     }
