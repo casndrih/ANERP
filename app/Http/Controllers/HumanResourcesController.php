@@ -17,6 +17,7 @@ class HumanResourcesController extends Controller {
             'leaveTypes'=>LeaveType::where('company_id',$companyId)->where('is_active',true)->orderBy('name')->get(),
             'leaveApplications'=>LeaveApplication::with(['employee','leaveType'])->where('company_id',$companyId)->latest()->limit(30)->get(),
             'attendance'=>AttendanceEntry::with('employee')->where('company_id',$companyId)->whereDate('work_date',today())->latest()->get(),
+            'company'=>Company::findOrFail($companyId),
         ]);
     }
     public function storeEmployee(Request $request) {
