@@ -7,6 +7,7 @@ use App\Models\PayrollRun;
 use App\Models\StockMovement;
 use App\Models\SupplierBill;
 use App\Support\CompanyAuthorizer;
+use App\Services\ReportingCalculator;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -65,7 +66,7 @@ class ReportingController extends Controller
             $docs=$model::with($relation)->where('company_id',$companyId)->where('status','posted')->whereDate($dateCol,'<=',$to->toDateString())->get();
             $rows=$docs->map(function($d) use($receivable,$relation,$dateCol,$to) {
                 $due=Carbon::parse($d->due_date??$d->{$dateCol}); $days=ReportingCalculator::ageingDays($due,$to); $amount=round((float)$d->amount,2);
-                return (object)['document'=>$receivable?$d->invoice_number:$d->bill_number,'counterparty'=>$d->{$relation}?->name??'','document_date'=>$d->{$dateCol}?->format('Y-m-d'),'due_date'=>$due->toDateString(),'days_overdue'=>$days,'current'=>$days===0?$amount:0,'1_30'=>$days>=1&&$days<=30?$amount:0,'31_60'=>$days>=31&&$days<=60?$amount:0,'61_90'=>$days>=61&&$days<=90?$amount:0,'over_90'=>$days>90?$amount:0,'amount'=>$amount];
+                return (object)['document'=>$receivable?$d->invoice_number:$d->bill_number,'counterparty'=>$d->{$relation}?->name??'','document_date'=>$d->{$dateCol}?->format('Y-m-d'),'due_date'=>$due->toDateString(),'days_overdue'=>$days,'current'=>ReportingCalculator::ageingBucket($days)==='current'?$amount:0,'1_30'=>ReportingCalculator::ageingBucket($days)==='1_30'?$amount:0,'31_60'=>ReportingCalculator::ageingBucket($days)==='31_60'?$amount:0,'61_90'=>ReportingCalculator::ageingBucket($days)==='61_90'?$amount:0,'over_90'=>ReportingCalculator::ageingBucket($days)==='over_90'?$amount:0,'amount'=>$amount];
             });
             $totals=['amount'=>round((float)$rows->sum('amount'),2)];
         } elseif($report==='payroll') {
