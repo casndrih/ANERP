@@ -13,6 +13,7 @@ use Illuminate\Validation\ValidationException;
 
 class StockMovementController extends Controller {
     public function index(Request $request) {
+        CompanyAuthorizer::requirePermission($request,'inventory.view');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $warehouses=Warehouse::where('company_id',$companyId)->where('is_active',true)->orderBy('name')->get();
         $products=Product::where('company_id',$companyId)->where('is_active',true)->where('track_stock',true)->orderBy('name')->get();
@@ -27,7 +28,7 @@ class StockMovementController extends Controller {
     }
 
     public function store(Request $request) {
-        CompanyAuthorizer::requireRole($request,['owner','admin','inventory_manager']);
+        CompanyAuthorizer::requirePermission($request,'inventory.manage');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $data=$request->validate([
             'movement_type'=>['required',Rule::in(['opening','issue','adjustment_in','adjustment_out'])],
@@ -50,7 +51,7 @@ class StockMovementController extends Controller {
     }
 
     public function transfer(Request $request) {
-        CompanyAuthorizer::requireRole($request,['owner','admin','inventory_manager']);
+        CompanyAuthorizer::requirePermission($request,'inventory.transfer');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $data=$request->validate([
             'from_warehouse_id'=>['required','integer',Rule::exists('warehouses','id')->where('company_id',$companyId)],
