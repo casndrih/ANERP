@@ -8,6 +8,7 @@ on:
       - feature/phase-3-inventory-procurement
       - feature/phase-4-hr-payroll
       - feature/phase-5-finance-accounting
+      - feature/phase-6-reporting-analytics
   push:
     branches:
       - main
@@ -36,7 +37,7 @@ jobs:
           composer create-project laravel/laravel:^12.0 /tmp/anerp-test --no-interaction
           cp -a app routes database resources tests /tmp/anerp-test/
           cd /tmp/anerp-test
-          php artisan test tests/Unit/ReportingCalculatorTest.php
+          php artisan test tests/Unit
 
   container-build:
     name: Build deployment image
