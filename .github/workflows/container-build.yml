@@ -19,5 +19,8 @@ jobs:
           cp .env.example .env
           sed -i 's/REPLACE_WITH_A_LONG_RANDOM_SECRET/ci-only-placeholder-secret/g' .env
           docker compose config --quiet
+      - name: PHP syntax check
+        run: |
+          docker run --rm -v "$PWD":/workspace -w /workspace php:8.4-cli sh -lc 'find app routes database -name "*.php" -print0 | xargs -0 -n1 php -l'
       - name: Build application image
         run: docker build -f deploy/Dockerfile -t anerp:ci .
