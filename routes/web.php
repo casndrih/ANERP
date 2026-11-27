@@ -11,6 +11,7 @@ use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\WarehouseController;
+use App\Http\Middleware\AuditCompanyActivity;
 use App\Http\Middleware\EnsureCompanyAccess;
 use Illuminate\Support\Facades\Route;
 
@@ -21,7 +22,7 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
 Route::post('/company/select', [CompanySelectionController::class, 'store'])->middleware('auth')->name('company.select');
 
-Route::middleware(['auth', EnsureCompanyAccess::class])->group(function () {
+Route::middleware(['auth', EnsureCompanyAccess::class, AuditCompanyActivity::class])->group(function () {
     Route::get('/', fn () => view('dashboard'))->name('dashboard');
     Route::get('/inventory/products', [ProductController::class, 'index'])->name('inventory.products.index');
     Route::post('/inventory/products', [ProductController::class, 'store'])->name('inventory.products.store');
