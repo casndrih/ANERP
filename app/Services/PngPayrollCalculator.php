@@ -48,7 +48,9 @@ class PngPayrollCalculator
                 $segmentTax = $fortnightEquivalent * 0.42;
             } else {
                 $segmentTax = $this->fortnightlyProgressiveTax($fortnightEquivalent, $residency);
-                $creditForSegment = $residency === 'resident'\n                    ? ($annualDependantTaxCredit / 26) * ($segmentDays / 14)\n                    : 0.0;
+                $creditForSegment = $residency === 'resident'
+                    ? ($annualDependantTaxCredit / 26) * ($segmentDays / 14)
+                    : 0.0;
                 $segmentTax = max(0, $segmentTax - $creditForSegment);
             }
 
