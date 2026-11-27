@@ -1,16 +1,16 @@
 <?php
-namespace App\\Http\\Controllers;
-use App\\Models\\Account;
-use App\\Models\\CustomerInvoice;
-use App\\Models\\JournalLine;
-use App\\Models\\PayrollRun;
-use App\\Models\\StockMovement;
-use App\\Models\\SupplierBill;
-use App\\Support\\CompanyAuthorizer;
-use Carbon\\Carbon;
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\DB;
-use Symfony\\Component\\HttpFoundation\\StreamedResponse;
+namespace App\Http\Controllers;
+use App\Models\Account;
+use App\Models\CustomerInvoice;
+use App\Models\JournalLine;
+use App\Models\PayrollRun;
+use App\Models\StockMovement;
+use App\Models\SupplierBill;
+use App\Support\CompanyAuthorizer;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportingController extends Controller
 {
