@@ -29,6 +29,6 @@
 - [ ] Confirm cross-company data cannot appear in reports or exports.
 - [ ] Verify date boundaries and timezone behavior.
 - [ ] Verify AP/AR ageing buckets and payroll aggregates.
-- [ ] Verify stock movement signs and paired transfers.
+- [x] Add pure unit coverage for debit/credit balances, ageing boundaries, signed stock movements/transfers and net income calculations.\n- [ ] Verify stock movement signs and paired transfers against database fixtures.
 - [ ] Accountant review of statement presentation and opening balances.
 - [ ] Add automated feature tests and security review before production.
