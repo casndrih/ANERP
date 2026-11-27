@@ -11,6 +11,15 @@ final class CompanyPermissionMap
 {
     private const ALL = ['*'];
 
+    private const KNOWN_PERMISSIONS = [
+        'inventory.view', 'inventory.manage', 'inventory.receive', 'inventory.transfer',
+        'procurement.view', 'procurement.create', 'procurement.submit', 'procurement.receive', 'procurement.approve',
+        'finance.view', 'finance.create', 'finance.post', 'finance.reconcile',
+        'hr.view', 'hr.manage', 'company.settings.manage',
+        'payroll.view', 'payroll.create', 'payroll.approve',
+        'reports.view', 'reports.export', 'users.manage', 'roles.manage', 'audit.view',
+    ];
+
     private const ROLE_PERMISSIONS = [
         'owner' => self::ALL,
         'admin' => self::ALL,
@@ -46,7 +55,7 @@ final class CompanyPermissionMap
 
     public static function allows(string $role, string $permission): bool
     {
-        if (trim($permission) === '') {
+        if (!in_array($permission, self::KNOWN_PERMISSIONS, true)) {
             return false;
         }
 
