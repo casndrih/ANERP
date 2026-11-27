@@ -16,10 +16,12 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ReportingController extends Controller
 {
     public function index(Request $request) {
+        CompanyAuthorizer::requirePermission($request,'reports.view');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         return view('reports.index',$this->reportData($request,$companyId));
     }
     public function export(Request $request): StreamedResponse {
+        CompanyAuthorizer::requirePermission($request,'reports.export');
         $data=$this->reportData($request,CompanyAuthorizer::activeCompanyId($request));
         return response()->streamDownload(function() use($data) {
             $out=fopen('php://output','w');
