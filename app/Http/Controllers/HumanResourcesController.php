@@ -34,6 +34,18 @@ class HumanResourcesController extends Controller {
         Employee::create($data);
         return back()->with('status','Employee record created.');
     }
+    public function storeLeaveType(Request $request) {
+        CompanyAuthorizer::requireRole($request,['owner','admin','hr_manager']);
+        $companyId=CompanyAuthorizer::activeCompanyId($request);
+        $data=$request->validate([
+            'code'=>['required','string','max:30',Rule::unique('leave_types')->where(fn($q)=>$q->where('company_id',$companyId))],
+            'name'=>'required|string|max:100','annual_entitlement'=>'required|numeric|min:0|max:366',
+            'is_paid'=>'sometimes|boolean',
+        ]);
+        $data['company_id']=$companyId; $data['is_paid']=$request->boolean('is_paid');
+        LeaveType::create($data);
+        return back()->with('status','Leave type created.');
+    }
     public function storeLeave(Request $request) {
         CompanyAuthorizer::requireRole($request,['owner','admin','hr_manager','employee']);
         $companyId=CompanyAuthorizer::activeCompanyId($request);
