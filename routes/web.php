@@ -11,5 +11,5 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout',[AuthenticatedSessionController::class,'destroy'])->middleware('auth')->name('logout');
 Route::post('/company/select',[CompanySelectionController::class,'store'])->middleware('auth')->name('company.select');
 Route::middleware(['auth',EnsureCompanyAccess::class])->group(function () {
-    Route::get('/', fn () => view('dashboard'))->name('dashboard');
+    Route::get('/', fn () => view('dashboard'))->name('dashboard');\n    Route::get('/inventory/products',[ProductController::class,'index'])->name('inventory.products.index');\n    Route::post('/inventory/products',[ProductController::class,'store'])->name('inventory.products.store');
 });
