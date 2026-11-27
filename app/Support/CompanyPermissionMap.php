@@ -46,6 +46,10 @@ final class CompanyPermissionMap
 
     public static function allows(string $role, string $permission): bool
     {
+        if (trim($permission) === '') {
+            return false;
+        }
+
         $permissions = self::ROLE_PERMISSIONS[$role] ?? [];
 
         return in_array('*', $permissions, true)
