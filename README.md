@@ -12,7 +12,7 @@ Start with one VM: 8 vCPU, 16 GB RAM (24 GB preferred), 250 GB SSD-backed disk a
 ## Quick start
 1. Create an Ubuntu Server 24.04 LTS VM in ESXi and install Docker Engine + Compose.
 2. Copy this repository to the VM.
-3. Copy .env.example to .env and set a strong unique POSTGRES_PASSWORD and APP_KEY.
+3. Copy .env.example to .env and set the same strong database password in DB_PASSWORD and POSTGRES_PASSWORD. Generate an APP_KEY with `docker compose exec app php artisan key:generate --show`, paste the returned base64 key into the host .env file, then restart the app container.
 4. Run docker compose build && docker compose up -d.
 5. Run docker compose exec app php artisan key:generate.
 6. Run docker compose exec app php artisan migrate --force.
