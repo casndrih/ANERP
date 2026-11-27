@@ -4,7 +4,7 @@ This phase adds session-based sign-in/out, a per-email/IP login throttle, no pub
 
 ## First-time bootstrap
 After migrations have run, execute:
-`docker compose exec app php artisan aner p:install-admin`
+`docker compose exec app php artisan anerp:install-admin`
 The exact command name is `anerp:install-admin`. Create the first company and owner account interactively. Do not place credentials in source control or deployment environment files.
 
 ## Tenant rules
