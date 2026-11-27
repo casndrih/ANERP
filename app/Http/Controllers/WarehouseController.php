@@ -7,13 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 class WarehouseController extends Controller {
     public function index(Request $request) {
+        CompanyAuthorizer::requirePermission($request,'inventory.view');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $warehouses=Warehouse::where('company_id',$companyId)->with('branch')->orderBy('name')->get();
         $branches=Branch::where('company_id',$companyId)->where('is_active',true)->orderBy('name')->get();
         return view('inventory.warehouses.index',compact('warehouses','branches'));
     }
     public function store(Request $request) {
-        CompanyAuthorizer::requireRole($request,['owner','admin','inventory_manager']);
+        CompanyAuthorizer::requirePermission($request,'inventory.manage');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $data=$request->validate([
             'code'=>['required','string','max:40',Rule::unique('warehouses')->where(fn($q)=>$q->where('company_id',$companyId))],
