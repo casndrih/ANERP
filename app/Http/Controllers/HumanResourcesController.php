@@ -38,6 +38,7 @@ class HumanResourcesController extends Controller {
         ]);
         $data['company_id']=$companyId; $data['currency']='PGK'; $data['status']='active';
         $data['employment_declaration_received']=$request->boolean('employment_declaration_received');
+        $data['annual_dependant_tax_credit']=$data['annual_dependant_tax_credit']??0;
         $data['superannuation_opt_in']=$request->boolean('superannuation_opt_in');
         $data['superannuation_exempt']=$request->boolean('superannuation_exempt');
         Employee::create($data);
