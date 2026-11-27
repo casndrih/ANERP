@@ -1,0 +1,12 @@
+# Security baseline before production
+- Restrict application access with firewall/VPN and HTTPS.
+- Keep PostgreSQL and Redis on the private container network.
+- Enforce MFA, strong passwords, secure cookies and session expiry.
+- Enforce tenant isolation in policies, services and query scopes.
+- Require maker-checker approvals for procurement, payroll and journals.
+- Audit approvals, postings, exports and sensitive changes.
+- Encrypt off-host backups and test restores regularly.
+- Keep secrets out of Git; rotate credentials.
+- Patch Ubuntu, Docker images, Laravel and PHP dependencies.
+- Add rate limits, CSRF protection, monitoring and alerting.
+- Perform independent security review and penetration testing.
