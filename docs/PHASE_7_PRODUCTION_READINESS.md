@@ -3,6 +3,12 @@
 ## Objective
 Establish repeatable security, operational and acceptance controls before ANERP is used for live business records. This phase does not certify the application as secure and does not replace an independent penetration test, accountant review or PNG legal/payroll advice.
 
+## Implemented in this increment
+- Central company-role permission matrix with deny-by-default behavior for unknown roles and permissions.
+- Permission enforcement on product management, procurement create/submit/approve/receive, finance access/posting/reconciliation, and payroll access/create/approval.
+- Append-only application audit events for authenticated company mutations and report exports, including actor, active company, route, outcome, HTTP status, safe route record identifiers and source IP. Request bodies and secrets are deliberately not captured.
+- Unit tests for role/permission separation and deny-by-default behavior.
+
 ## Scope
 - Automated dependency and container vulnerability checks in GitHub Actions.
 - Secret scanning on pull requests and pushes.
