@@ -10,8 +10,8 @@ final class ReportingCalculatorTest extends TestCase
 {
     public function test_debit_and_credit_normal_balances_are_calculated_correctly(): void
     {
-        self::assertSame(125.50, ReportingCalculator::accountBalance(25, 151, 'credit'));
-        self::assertSame(125.50, ReportingCalculator::accountBalance(151, 25, 'debit'));
+        self::assertSame(125.50, ReportingCalculator::accountBalance(25, 150.50, 'credit'));
+        self::assertSame(125.50, ReportingCalculator::accountBalance(150.50, 25, 'debit'));
     }
 
     public function test_ageing_days_and_buckets_cover_boundaries(): void
