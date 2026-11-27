@@ -55,7 +55,7 @@ Route::middleware(['auth', EnsureCompanyAccess::class])->group(function () {
     Route::post('/finance/bank-accounts', [FinanceController::class, 'storeBankAccount'])->name('finance.bank-accounts.store');
     Route::post('/finance/bank-transactions', [FinanceController::class, 'storeBankTransaction'])->name('finance.bank-transactions.store');
     Route::post('/finance/bank-accounts/{bankAccount}/reconcile', [FinanceController::class, 'reconcile'])->name('finance.bank-accounts.reconcile');
-    Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+    Route::get('/reports', [ReportingController::class, 'index'])->name('reports.index');\n    Route::get('/reports/export', [ReportingController::class, 'export'])->name('reports.export');\n    Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
     Route::post('/payroll', [PayrollController::class, 'store'])->name('payroll.store');
     Route::post('/payroll/{run}/approve', [PayrollController::class, 'approve'])->name('payroll.approve');
     Route::get('/payroll/payslips/{line}', [PayrollController::class, 'payslip'])->name('payroll.payslip');
