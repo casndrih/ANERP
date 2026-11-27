@@ -51,7 +51,7 @@ class ReportingController extends Controller
             if($report==='profit_loss') $rows=$rows->whereIn('type',['income','expense'])->values();
             if($report==='balance_sheet') {
                 $rows=$rows->whereIn('type',['asset','liability','equity'])->values();
-                $earnings=$balances->whereIn('account_type',['income','expense'])->sum(fn($a)=>$a->account_type==='income'?(float)$a->credit_total-(float)$a->debit_total:(float)$a->debit_total-(float)$a->credit_total);
+                $earnings=ReportingCalculator::netIncome($balances->whereIn('account_type',['income','expense']));
                 $rows->push((object)['code'=>'CURRENT-EARNINGS','account'=>'Accumulated earnings (calculated)','type'=>'equity','debit'=>0,'credit'=>0,'balance'=>round($earnings,2)]);
             }
             if($report==='cash_flow') {
@@ -64,7 +64,7 @@ class ReportingController extends Controller
             $dateCol=$receivable?'invoice_date':'bill_date'; $relation=$receivable?'customer':'supplier';
             $docs=$model::with($relation)->where('company_id',$companyId)->where('status','posted')->whereDate($dateCol,'<=',$to->toDateString())->get();
             $rows=$docs->map(function($d) use($receivable,$relation,$dateCol,$to) {
-                $due=Carbon::parse($d->due_date??$d->{$dateCol}); $days=max(0,(int)$due->diffInDays($to->copy()->startOfDay(),false)); $amount=round((float)$d->amount,2);
+                $due=Carbon::parse($d->due_date??$d->{$dateCol}); $days=ReportingCalculator::ageingDays($due,$to); $amount=round((float)$d->amount,2);
                 return (object)['document'=>$receivable?$d->invoice_number:$d->bill_number,'counterparty'=>$d->{$relation}?->name??'','document_date'=>$d->{$dateCol}?->format('Y-m-d'),'due_date'=>$due->toDateString(),'days_overdue'=>$days,'current'=>$days===0?$amount:0,'1_30'=>$days>=1&&$days<=30?$amount:0,'31_60'=>$days>=31&&$days<=60?$amount:0,'61_90'=>$days>=61&&$days<=90?$amount:0,'over_90'=>$days>90?$amount:0,'amount'=>$amount];
             });
             $totals=['amount'=>round((float)$rows->sum('amount'),2)];
@@ -77,7 +77,7 @@ class ReportingController extends Controller
             $rows=$moves->groupBy(fn($m)=>($m->product?->sku??'—').' · '.($m->product?->name??'Unknown').' / '.($m->warehouse?->name??'Unknown'))->map(function($items,$label) {
                 $in=$items->whereIn('movement_type',['opening','purchase_receipt','transfer_in','adjustment_in'])->sum('quantity');
                 $out=$items->whereIn('movement_type',['issue','transfer_out','adjustment_out'])->sum('quantity');
-                return (object)['product_warehouse'=>$label,'movements'=>$items->count(),'quantity_in'=>round((float)$in,3),'quantity_out'=>round((float)$out,3),'net_quantity'=>round((float)$in-(float)$out,3),'movement_cost_value'=>round((float)$items->sum(fn($m)=>(float)$m->quantity*(float)$m->unit_cost),2)];
+                return (object)['product_warehouse'=>$label,'movements'=>$items->count(),'quantity_in'=>round((float)$in,3),'quantity_out'=>round((float)$out,3),'net_quantity'=>round((float)$in-(float)$out,3),'movement_cost_value'=>ReportingCalculator::movementCostValue($items)];
             })->values();
             foreach(['quantity_in','quantity_out','net_quantity','movement_cost_value'] as $k) $totals[$k]=round((float)$rows->sum($k),3);
         }
