@@ -19,7 +19,7 @@ use Illuminate\Validation\ValidationException;
 
 class FinanceController extends Controller {
     private function company(Request $request): int { return CompanyAuthorizer::activeCompanyId($request); }
-    private function financeRole(Request $request): void { CompanyAuthorizer::requireRole($request,['owner','admin','finance_manager','accountant']); }
+    private function financeRole(Request $request): void { CompanyAuthorizer::requirePermission($request,'finance.create'); }
     private function seedChart(int $companyId): void {
         $rows=[
             ['1000','Cash at bank','asset','debit',true],['1100','Accounts receivable','asset','debit',true],
@@ -39,6 +39,7 @@ class FinanceController extends Controller {
         );
     }
     public function index(Request $request) {
+        CompanyAuthorizer::requirePermission($request,'finance.view');
         $companyId=$this->company($request); $this->seedChart($companyId);
         return view('finance.index',[
             'accounts'=>Account::where('company_id',$companyId)->where('is_active',true)->orderBy('account_code')->get(),
@@ -71,7 +72,8 @@ class FinanceController extends Controller {
         return back()->with('status','Balanced draft journal created. A different finance user must post it.');
     }
     public function postJournal(Request $request, int $journal) {
-        $this->financeRole($request); $companyId=$this->company($request);
+        $this->financeRole($request);
+        CompanyAuthorizer::requirePermission($request,'finance.post'); $companyId=$this->company($request);
         DB::transaction(function() use($journal,$companyId,$request) {
             $entry=JournalEntry::where('company_id',$companyId)->lockForUpdate()->findOrFail($journal);
             abort_unless($entry->status==='draft',409,'Only draft journals can be posted.');
@@ -91,7 +93,8 @@ class FinanceController extends Controller {
         return back()->with('status','Supplier bill saved as draft.');
     }
     public function postSupplierBill(Request $request, int $bill) {
-        $this->financeRole($request); $companyId=$this->company($request); $this->seedChart($companyId);
+        $this->financeRole($request);
+        CompanyAuthorizer::requirePermission($request,'finance.post'); $companyId=$this->company($request); $this->seedChart($companyId);
         DB::transaction(function() use($bill,$companyId,$request) {
             $doc=SupplierBill::where('company_id',$companyId)->lockForUpdate()->findOrFail($bill);
             abort_unless($doc->status==='draft',409,'Only draft supplier bills can be posted.');
@@ -112,7 +115,8 @@ class FinanceController extends Controller {
         return back()->with('status','Customer invoice saved as draft.');
     }
     public function postInvoice(Request $request, int $invoice) {
-        $this->financeRole($request); $companyId=$this->company($request); $this->seedChart($companyId);
+        $this->financeRole($request);
+        CompanyAuthorizer::requirePermission($request,'finance.post'); $companyId=$this->company($request); $this->seedChart($companyId);
         DB::transaction(function() use($invoice,$companyId,$request) {
             $doc=CustomerInvoice::where('company_id',$companyId)->lockForUpdate()->findOrFail($invoice);
             abort_unless($doc->status==='draft',409,'Only draft customer invoices can be posted.');
@@ -153,7 +157,8 @@ class FinanceController extends Controller {
         return back()->with('status','Bank transaction recorded with a draft double-entry journal. Have another finance user post the journal before reconciliation.');
     }
     public function reconcile(Request $request, int $bankAccount) {
-        $this->financeRole($request); $companyId=$this->company($request);
+        $this->financeRole($request);
+        CompanyAuthorizer::requirePermission($request,'finance.reconcile'); $companyId=$this->company($request);
         $data=$request->validate(['statement_start'=>'required|date','statement_end'=>'required|date|after_or_equal:statement_start','opening_balance'=>'required|numeric','closing_balance'=>'required|numeric','transaction_ids'=>'required|array|min:1','transaction_ids.*'=>'integer']);
         DB::transaction(function() use($data,$bankAccount,$companyId,$request) {
             $bank=BankAccount::where('company_id',$companyId)->findOrFail($bankAccount);
