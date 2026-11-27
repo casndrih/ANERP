@@ -6,7 +6,8 @@ Establish repeatable security, operational and acceptance controls before ANERP 
 ## Implemented in this increment
 - Central company-role permission matrix with deny-by-default behavior for unknown roles and permissions.
 - Permission enforcement on product management, procurement create/submit/approve/receive, finance access/posting/reconciliation, and payroll access/create/approval.
-- Append-only application audit events for authenticated company mutations and report exports, including actor, active company, route, outcome, HTTP status, safe route record identifiers and source IP. Request bodies and secrets are deliberately not captured.
+- Append-only audit events for authenticated company mutations and report exports, including actor, active company, route, outcome, HTTP status, safe route record identifiers and source IP. Request bodies and secrets are deliberately not captured.
+- PostgreSQL triggers reject UPDATE and DELETE against audit_events, protecting event history from ordinary application/database statements. Database superusers remain trusted administrators and can bypass/alter database protections.
 - Unit tests for role/permission separation and deny-by-default behavior.
 
 ## Scope
@@ -45,6 +46,7 @@ Establish repeatable security, operational and acceptance controls before ANERP 
 - [ ] Dependency and container scans have no unaccepted critical/high findings.
 - [ ] Independent security review and penetration test completed; findings triaged.
 - [ ] Tenant-isolation and authorization tests pass.
+- [ ] Audit-event append-only migration is applied and verified on the production PostgreSQL version.
 - [ ] MFA and privileged-role policy enabled.
 - [ ] TLS, firewall/VPN and private database/cache networking verified.
 - [ ] Encrypted off-host backup configured and restore drill witnessed.
