@@ -31,9 +31,9 @@ class PayrollController extends Controller {
         }
         $employees=Employee::where('company_id',$companyId)->where('status','active')->where('pay_frequency',$data['pay_frequency'])->get();
         abort_if($employees->isEmpty(),422,'No active employees use this pay frequency.');
-        $companyHeadcount=Employee::where('company_id',$companyId)->where('status','active')
+        $employerVoluntary=(bool)Company::whereKey($companyId)->value('superannuation_voluntary_participant');\n        $companyHeadcount=Employee::where('company_id',$companyId)->where('status','active')
             ->whereDate('hire_date','<=',$end)->where(fn($q)=>$q->whereNull('termination_date')->orWhereDate('termination_date','>=',$start))->count();
-        DB::transaction(function() use($data,$employees,$companyId,$request,$calculator,$days,$end,$companyHeadcount) {
+        DB::transaction(function() use($data,$employees,$companyId,$request,$calculator,$days,$end,$companyHeadcount,$employerVoluntary) {
             $run=PayrollRun::create([
                 'company_id'=>$companyId,'run_number'=>'PAY-'.now()->format('YmdHis'),
                 'period_start'=>$data['period_start'],'period_end'=>$data['period_end'],
@@ -53,7 +53,7 @@ class PayrollController extends Controller {
                 $serviceEligible=$employee->hire_date && $employee->hire_date->copy()->addMonths(3)->lte($end);
                 $super=$calculator->superannuation(
                     $base,$companyHeadcount>=15,(bool)$serviceEligible,
-                    (bool)$employee->superannuation_opt_in,(bool)$employee->superannuation_exempt
+                    $employerVoluntary,(bool)$employee->superannuation_opt_in,(bool)$employee->superannuation_exempt
                 );
                 $net=round($gross-$tax-$super['employee'],2);
                 PayrollLine::create([
