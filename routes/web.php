@@ -5,6 +5,7 @@ use App\Http\Controllers\CompanySelectionController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\HumanResourcesController;
 use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\StockMovementController;
