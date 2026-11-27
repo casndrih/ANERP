@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 class HumanResourcesController extends Controller {
     public function index(Request $request) {
+        CompanyAuthorizer::requirePermission($request,'hr.view');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         return view('hr.index',[
             'employees'=>Employee::where('company_id',$companyId)->orderBy('last_name')->paginate(20),
@@ -21,7 +22,7 @@ class HumanResourcesController extends Controller {
         ]);
     }
     public function storeEmployee(Request $request) {
-        CompanyAuthorizer::requireRole($request,['owner','admin','hr_manager']);
+        CompanyAuthorizer::requirePermission($request,'hr.manage');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $data=$request->validate([
             'employee_number'=>['required','string','max:50',Rule::unique('employees')->where(fn($q)=>$q->where('company_id',$companyId))],
@@ -45,7 +46,7 @@ class HumanResourcesController extends Controller {
         return back()->with('status','Employee record created.');
     }
     public function setVoluntarySuperParticipation(Request $request) {
-        CompanyAuthorizer::requireRole($request,['owner','admin']);
+        CompanyAuthorizer::requirePermission($request,'company.settings.manage');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         Company::whereKey($companyId)->update(['superannuation_voluntary_participant'=>$request->boolean('superannuation_voluntary_participant')]);
         return back()->with('status','Company voluntary superannuation participation setting updated.');
@@ -76,7 +77,7 @@ class HumanResourcesController extends Controller {
         return back()->with('status','Leave application submitted for review.');
     }
     public function decideLeave(Request $request, LeaveApplication $leave) {
-        CompanyAuthorizer::requireRole($request,['owner','admin','hr_manager']);
+        CompanyAuthorizer::requirePermission($request,'hr.manage');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         abort_unless($leave->company_id===$companyId,404);
         abort_unless($leave->status==='pending',422,'Only pending leave applications can be decided.');
@@ -86,7 +87,7 @@ class HumanResourcesController extends Controller {
         return back()->with('status','Leave application '.$data['decision'].'.');
     }
     public function storeAttendance(Request $request) {
-        CompanyAuthorizer::requireRole($request,['owner','admin','hr_manager','payroll_manager']);
+        CompanyAuthorizer::requirePermission($request,'hr.manage');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $data=$request->validate([
             'employee_id'=>['required','integer',Rule::exists('employees','id')->where('company_id',$companyId)],
