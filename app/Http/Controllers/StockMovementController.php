@@ -31,8 +31,8 @@ class StockMovementController extends Controller {
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $data=$request->validate([
             'movement_type'=>['required',Rule::in(['opening','issue','adjustment_in','adjustment_out'])],
-            'warehouse_id'=>['required','integer',Rule::exists('warehouses','id')->where('company_id',$companyId)],
-            'product_id'=>['required','integer',Rule::exists('products','id')->where('company_id',$companyId)],
+            'warehouse_id'=>['required','integer',Rule::exists('warehouses','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true))],
+            'product_id'=>['required','integer',Rule::exists('products','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true))],
             'quantity'=>['required','numeric','gt:0'],
             'unit_cost'=>['required','numeric','min:0'],
             'notes'=>['nullable','string','max:500'],
