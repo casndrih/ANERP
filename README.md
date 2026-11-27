@@ -14,23 +14,25 @@ As usage grows, the host has room to separate the stack into an application VM (
 ## Quick start
 1. Create an Ubuntu Server 24.04 LTS VM in ESXi and install Docker Engine + Compose.
 2. Copy this repository to the VM.
-3. Copy `.env.example` to `.env`. Set the same strong random secret in `DB_PASSWORD` and `POSTGRES_PASSWORD`.
-4. Run `docker compose build`.
-5. Generate a key with `docker compose run --rm app php artisan key:generate --show`; paste the returned `base64:...` value into `APP_KEY` in the host `.env` file.
-6. Run `docker compose up -d`.
-7. Run `docker compose exec app php artisan migrate --force`.
-8. Create the initial company and owner account with `docker compose exec app php artisan anerp:install-admin` (actual command: `anerp:install-admin`).
-9. Browse to the VM on your trusted LAN and sign in at `/login`.
+3. Copy .env.example to .env. Set the same strong random secret in DB_PASSWORD and POSTGRES_PASSWORD.
+4. Run docker compose build.
+5. Generate a key with docker compose run --rm app php artisan key:generate --show; paste the returned base64 value into APP_KEY in the host .env file.
+6. Run docker compose up -d.
+7. Run docker compose exec app php artisan migrate --force.
+8. Create the initial company and owner account with docker compose exec app php artisan anerp:install-admin.
+9. Browse to the VM on your trusted LAN and sign in at /login.
 
 Do not expose the bootstrap system to the public internet. Add HTTPS, firewall/VPN, MFA, granular roles, tenant-isolation tests, SMTP, monitoring and encrypted off-host backups before production.
 
 ## Current implementation
-- Session sign-in/sign-out and login throttling; public registration disabled
-- Initial company bootstrap and active company membership context
-- Tenant-scoped product catalogue create/list
-- Inventory and procurement workflows: warehouses, stock ledger, transfers, suppliers and purchase orders
-- HR and payroll: employee records, leave, attendance, PNG 2026 core PAYE and superannuation calculations, maker-checker approval and payslips
-- Finance foundation: company chart of accounts, balanced journals, supplier bills, customer invoices, bank transactions and statement reconciliation\n- Reporting: company-scoped trial balance, P&L, balance sheet, bank cash movement, AP/AR ageing, approved payroll summaries, inventory movement reports and CSV exports
-- Docker Compose deployment and CI container-build workflow
+- Session sign-in/sign-out and login throttling; public registration disabled.
+- Initial company bootstrap and active company membership context.
+- Tenant-scoped product catalogue create/list.
+- Inventory and procurement workflows: warehouses, stock ledger, transfers, suppliers and purchase orders.
+- HR and payroll: employee records, leave, attendance, PNG 2026 core PAYE and superannuation calculations, maker-checker approval and payslips.
+- Finance foundation: company chart of accounts, balanced journals, supplier bills, customer invoices, bank transactions and statement reconciliation.
+- Reporting: company-scoped trial balance, P&L, balance sheet, bank cash movement, AP/AR ageing, approved payroll summaries, inventory movement reports and CSV exports.
+- Phase 7 baseline: secret/dependency/container scanning workflow, production-readiness gates and backup/restore operating runbook.
 
-See docs/ROADMAP.md, docs/PNG_LOCALISATION.md, docs/PNG_PAYROLL_STATUTORY_RULES.md, docs/ESXI_DEPLOYMENT.md, docs/SECURITY_BASELINE.md, docs/PHASE_2_AUTH_TENANCY.md, docs/PHASE_3_INVENTORY_PROCUREMENT.md, docs/PHASE_4_HR_PAYROLL.md and docs/PHASE_5_FINANCE_ACCOUNTING.md and docs/PHASE_6_REPORTING_ANALYTICS.md.
+## Documentation
+See docs/ROADMAP.md, docs/PNG_LOCALISATION.md, docs/PNG_PAYROLL_STATUTORY_RULES.md, docs/ESXI_DEPLOYMENT.md, docs/SECURITY_BASELINE.md, docs/PHASE_2_AUTH_TENANCY.md, docs/PHASE_3_INVENTORY_PROCUREMENT.md, docs/PHASE_4_HR_PAYROLL.md, docs/PHASE_5_FINANCE_ACCOUNTING.md, docs/PHASE_6_REPORTING_ANALYTICS.md, docs/PHASE_7_PRODUCTION_READINESS.md and docs/OPERATIONS_BACKUP_RESTORE.md.
