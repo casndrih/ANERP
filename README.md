@@ -32,7 +32,7 @@ Do not expose the bootstrap system to the public internet. Add HTTPS, firewall/V
 - HR and payroll: employee records, leave, attendance, PNG 2026 core PAYE and superannuation calculations, maker-checker approval and payslips.
 - Finance foundation: company chart of accounts, balanced journals, supplier bills, customer invoices, bank transactions and statement reconciliation.
 - Reporting: company-scoped trial balance, P&L, balance sheet, bank cash movement, AP/AR ageing, approved payroll summaries, inventory movement reports and CSV exports.
-- Phase 7 baseline: secret/dependency/container scanning workflow, production-readiness gates and backup/restore operating runbook.
+- Phase 7 security increment: central company role/permission matrix, route-level permission checks for inventory/procurement/finance/payroll, audit event logging for authenticated company writes and report exports, role-matrix unit tests, secret/dependency/container scanning workflow, and backup/restore runbook.
 
 ## Documentation
 See docs/ROADMAP.md, docs/PNG_LOCALISATION.md, docs/PNG_PAYROLL_STATUTORY_RULES.md, docs/ESXI_DEPLOYMENT.md, docs/SECURITY_BASELINE.md, docs/PHASE_2_AUTH_TENANCY.md, docs/PHASE_3_INVENTORY_PROCUREMENT.md, docs/PHASE_4_HR_PAYROLL.md, docs/PHASE_5_FINANCE_ACCOUNTING.md, docs/PHASE_6_REPORTING_ANALYTICS.md, docs/PHASE_7_PRODUCTION_READINESS.md and docs/OPERATIONS_BACKUP_RESTORE.md.
