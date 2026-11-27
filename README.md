@@ -19,7 +19,7 @@ As usage grows, the host has room to separate the stack into an application VM (
 5. Generate a key with `docker compose run --rm app php artisan key:generate --show`; paste the returned `base64:...` value into `APP_KEY` in the host `.env` file.
 6. Run `docker compose up -d`.
 7. Run `docker compose exec app php artisan migrate --force`.
-8. Create the initial company and owner account with `docker compose exec app php artisan aner p:install-admin` (actual command: `anerp:install-admin`).
+8. Create the initial company and owner account with `docker compose exec app php artisan anerp:install-admin` (actual command: `anerp:install-admin`).
 9. Browse to the VM on your trusted LAN and sign in at `/login`.
 
 Do not expose the bootstrap system to the public internet. Add HTTPS, firewall/VPN, MFA, granular roles, tenant-isolation tests, SMTP, monitoring and encrypted off-host backups before production.
