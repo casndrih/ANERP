@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+
 class StockMovementController extends Controller {
     public function index(Request $request) {
         $companyId=CompanyAuthorizer::activeCompanyId($request);
@@ -24,6 +25,7 @@ class StockMovementController extends Controller {
             ->orderBy('products.name')->get();
         return view('inventory.movements.index',compact('warehouses','products','movements','balances'));
     }
+
     public function store(Request $request) {
         CompanyAuthorizer::requireRole($request,['owner','admin','inventory_manager']);
         $companyId=CompanyAuthorizer::activeCompanyId($request);
@@ -31,7 +33,9 @@ class StockMovementController extends Controller {
             'movement_type'=>['required',Rule::in(['opening','issue','adjustment_in','adjustment_out'])],
             'warehouse_id'=>['required','integer',Rule::exists('warehouses','id')->where('company_id',$companyId)],
             'product_id'=>['required','integer',Rule::exists('products','id')->where('company_id',$companyId)],
-            'quantity'=>['required','numeric','gt:0'],'unit_cost'=>['required','numeric','min:0'],'notes'=>['nullable','string','max:500'],
+            'quantity'=>['required','numeric','gt:0'],
+            'unit_cost'=>['required','numeric','min:0'],
+            'notes'=>['nullable','string','max:500'],
         ]);
         DB::transaction(function() use($data,$companyId,$request) {
             $product=Product::where('company_id',$companyId)->whereKey($data['product_id'])->lockForUpdate()->firstOrFail();
@@ -44,6 +48,7 @@ class StockMovementController extends Controller {
         });
         return back()->with('status','Stock movement recorded in the inventory ledger.');
     }
+
     public function transfer(Request $request) {
         CompanyAuthorizer::requireRole($request,['owner','admin','inventory_manager']);
         $companyId=CompanyAuthorizer::activeCompanyId($request);
@@ -51,16 +56,26 @@ class StockMovementController extends Controller {
             'from_warehouse_id'=>['required','integer',Rule::exists('warehouses','id')->where('company_id',$companyId)],
             'to_warehouse_id'=>['required','different:from_warehouse_id','integer',Rule::exists('warehouses','id')->where('company_id',$companyId)],
             'product_id'=>['required','integer',Rule::exists('products','id')->where('company_id',$companyId)],
-            'quantity'=>['required','numeric','gt:0'],'unit_cost'=>['required','numeric','min:0'],
+            'quantity'=>['required','numeric','gt:0'],
+            'unit_cost'=>['required','numeric','min:0'],
+            'notes'=>['nullable','string','max:500'],
         ]);
         DB::transaction(function() use($data,$companyId,$request) {
             $product=Product::where('company_id',$companyId)->whereKey($data['product_id'])->lockForUpdate()->firstOrFail();
             if(!$product->track_stock) throw ValidationException::withMessages(['product_id'=>'Stock tracking is disabled for this product.']);
             $available=InventoryLedger::onHand($companyId,(int)$data['from_warehouse_id'],(int)$product->id);
             if((float)$data['quantity']>$available) throw ValidationException::withMessages(['quantity'=>"Insufficient stock. Available: {$available}."]);
-            $reference='TRF-'.strtoupper(bin2hex(random_bytes(5)));
-            InventoryLedger::record($companyId,(int)$data['from_warehouse_id'],(int)$product->id,'transfer_out',(float)$data['quantity'],(float)$data['unit_cost'],$request->user()->id,'transfer',null);
-            InventoryLedger::record($companyId,(int)$data['to_warehouse_id'],(int)$product->id,'transfer_in',(float)$data['quantity'],(float)$data['unit_cost'],$request->user()->id,'transfer',null);
+            $transfer=StockTransfer::create([
+                'company_id'=>$companyId,
+                'transfer_number'=>'TRF-'.now()->format('ymd').'-'.strtoupper(bin2hex(random_bytes(3))),
+                'from_warehouse_id'=>$data['from_warehouse_id'],
+                'to_warehouse_id'=>$data['to_warehouse_id'],
+                'status'=>'posted',
+                'notes'=>$data['notes']??null,
+                'created_by'=>$request->user()->id,
+            ]);
+            InventoryLedger::record($companyId,(int)$data['from_warehouse_id'],(int)$product->id,'transfer_out',(float)$data['quantity'],(float)$data['unit_cost'],$request->user()->id,'stock_transfer',$transfer->id,$transfer->notes);
+            InventoryLedger::record($companyId,(int)$data['to_warehouse_id'],(int)$product->id,'transfer_in',(float)$data['quantity'],(float)$data['unit_cost'],$request->user()->id,'stock_transfer',$transfer->id,$transfer->notes);
         });
         return back()->with('status','Warehouse transfer posted.');
     }
