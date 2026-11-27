@@ -37,7 +37,15 @@ class ReportingController extends Controller
         $to=Carbon::parse($v['to']??now()->toDateString())->endOfDay();
         $from=Carbon::parse($v['from']??$to->copy()->startOfMonth()->toDateString())->startOfDay();
         abort_if($from->gt($to),422,'Start date must not be after end date.');
-        $report=$v['report']??'trial_balance'; $rows=collect(); $totals=[];
+        $report=$v['report']??'trial_balance';
+        if (in_array($report,['trial_balance','profit_loss','balance_sheet','cash_flow','receivables','payables'],true)) {
+            CompanyAuthorizer::requirePermission($request,'finance.view');
+        } elseif ($report==='payroll') {
+            CompanyAuthorizer::requirePermission($request,'payroll.view');
+        } elseif ($report==='inventory') {
+            CompanyAuthorizer::requirePermission($request,'inventory.view');
+        }
+        $rows=collect(); $totals=[];
         if(in_array($report,['trial_balance','profit_loss','balance_sheet','cash_flow'],true)) {
             $q=JournalLine::query()->join('journal_entries','journal_entries.id','=','journal_lines.journal_entry_id')
                 ->join('accounts','accounts.id','=','journal_lines.account_id')
