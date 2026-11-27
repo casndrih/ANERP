@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        Schema::table('companies', function (Blueprint $t) { $t->boolean('superannuation_voluntary_participant')->default(false); });
         Schema::table('employees', function (Blueprint $t) {
             $t->string('tax_residency')->default('resident');
             $t->boolean('employment_declaration_received')->default(false);
@@ -35,6 +36,7 @@ return new class extends Migration {
         Schema::table('payroll_runs', function (Blueprint $t) {
             $t->dropColumn(['pay_frequency','statutory_rule_version']);
         });
+        Schema::table('companies', function (Blueprint $t) { $t->dropColumn('superannuation_voluntary_participant'); });
         Schema::table('employees', function (Blueprint $t) {
             $t->dropColumn(['tax_residency','employment_declaration_received','annual_dependant_tax_credit','superannuation_opt_in','superannuation_exempt','superannuation_exempt_reason','superannuation_fund','superannuation_member_number']);
         });
