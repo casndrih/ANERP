@@ -63,11 +63,12 @@ class PngPayrollCalculator
         float $basePay,
         bool $employerHasAtLeast15Employees,
         bool $continuousServiceOfThreeMonths,
-        bool $voluntaryOptIn,
+        bool $employerVoluntaryParticipation,
+        bool $employeeVoluntaryOptIn,
         bool $exempt
     ): array {
         $eligible = !$exempt && $continuousServiceOfThreeMonths
-            && ($employerHasAtLeast15Employees || $voluntaryOptIn);
+            && ($employerHasAtLeast15Employees || ($employerVoluntaryParticipation && $employeeVoluntaryOptIn));
 
         return [
             'eligible' => $eligible,
