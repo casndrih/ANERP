@@ -63,7 +63,8 @@ class PurchaseOrderController extends Controller {
         CompanyAuthorizer::requireRole($request,['owner','admin','procurement_approver']);
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $po=PurchaseOrder::where('company_id',$companyId)->findOrFail($order);
-        abort_unless($po->status==='submitted',409,'Only submitted purchase orders can be approved.');\n        abort_unless((int)$po->created_by !== (int)$request->user()->id,403,'The purchase order creator cannot approve their own order.');
+        abort_unless($po->status==='submitted',409,'Only submitted purchase orders can be approved.');
+        abort_unless((int)$po->created_by !== (int)$request->user()->id,403,'The purchase order creator cannot approve their own order.');
         $po->update(['status'=>'approved','approved_by'=>$request->user()->id,'approved_at'=>now()]);
         return back()->with('status','Purchase order approved.');
     }
