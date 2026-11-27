@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\CompanySelectionController;
+use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\HumanResourcesController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\ProductController;
@@ -43,6 +44,17 @@ Route::middleware(['auth', EnsureCompanyAccess::class])->group(function () {
     Route::post('/hr/leave', [HumanResourcesController::class, 'storeLeave'])->name('hr.leave.store');
     Route::post('/hr/leave/{leave}/decision', [HumanResourcesController::class, 'decideLeave'])->name('hr.leave.decision');
     Route::post('/hr/attendance', [HumanResourcesController::class, 'storeAttendance'])->name('hr.attendance.store');
+    Route::get('/finance', [FinanceController::class, 'index'])->name('finance.index');
+    Route::post('/finance/customers', [FinanceController::class, 'storeCustomer'])->name('finance.customers.store');
+    Route::post('/finance/journals', [FinanceController::class, 'storeJournal'])->name('finance.journals.store');
+    Route::post('/finance/journals/{journal}/post', [FinanceController::class, 'postJournal'])->name('finance.journals.post');
+    Route::post('/finance/bills', [FinanceController::class, 'storeSupplierBill'])->name('finance.bills.store');
+    Route::post('/finance/bills/{bill}/post', [FinanceController::class, 'postSupplierBill'])->name('finance.bills.post');
+    Route::post('/finance/invoices', [FinanceController::class, 'storeInvoice'])->name('finance.invoices.store');
+    Route::post('/finance/invoices/{invoice}/post', [FinanceController::class, 'postInvoice'])->name('finance.invoices.post');
+    Route::post('/finance/bank-accounts', [FinanceController::class, 'storeBankAccount'])->name('finance.bank-accounts.store');
+    Route::post('/finance/bank-transactions', [FinanceController::class, 'storeBankTransaction'])->name('finance.bank-transactions.store');
+    Route::post('/finance/bank-accounts/{bankAccount}/reconcile', [FinanceController::class, 'reconcile'])->name('finance.bank-accounts.reconcile');
     Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
     Route::post('/payroll', [PayrollController::class, 'store'])->name('payroll.store');
     Route::post('/payroll/{run}/approve', [PayrollController::class, 'approve'])->name('payroll.approve');
