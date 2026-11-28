@@ -5,12 +5,14 @@ use App\Models\BankAccount;
 use App\Models\BankReconciliation;
 use App\Models\BankTransaction;
 use App\Models\Customer;
+use App\Models\Company;
 use App\Models\CustomerInvoice;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\Supplier;
 use App\Models\SupplierBill;
 use App\Support\CompanyAuthorizer;
+use App\Services\PngProcurementTaxCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -53,6 +55,7 @@ class FinanceController extends Controller {
             'accounts'=>Account::where('company_id',$companyId)->where('is_active',true)->orderBy('account_code')->get(),
             'branches'=>DB::table('branches')->where('company_id',$companyId)->where('is_active',true)->orderBy('name')->get(),
             'assignedBranchId'=>$branchId,
+            'company'=>Company::findOrFail($companyId),
             'journals'=>JournalEntry::with('lines.account')->where('company_id',$companyId)->when($branchId,fn($q)=>$q->where('branch_id',$branchId))->latest('journal_date')->limit(30)->get(),
             'suppliers'=>Supplier::where('company_id',$companyId)->where('is_active',true)->orderBy('name')->get(),
             'customers'=>Customer::where('company_id',$companyId)->where('is_active',true)->orderBy('name')->get(),
@@ -62,6 +65,20 @@ class FinanceController extends Controller {
             'bankTransactions'=>BankTransaction::with('bankAccount')->where('company_id',$companyId)->when($branchId,fn($q)=>$q->where('branch_id',$branchId))->latest('transaction_date')->limit(30)->get(),
         ]);
     }
+    public function storeGstSettings(Request $request) {
+        CompanyAuthorizer::requireRole($request, ['owner','admin']);
+        $companyId=$this->company($request);
+        $data=$request->validate([
+            'gst_registered'=>['required','boolean'],
+            'gst_registration_number'=>['nullable','string','max:80','required_if:gst_registered,1'],
+        ]);
+        Company::whereKey($companyId)->update([
+            'gst_registered'=>(bool)$data['gst_registered'],
+            'gst_registration_number'=>$data['gst_registered'] ? ($data['gst_registration_number'] ?? null) : null,
+        ]);
+        return back()->with('status','Company GST registration settings updated.');
+    }
+
     public function storeCustomer(Request $request) {
         $this->financeRole($request); $companyId=$this->company($request);
         $data=$request->validate(['code'=>['required','string','max:50',Rule::unique('customers')->where(fn($q)=>$q->where('company_id',$companyId))],'name'=>'required|string|max:180','tin'=>'nullable|string|max:80','email'=>'nullable|email','phone'=>'nullable|string|max:50','billing_address'=>'nullable|string|max:1000']);
@@ -99,11 +116,31 @@ class FinanceController extends Controller {
     public function storeSupplierBill(Request $request) {
         $this->financeRole($request); $companyId=$this->company($request);
         $this->seedChart($companyId);
-        $data=$request->validate(['branch_id'=>['nullable','integer',Rule::exists('branches','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true))],'supplier_id'=>['required','integer',Rule::exists('suppliers','id')->where('company_id',$companyId)],'bill_number'=>['required','string','max:80',Rule::unique('supplier_bills')->where(fn($q)=>$q->where('company_id',$companyId))],'bill_date'=>'required|date','due_date'=>'nullable|date|after_or_equal:bill_date','expense_account_id'=>['required','integer',Rule::exists('accounts','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('account_type','expense'))],'amount'=>'required|numeric|gt:0','description'=>'required|string|max:255']);
+        $data=$request->validate([
+            'branch_id'=>['nullable','integer',Rule::exists('branches','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true))],
+            'supplier_id'=>['required','integer',Rule::exists('suppliers','id')->where('company_id',$companyId)],
+            'bill_number'=>['required','string','max:80',Rule::unique('supplier_bills')->where(fn($q)=>$q->where('company_id',$companyId))],
+            'bill_date'=>'required|date','due_date'=>'nullable|date|after_or_equal:bill_date',
+            'expense_account_id'=>['required','integer',Rule::exists('accounts','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('account_type','expense'))],
+            'amount'=>'required|numeric|gt:0','description'=>'required|string|max:255',
+            'gst_treatment'=>['nullable',Rule::in(['standard','zero_rated','exempt','out_of_scope'])],
+            'supplier_gst_registered'=>['nullable','boolean'],'supplier_gst_registration_number'=>['nullable','string','max:80'],'tax_invoice_reference'=>['nullable','string','max:120'],
+        ]);
+        $company=Company::findOrFail($companyId);
+        $supplierRegistered=(bool)($data['supplier_gst_registered'] ?? false);
+        $tax=(new PngProcurementTaxCalculator())->domesticSupply((float)$data['amount'],$data['gst_treatment'] ?? 'out_of_scope',$supplierRegistered);
+        $inputCreditEligible=$company->gst_registered && $supplierRegistered && !empty(trim($data['supplier_gst_registration_number'] ?? '')) && !empty(trim($data['tax_invoice_reference'] ?? '')) && $tax['gst_amount']>0;
         $branchId=$this->branchId($request,isset($data['branch_id'])?(int)$data['branch_id']:null);
-        SupplierBill::create(array_merge($data,['company_id'=>$companyId,'branch_id'=>$branchId,'currency'=>'PGK','status'=>'draft','created_by'=>$request->user()->id]));
-        return back()->with('status','Supplier bill saved as draft.');
+        SupplierBill::create(array_merge($data,[
+            'company_id'=>$companyId,'branch_id'=>$branchId,'currency'=>'PGK','status'=>'draft','created_by'=>$request->user()->id,
+            'amount'=>$tax['total'],'net_amount'=>$tax['taxable_value'],'gst_treatment'=>$tax['treatment'],
+            'gst_rate'=>$tax['gst_rate'],'gst_amount'=>$tax['gst_amount'],'supplier_gst_registered'=>$supplierRegistered,
+            'supplier_gst_registration_number'=>$data['supplier_gst_registration_number'] ?? null,'tax_invoice_reference'=>$data['tax_invoice_reference'] ?? null,'input_tax_credit_eligible'=>$inputCreditEligible,
+        ]));
+        return back()->with('status','Supplier bill saved as a draft with PNG GST calculated.');
     }
+
+
     public function postSupplierBill(Request $request, int $bill) {
         $this->financeRole($request);
         CompanyAuthorizer::requirePermission($request,'finance.post'); $companyId=$this->company($request); $branchId=CompanyAuthorizer::activeBranchId($request); $this->seedChart($companyId);
@@ -113,21 +150,44 @@ class FinanceController extends Controller {
             abort_if((int)$doc->created_by===(int)$request->user()->id,403,'The bill creator cannot post their own bill.');
             abort_if(!empty($doc->purchase_order_id), 409, 'Purchase-order supplier invoices must be approved through the three-way matching workspace.');
             $ap=Account::where('company_id',$companyId)->where('account_code','2000')->firstOrFail();
-            $j=$this->makePostedJournal($companyId,$doc->branch_id,$doc->bill_date,'supplier_bill',$doc->description,$doc->created_by,$request->user()->id,[
-                [$doc->expense_account_id,$doc->amount,0],[$ap->id,0,$doc->amount]
-            ]);
+            if ((bool)$doc->input_tax_credit_eligible && (float)$doc->gst_amount > 0) {
+                $inputTax=Account::where('company_id',$companyId)->where('account_code','1300')->firstOrFail();
+                $net=(float)($doc->net_amount ?? ((float)$doc->amount-(float)$doc->gst_amount));
+                $lines=[[$doc->expense_account_id,$net,0],[$inputTax->id,$doc->gst_amount,0],[$ap->id,0,$doc->amount]];
+            } else {
+                $lines=[[$doc->expense_account_id,$doc->amount,0],[$ap->id,0,$doc->amount]];
+            }
+            $j=$this->makePostedJournal($companyId,$doc->branch_id,$doc->bill_date,'supplier_bill',$doc->description,$doc->created_by,$request->user()->id,$lines);
             $doc->update(['status'=>'posted','journal_entry_id'=>$j->id,'posted_by'=>$request->user()->id,'posted_at'=>now()]);
         });
-        return back()->with('status','Supplier bill posted: expense debit and accounts payable credit.');
+        return back()->with('status','Supplier bill posted with the applicable expense and GST input-tax treatment.');
     }
+
+
     public function storeInvoice(Request $request) {
         $this->financeRole($request); $companyId=$this->company($request);
         $this->seedChart($companyId);
-        $data=$request->validate(['branch_id'=>['nullable','integer',Rule::exists('branches','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true))],'customer_id'=>['required','integer',Rule::exists('customers','id')->where('company_id',$companyId)],'invoice_number'=>['required','string','max:80',Rule::unique('customer_invoices')->where(fn($q)=>$q->where('company_id',$companyId))],'invoice_date'=>'required|date','due_date'=>'nullable|date|after_or_equal:invoice_date','revenue_account_id'=>['required','integer',Rule::exists('accounts','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('account_type','income'))],'amount'=>'required|numeric|gt:0','description'=>'required|string|max:255']);
+        $data=$request->validate([
+            'branch_id'=>['nullable','integer',Rule::exists('branches','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true))],
+            'customer_id'=>['required','integer',Rule::exists('customers','id')->where('company_id',$companyId)],
+            'invoice_number'=>['required','string','max:80',Rule::unique('customer_invoices')->where(fn($q)=>$q->where('company_id',$companyId))],
+            'invoice_date'=>'required|date','due_date'=>'nullable|date|after_or_equal:invoice_date',
+            'revenue_account_id'=>['required','integer',Rule::exists('accounts','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('account_type','income'))],
+            'amount'=>'required|numeric|gt:0','description'=>'required|string|max:255',
+            'gst_treatment'=>['nullable',Rule::in(['standard','zero_rated','exempt','out_of_scope'])],
+        ]);
+        $company=Company::findOrFail($companyId);
+        $tax=(new PngProcurementTaxCalculator())->domesticSupply((float)$data['amount'],$data['gst_treatment'] ?? 'out_of_scope',(bool)$company->gst_registered);
         $branchId=$this->branchId($request,isset($data['branch_id'])?(int)$data['branch_id']:null);
-        CustomerInvoice::create(array_merge($data,['company_id'=>$companyId,'branch_id'=>$branchId,'currency'=>'PGK','status'=>'draft','created_by'=>$request->user()->id]));
-        return back()->with('status','Customer invoice saved as draft.');
+        CustomerInvoice::create(array_merge($data,[
+            'company_id'=>$companyId,'branch_id'=>$branchId,'currency'=>'PGK','status'=>'draft','created_by'=>$request->user()->id,
+            'amount'=>$tax['total'],'net_amount'=>$tax['taxable_value'],'gst_treatment'=>$tax['treatment'],
+            'gst_rate'=>$tax['gst_rate'],'gst_amount'=>$tax['gst_amount'],
+        ]));
+        return back()->with('status','Customer invoice saved as a draft with PNG GST calculated.');
     }
+
+
     public function postInvoice(Request $request, int $invoice) {
         $this->financeRole($request);
         CompanyAuthorizer::requirePermission($request,'finance.post'); $companyId=$this->company($request); $branchId=CompanyAuthorizer::activeBranchId($request); $this->seedChart($companyId);
@@ -136,13 +196,19 @@ class FinanceController extends Controller {
             abort_unless($doc->status==='draft',409,'Only draft customer invoices can be posted.');
             abort_if((int)$doc->created_by===(int)$request->user()->id,403,'The invoice creator cannot post their own invoice.');
             $ar=Account::where('company_id',$companyId)->where('account_code','1100')->firstOrFail();
-            $j=$this->makePostedJournal($companyId,$doc->branch_id,$doc->invoice_date,'customer_invoice',$doc->description,$doc->created_by,$request->user()->id,[
-                [$ar->id,$doc->amount,0],[$doc->revenue_account_id,0,$doc->amount]
-            ]);
+            $net=(float)($doc->net_amount ?? ((float)$doc->amount-(float)$doc->gst_amount));
+            $lines=[[$ar->id,$doc->amount,0],[$doc->revenue_account_id,0,$net]];
+            if ((float)$doc->gst_amount > 0) {
+                $outputTax=Account::where('company_id',$companyId)->where('account_code','2100')->firstOrFail();
+                $lines[]=[$outputTax->id,0,$doc->gst_amount];
+            }
+            $j=$this->makePostedJournal($companyId,$doc->branch_id,$doc->invoice_date,'customer_invoice',$doc->description,$doc->created_by,$request->user()->id,$lines);
             $doc->update(['status'=>'posted','journal_entry_id'=>$j->id,'posted_by'=>$request->user()->id,'posted_at'=>now()]);
         });
-        return back()->with('status','Customer invoice posted: accounts receivable debit and revenue credit.');
+        return back()->with('status','Customer invoice posted with output GST where applicable.');
     }
+
+
     private function makePostedJournal(int $companyId,?int $branchId,$date,string $source,string $description,int $creator,int $poster,array $lines): JournalEntry {
         $entry=JournalEntry::create(['company_id'=>$companyId,'branch_id'=>$branchId,'journal_number'=>'JV-'.now()->format('YmdHis').'-'.Str::upper(Str::random(4)),'journal_date'=>$date,'source'=>$source,'status'=>'posted','description'=>$description,'created_by'=>$creator,'posted_by'=>$poster,'posted_at'=>now()]);
         foreach($lines as [$account,$debit,$credit]) JournalLine::create(['journal_entry_id'=>$entry->id,'account_id'=>$account,'description'=>$description,'debit'=>$debit,'credit'=>$credit]);
