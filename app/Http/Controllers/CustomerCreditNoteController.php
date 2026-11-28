@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\CustomerCreditNote;
 use App\Models\CustomerInvoice;
+use App\Models\CustomerSalesReturn;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Support\CompanyAuthorizer;
