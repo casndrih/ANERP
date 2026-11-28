@@ -17,14 +17,17 @@
 - Posted journals and source documents are immutable through this phase's UI.
 - Account, supplier, customer, bank account and document references are validated within the active company.
 
-## Not included yet
-- GST calculations and GST return filing.
-- Customer receipts, supplier payment allocation, credit notes, refunds and ageing automation.
-- FIFO/weighted-average inventory valuation, purchase invoice matching, payroll payment execution and statutory remittance workflows.
-- Fixed assets, depreciation, budgets, cost centres, multi-currency and foreign exchange revaluation.
-- Period locks, year-end closing, retained earnings roll-forward and full financial statements.
-- Bank feed/API integrations and statement import formats.
-- Automated tenant-isolation tests, accounting review and external audit.
+## Remaining work after later phases
+- Fixed-asset register, depreciation schedules, disposals and GL integration.
+- Budgets, cost centres, project/job costing and budget-versus-actual controls.
+- Supplier advances, customer advance reallocation and payment/receipt reversals.
+- Multi-currency documents, realised/unrealised FX gains and losses, and revaluation.
+- Period locks, controlled period close, year-end close, retained-earnings roll-forward and audit adjustments.
+- Bank statement import formats, bank feeds/API integrations and automated matching.
+- Filing-ready GST return generation, adjustment notes, Section 65A workflows and statutory reconciliation.
+- Full financial statement acceptance, accounting review and external audit evidence.
+
+Later phases have implemented customer receipts, supplier payment allocations, credit notes, refunds, AP/AR ageing, inventory valuation, purchase invoice matching, PNG GST calculation and payroll/inventory journals. These must be validated against the accounting acceptance checklist rather than treated as a substitute for accountant sign-off.
 
 ## Acceptance checklist
 - [ ] Clean PostgreSQL migrations and rollback succeed.
