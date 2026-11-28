@@ -1,0 +1,73 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      target: app
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php -r '$$s=@fsockopen(\"127.0.0.1\",9000); exit($$s ? 0 : 1);'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    volumes:
+      - storage_data:/var/www/html/storage
+    networks: [anerp]
+  web:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      target: web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/up || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    volumes:
+      - storage_data:/var/www/html/storage:ro
+    networks: [anerp]
+  db:
+    image: postgres:17-alpine
+    env_file: .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks: [anerp]
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "384mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - redis_data:/data
+    networks: [anerp]
+volumes:
+  postgres_data:
+  redis_data:
+  storage_data:
+networks:
+  anerp:
+    name: anerp
