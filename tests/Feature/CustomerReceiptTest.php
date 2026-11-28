@@ -43,6 +43,9 @@ final class CustomerReceiptTest extends TestCase
         $this->assertDatabaseHas('journal_lines', ['account_id' => $bankLedger->id, 'debit' => 50, 'credit' => 0]);
         $this->assertDatabaseHas('journal_lines', ['account_id' => $ar->id, 'debit' => 0, 'credit' => 40]);
         $this->assertDatabaseHas('journal_lines', ['account_id' => Account::where('company_id', $company->id)->where('account_code', '2500')->value('id'), 'debit' => 0, 'credit' => 10]);
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
+            ->get(route('reports.index', ['report' => 'receivables', 'to' => '2026-11-28']))
+            ->assertOk()->assertSee('60.00');
     }
 
     public function test_receipt_cannot_overpay_invoice_after_prior_posted_receipts(): void
