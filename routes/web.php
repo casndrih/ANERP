@@ -115,6 +115,9 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::post('/finance/section-65a/notices', [SupplierGstWithholdingController::class, 'storeNotice'])->name('finance.section65a.notices.store');
     Route::post('/finance/section-65a/notices/{notice}/activate', [SupplierGstWithholdingController::class, 'activate'])->name('finance.section65a.notices.activate');
     Route::post('/finance/section-65a/notices/{notice}/revoke', [SupplierGstWithholdingController::class, 'revoke'])->name('finance.section65a.notices.revoke');
+    Route::get('/finance/section-65a/notices/{notice}/document', [SupplierGstWithholdingController::class, 'downloadNoticeDocument'])->name('finance.section65a.notices.document');
+    Route::get('/finance/section-65a/notices/{notice}/revocation-document', [SupplierGstWithholdingController::class, 'downloadRevocationDocument'])->name('finance.section65a.notices.revocation-document');
+
     Route::post('/finance/section-65a/remittances', [SupplierGstWithholdingController::class, 'storeRemittance'])->name('finance.section65a.remittances.store');
     Route::post('/finance/section-65a/remittances/{remittance}/post', [SupplierGstWithholdingController::class, 'postRemittance'])->name('finance.section65a.remittances.post');
     Route::post('/finance/section-65a/remittances/{remittance}/cancel', [SupplierGstWithholdingController::class, 'cancelRemittance'])->name('finance.section65a.remittances.cancel');
