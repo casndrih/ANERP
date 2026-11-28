@@ -15,12 +15,14 @@ class StockMovementController extends Controller {
     public function index(Request $request) {
         CompanyAuthorizer::requirePermission($request,'inventory.view');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
-        $warehouses=Warehouse::where('company_id',$companyId)->where('is_active',true)->orderBy('name')->get();
+        $branchId=CompanyAuthorizer::activeBranchId($request);
+        $warehouses=Warehouse::where('company_id',$companyId)->where('is_active',true)->when($branchId,fn($q)=>$q->where('branch_id',$branchId))->orderBy('name')->get();
         $products=Product::where('company_id',$companyId)->where('is_active',true)->where('track_stock',true)->orderBy('name')->get();
-        $movements=StockMovement::where('company_id',$companyId)->with(['product','warehouse'])->latest('occurred_at')->paginate(30);
+        $movements=StockMovement::where('company_id',$companyId)->when($branchId,fn($q)=>$q->whereHas('warehouse',fn($w)=>$w->where('branch_id',$branchId)))->with(['product','warehouse'])->latest('occurred_at')->paginate(30);
         $balances=StockMovement::where('stock_movements.company_id',$companyId)
             ->join('products','products.id','=','stock_movements.product_id')
             ->join('warehouses','warehouses.id','=','stock_movements.warehouse_id')
+            ->when($branchId,fn($q)=>$q->where('warehouses.branch_id',$branchId))
             ->selectRaw("stock_movements.product_id, stock_movements.warehouse_id, products.name as product_name, products.sku, warehouses.name as warehouse_name, SUM(CASE WHEN movement_type IN ('opening','purchase_receipt','transfer_in','adjustment_in') THEN quantity WHEN movement_type IN ('issue','transfer_out','adjustment_out') THEN -quantity ELSE 0 END) as on_hand")
             ->groupBy('stock_movements.product_id','stock_movements.warehouse_id','products.name','products.sku','warehouses.name')
             ->orderBy('products.name')->get();
@@ -30,9 +32,10 @@ class StockMovementController extends Controller {
     public function store(Request $request) {
         CompanyAuthorizer::requirePermission($request,'inventory.manage');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
+        $branchId=CompanyAuthorizer::activeBranchId($request);
         $data=$request->validate([
             'movement_type'=>['required',Rule::in(['opening','issue','adjustment_in','adjustment_out'])],
-            'warehouse_id'=>['required','integer',Rule::exists('warehouses','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true))],
+            'warehouse_id'=>['required','integer',Rule::exists('warehouses','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true)->when($branchId,fn($w)=>$w->where('branch_id',$branchId)))],
             'product_id'=>['required','integer',Rule::exists('products','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true))],
             'quantity'=>['required','numeric','gt:0'],
             'unit_cost'=>['required','numeric','min:0'],
@@ -53,9 +56,10 @@ class StockMovementController extends Controller {
     public function transfer(Request $request) {
         CompanyAuthorizer::requirePermission($request,'inventory.transfer');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
+        $branchId=CompanyAuthorizer::activeBranchId($request);
         $data=$request->validate([
-            'from_warehouse_id'=>['required','integer',Rule::exists('warehouses','id')->where('company_id',$companyId)],
-            'to_warehouse_id'=>['required','different:from_warehouse_id','integer',Rule::exists('warehouses','id')->where('company_id',$companyId)],
+            'from_warehouse_id'=>['required','integer',Rule::exists('warehouses','id')->where(fn($q)=>$q->where('company_id',$companyId)->when($branchId,fn($w)=>$w->where('branch_id',$branchId)))],
+            'to_warehouse_id'=>['required','different:from_warehouse_id','integer',Rule::exists('warehouses','id')->where(fn($q)=>$q->where('company_id',$companyId)->when($branchId,fn($w)=>$w->where('branch_id',$branchId)))],
             'product_id'=>['required','integer',Rule::exists('products','id')->where('company_id',$companyId)],
             'quantity'=>['required','numeric','gt:0'],
             'unit_cost'=>['required','numeric','min:0'],
