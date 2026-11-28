@@ -22,7 +22,7 @@ final class BranchAccountingIsolationTest extends TestCase
         $a=$this->journal($company,$branchA,$user,$account,'BR-A',100);
         $b=$this->journal($company,$branchB,$user,$account,'BR-B',900);
         $legacy=$this->journal($company,null,$user,$account,'LEGACY',500);
-        $this->actingAs($user)->withSession($this->session($user,$company))->get(route('finance.index'))
+        $this->actingAs($user)->withSession($this->sessionData($user,$company))->get(route('finance.index'))
             ->assertOk()->assertViewHas('journals',fn($journals)=>$journals->contains('id',$a->id)&&!$journals->contains('id',$b->id)&&!$journals->contains('id',$legacy->id));
     }
 
@@ -30,7 +30,7 @@ final class BranchAccountingIsolationTest extends TestCase
     {
         [$user,$company,$branchA,$branchB]=$this->branchFinanceUser();
         $account=$this->account($company);
-        $this->actingAs($user)->withSession($this->session($user,$company))->post(route('finance.journals.store'),[
+        $this->actingAs($user)->withSession($this->sessionData($user,$company))->post(route('finance.journals.store'),[
             'branch_id'=>$branchB->id,'journal_date'=>'2026-11-28','description'=>'Cross branch attempt',
             'lines'=>[['account_id'=>$account->id,'debit'=>100,'credit'=>0],['account_id'=>$account->id,'debit'=>0,'credit'=>100]],
         ])->assertForbidden();
@@ -44,7 +44,7 @@ final class BranchAccountingIsolationTest extends TestCase
         $this->journal($company,$branchA,$user,$account,'TB-A',100);
         $this->journal($company,$branchB,$user,$account,'TB-B',900);
         $this->journal($company,null,$user,$account,'TB-LEGACY',500);
-        $this->actingAs($user)->withSession($this->session($user,$company))
+        $this->actingAs($user)->withSession($this->sessionData($user,$company))
             ->get(route('reports.index',['report'=>'trial_balance','from'=>'2026-11-01','to'=>'2026-11-30']))
             ->assertOk()->assertViewHas('rows',fn($rows)=>$rows->count()===1&&(float)$rows->first()->debit===100.0);
     }
@@ -56,7 +56,7 @@ final class BranchAccountingIsolationTest extends TestCase
         $this->journal($company,$branchA,$user,$account,'CON-A',100);
         $this->journal($company,$branchB,$user,$account,'CON-B',900);
         $this->journal($company,null,$user,$account,'CON-LEGACY',500);
-        $this->actingAs($user)->withSession($this->session($user,$company))->get(route('finance.index'))
+        $this->actingAs($user)->withSession($this->sessionData($user,$company))->get(route('finance.index'))
             ->assertOk()->assertViewHas('journals',fn($journals)=>$journals->contains('journal_number','CON-A')&&$journals->contains('journal_number','CON-B')&&$journals->contains('journal_number','CON-LEGACY'));
     }
 
@@ -84,7 +84,7 @@ final class BranchAccountingIsolationTest extends TestCase
         return $entry;
     }
 
-    private function session(User $user,Company $company): array
+    private function sessionData(User $user,Company $company): array
     {
         return ['active_company_id'=>$company->id,'mfa_verified_user_id'=>$user->id];
     }
