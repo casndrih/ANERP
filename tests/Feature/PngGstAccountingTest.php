@@ -29,7 +29,7 @@ final class PngGstAccountingTest extends TestCase
                 'branch_id' => $branch->id, 'supplier_id' => $supplier->id, 'bill_number' => 'BILL-GST-001',
                 'bill_date' => '2026-11-10', 'due_date' => '2026-11-30', 'expense_account_id' => Account::where('company_id', $company->id)->where('account_code', '6400')->value('id'),
                 'amount' => 100, 'description' => 'GST eligible purchase', 'gst_treatment' => 'standard',
-                'supplier_gst_registered' => 1, 'tax_invoice_reference' => 'SUP-TAX-001',
+                'supplier_gst_registered' => 1, 'supplier_gst_registration_number' => 'GST-SUP-001', 'tax_invoice_reference' => 'SUP-TAX-001',
             ])->assertRedirect()->assertSessionHasNoErrors();
         $bill = SupplierBill::where('bill_number', 'BILL-GST-001')->firstOrFail();
         self::assertSame(110.0, (float) $bill->amount);
