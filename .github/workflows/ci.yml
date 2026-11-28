@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - feature/phase-1-erp-foundation
       - feature/phase-2-auth-tenancy
       - feature/phase-3-inventory-procurement
       - feature/phase-4-hr-payroll
@@ -16,6 +17,7 @@ on:
   push:
     branches:
       - main
+      - feature/phase-2-auth-tenancy
       - feature/phase-6-reporting-analytics
       - feature/phase-7-production-readiness
       - feature/phase-8-inventory-controls
