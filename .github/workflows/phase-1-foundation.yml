@@ -1,0 +1,43 @@
+name: ANERP Phase 1 Foundation
+
+on:
+  push:
+    branches: [feature/phase-1-erp-foundation]
+  pull_request:
+    branches: [main, feature/phase-1-erp-foundation, feature/phase-2-auth-tenancy]
+
+permissions:
+  contents: read
+
+jobs:
+  foundation-validation:
+    name: Foundation, Compose and deployment validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate shell scripts
+        run: |
+          bash -n deploy/bootstrap.sh
+          bash -n deploy/export-esxi-ova.sh
+
+      - name: Validate Docker Compose configuration
+        run: |
+          cp .env.example .env
+          sed -i 's/REPLACE_WITH_A_LONG_RANDOM_SECRET/ci-only-placeholder-secret/g' .env
+          docker compose config --quiet
+
+      - name: Build ANERP application image
+        run: docker build --file deploy/Dockerfile --tag anerp:phase-1-ci .
+
+      - name: Smoke-test Laravel application bootstrap
+        run: |
+          docker run --rm --entrypoint php anerp:phase-1-ci artisan --version
+          docker run --rm --entrypoint php anerp:phase-1-ci artisan route:list --except-vendor
+
+      - name: Verify no local environment file is tracked
+        run: |
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
+            echo ".env must never be committed." >&2
+            exit 1
+          fi
