@@ -124,7 +124,7 @@ class FinanceController extends Controller {
             'expense_account_id'=>['required','integer',Rule::exists('accounts','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('account_type','expense'))],
             'amount'=>'required|numeric|gt:0','description'=>'required|string|max:255',
             'gst_treatment'=>['nullable',Rule::in(['standard','zero_rated','exempt','out_of_scope'])],
-            'supplier_gst_registered'=>['nullable','boolean'],'supplier_gst_registration_number'=>['nullable','string','max:80'],'tax_invoice_reference'=>['nullable','string','max:120'],
+            'supplier_gst_registered'=>['nullable','boolean'],'supplier_gst_registration_number'=>['nullable','string','max:80'],'tax_invoice_reference'=>['nullable','string','max:120'],'supply_province'=>['nullable','string','max:100'],
         ]);
         $company=Company::findOrFail($companyId);
         $supplierRegistered=(bool)($data['supplier_gst_registered'] ?? false);
