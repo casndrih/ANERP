@@ -34,8 +34,13 @@ class CustomerCreditNoteController extends Controller
                     ->whereIn('customer_credit_notes.status', ['draft', 'posted'])->whereColumn('customer_credit_notes.company_id', 'customer_invoices.company_id')
                     ->selectRaw('COALESCE(SUM(customer_credit_notes.amount), 0)');
             }, 'amount_credited')
+            ->selectSub(function ($q) {
+                $q->from('customer_sales_returns')->whereColumn('customer_sales_returns.customer_invoice_id', 'customer_invoices.id')
+                    ->where('customer_sales_returns.status', 'draft')->whereColumn('customer_sales_returns.company_id', 'customer_invoices.company_id')
+                    ->selectRaw('COALESCE(SUM(customer_sales_returns.total_amount), 0)');
+            }, 'amount_return_reserved')
             ->orderBy('due_date')->get()
-            ->filter(fn ($invoice) => round((float) $invoice->amount - (float) $invoice->amount_paid - (float) $invoice->amount_credited, 2) > 0);
+            ->filter(fn ($invoice) => round((float) $invoice->amount - (float) $invoice->amount_paid - (float) $invoice->amount_credited - (float) $invoice->amount_return_reserved, 2) > 0);
 
         $notes = CustomerCreditNote::with(['customer', 'invoice'])->where('company_id', $companyId)
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))->latest('credit_note_date')->limit(40)->get();
@@ -70,7 +75,9 @@ class CustomerCreditNoteController extends Controller
                 ->where('customer_receipts.company_id', $companyId)->sum('customer_receipt_allocations.amount');
             $reservedCredits = (float) CustomerCreditNote::where('company_id', $companyId)->where('customer_invoice_id', $invoice->id)
                 ->whereIn('status', ['draft', 'posted'])->sum('amount');
-            $outstanding = round((float) $invoice->amount - $paid - $reservedCredits, 2);
+            $reservedReturns = (float) CustomerSalesReturn::where('company_id', $companyId)->where('customer_invoice_id', $invoice->id)
+                ->where('status', 'draft')->sum('total_amount');
+            $outstanding = round((float) $invoice->amount - $paid - $reservedCredits - $reservedReturns, 2);
             $amount = round((float) $data['amount'], 2);
             if ($amount > $outstanding + 0.009) {
                 throw ValidationException::withMessages(['amount' => 'Credit note exceeds the invoice outstanding balance after posted receipts and existing credit notes.']);
