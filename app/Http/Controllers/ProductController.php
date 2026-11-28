@@ -21,6 +21,8 @@ class ProductController extends Controller {
             'unit'=>['required','string','max:30'],
             'standard_cost'=>['required','numeric','min:0'],
             'selling_price'=>['required','numeric','min:0'],
+            'weight_kg'=>['nullable','numeric','gt:0'],
+            'volume_m3'=>['nullable','numeric','gt:0'],
             'track_stock'=>['sometimes','boolean'],
         ]);
         $data['company_id']=$companyId;
