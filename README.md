@@ -30,7 +30,7 @@ Do not expose the bootstrap system to the public internet. Add HTTPS, firewall/V
 - Tenant-scoped product catalogue create/list
 - Inventory and procurement workflows: warehouses, stock ledger, transfers, suppliers and purchase orders
 - HR and payroll: employee records, leave, attendance, PNG 2026 core PAYE and superannuation calculations, maker-checker approval and payslips
-- Finance foundation: company chart of accounts, balanced journals, supplier bills, customer invoices, bank transactions and statement reconciliation
+- Finance foundation: company chart of accounts, balanced journals, supplier bills, customer invoices, bank transactions and statement reconciliation\n- Reporting: company-scoped trial balance, P&L, balance sheet, bank cash movement, AP/AR ageing, approved payroll summaries, inventory movement reports and CSV exports
 - Docker Compose deployment and CI container-build workflow
 
-See docs/ROADMAP.md, docs/PNG_LOCALISATION.md, docs/PNG_PAYROLL_STATUTORY_RULES.md, docs/ESXI_DEPLOYMENT.md, docs/SECURITY_BASELINE.md, docs/PHASE_2_AUTH_TENANCY.md, docs/PHASE_3_INVENTORY_PROCUREMENT.md, docs/PHASE_4_HR_PAYROLL.md and docs/PHASE_5_FINANCE_ACCOUNTING.md.
+See docs/ROADMAP.md, docs/PNG_LOCALISATION.md, docs/PNG_PAYROLL_STATUTORY_RULES.md, docs/ESXI_DEPLOYMENT.md, docs/SECURITY_BASELINE.md, docs/PHASE_2_AUTH_TENANCY.md, docs/PHASE_3_INVENTORY_PROCUREMENT.md, docs/PHASE_4_HR_PAYROLL.md and docs/PHASE_5_FINANCE_ACCOUNTING.md and docs/PHASE_6_REPORTING_ANALYTICS.md.

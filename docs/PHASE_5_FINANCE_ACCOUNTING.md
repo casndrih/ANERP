@@ -19,7 +19,7 @@
 
 ## Not included yet
 - GST calculations and GST return filing.
-- Customer receipts, credit notes, refunds and supplier advance handling remain outstanding. Supplier payment allocation, maker-checker AP settlement, bank journal posting and outgoing bank transaction capture are implemented.
+- Customer receipts, supplier payment allocation, credit notes, refunds and ageing automation.
 - Inventory valuation journal automation and payroll-to-ledger posting.
 - Fixed assets, depreciation, budgets, cost centres, multi-currency and foreign exchange revaluation.
 - Period locks, year-end closing, retained earnings roll-forward and full financial statements.

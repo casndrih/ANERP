@@ -5,7 +5,7 @@
 3. Operations: product catalogue, warehouses, stock ledger and balances, supplier directory, purchase orders, maker-checker approval, partial/full goods receiving and inter-warehouse transfers.
 4. HR and payroll: employee directory, leave applications, attendance, base-pay draft runs, maker-checker approval and payslip views. PNG PAYE and core superannuation rules are implemented from the Income Tax Act 2025 and BPNG notice; special cases and production compliance review remain.
 5. Finance: company chart of accounts, balanced double-entry journals, supplier bills, customer invoices, bank accounts, bank transactions and statement reconciliation. Fixed assets, payment allocation, GST and period close remain future work.
-6. Reporting and integrations: financial statements, inventory/procurement/payroll reports, CSV/XLSX/PDF exports, REST API, webhooks, POS, biometrics and banking adapters.
+6. Reporting and integrations: Phase 6 baseline includes trial balance, P&L, balance sheet, bank cash movement, AP/AR ageing, approved payroll summaries, inventory movement reports and CSV export. XLSX/PDF, payment allocations, classified cash-flow statements, branch attribution, REST API, webhooks, POS, biometrics and banking adapters remain future work.
 7. Production readiness: security review, penetration testing, restore drills, disaster recovery, load testing, accounting/payroll compliance review and user acceptance testing.
 
 Implementation branches are proposals until CI, migration and acceptance checks pass and the pull requests are reviewed and merged.

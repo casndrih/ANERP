@@ -6,6 +6,7 @@ use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\HumanResourcesController;
 use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\StockMovementController;
@@ -60,6 +61,8 @@ Route::middleware(['auth', EnsureCompanyAccess::class])->group(function () {
     Route::post('/finance/bank-accounts', [FinanceController::class, 'storeBankAccount'])->name('finance.bank-accounts.store');
     Route::post('/finance/bank-transactions', [FinanceController::class, 'storeBankTransaction'])->name('finance.bank-transactions.store');
     Route::post('/finance/bank-accounts/{bankAccount}/reconcile', [FinanceController::class, 'reconcile'])->name('finance.bank-accounts.reconcile');
+    Route::get('/reports', [ReportingController::class, 'index'])->name('reports.index');
+    Route::get('/reports/export', [ReportingController::class, 'export'])->name('reports.export');
     Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
     Route::post('/payroll', [PayrollController::class, 'store'])->name('payroll.store');
     Route::post('/payroll/{run}/approve', [PayrollController::class, 'approve'])->name('payroll.approve');

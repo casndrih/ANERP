@@ -34,6 +34,8 @@ final class SupplierPaymentTest extends TestCase
         $this->assertDatabaseHas('journal_lines', ['account_id' => $bankLedger->id, 'debit' => 0, 'credit' => 75]);
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->get(route('finance.payments.index'))->assertOk()->assertSee('Supplier payments');
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
+            ->get(route('reports.index', ['report' => 'payables', 'to' => '2026-11-28']))->assertOk()->assertSee('25.00');
     }
 
     public function test_payment_cannot_overpay_bill_and_creator_cannot_post_own_payment(): void
