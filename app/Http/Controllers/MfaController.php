@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Services\TotpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -28,7 +27,7 @@ class MfaController extends Controller
             'enabled' => (bool) $user->mfa_enabled_at,
             'setupSecret' => $secret,
             'otpAuthUri' => $uri,
-            'recoveryCodes' => $request->session()->get('mfa_recovery_codes_once', []),
+            'recoveryCodes' => $request->session()->pull('mfa_recovery_codes_once', []),
         ]);
     }
 
