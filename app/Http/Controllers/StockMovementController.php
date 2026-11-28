@@ -19,6 +19,8 @@ class StockMovementController extends Controller {
         $warehouses=Warehouse::where('company_id',$companyId)->where('is_active',true)->when($branchId,fn($q)=>$q->where('branch_id',$branchId))->orderBy('name')->get();
         $products=Product::where('company_id',$companyId)->where('is_active',true)->where('track_stock',true)->orderBy('name')->get();
         $valuationMethod=DB::table('inventory_valuation_settings')->where('company_id',$companyId)->value('valuation_method') ?? 'weighted_average';
+        $membership=$request->user()->companies()->where('companies.id',$companyId)->wherePivot('is_active',true)->first();
+        $canManageValuation=$branchId===null && in_array($membership?->pivot?->role_code,['owner','admin'],true);
         $movements=StockMovement::where('company_id',$companyId)->when($branchId,fn($q)=>$q->whereHas('warehouse',fn($w)=>$w->where('branch_id',$branchId)))->with(['product','warehouse'])->latest('occurred_at')->paginate(30);
         $balances=StockMovement::where('stock_movements.company_id',$companyId)
             ->join('products','products.id','=','stock_movements.product_id')
@@ -27,7 +29,7 @@ class StockMovementController extends Controller {
             ->selectRaw("stock_movements.product_id, stock_movements.warehouse_id, products.name as product_name, products.sku, warehouses.name as warehouse_name, SUM(CASE WHEN movement_type IN ('opening','purchase_receipt','transfer_in','adjustment_in') THEN quantity WHEN movement_type IN ('issue','transfer_out','adjustment_out') THEN -quantity ELSE 0 END) as on_hand")
             ->groupBy('stock_movements.product_id','stock_movements.warehouse_id','products.name','products.sku','warehouses.name')
             ->orderBy('products.name')->get();
-        return view('inventory.movements.index',compact('warehouses','products','movements','balances','valuationMethod'));
+        return view('inventory.movements.index',compact('warehouses','products','movements','balances','valuationMethod','canManageValuation'));
     }
 
     public function updateValuationMethod(Request $request) {
