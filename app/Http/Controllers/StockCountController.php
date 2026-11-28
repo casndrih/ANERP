@@ -55,8 +55,8 @@ class StockCountController extends Controller
             'lines.*.notes' => ['nullable', 'string', 'max:500'],
         ]);
 
-        DB::transaction(function () use ($data, $companyId, $request) {
-            $warehouse = Warehouse::where('company_id', $companyId)->lockForUpdate()->findOrFail($data['warehouse_id']);
+        DB::transaction(function () use ($data, $companyId, $branchId, $request) {
+            $warehouse = Warehouse::where('company_id', $companyId)->when($branchId, fn ($query) => $query->where('branch_id', $branchId))->lockForUpdate()->findOrFail($data['warehouse_id']);
             $count = StockCount::create([
                 'company_id' => $companyId,
                 'warehouse_id' => $warehouse->id,
@@ -68,7 +68,7 @@ class StockCountController extends Controller
             ]);
 
             foreach ($data['lines'] as $line) {
-                $product = Product::where('company_id', $companyId)->findOrFail($line['product_id']);
+                $product = Product::where('company_id', $companyId)->lockForUpdate()->findOrFail($line['product_id']);
                 $systemQuantity = InventoryLedger::onHand($companyId, (int) $warehouse->id, (int) $product->id);
                 $averageCost = DB::table('inventory_cost_balances')
                     ->where('company_id', $companyId)->where('warehouse_id', $warehouse->id)
@@ -118,6 +118,7 @@ class StockCountController extends Controller
             abort_if((int) $stockCount->created_by === (int) $request->user()->id || (int) $stockCount->submitted_by === (int) $request->user()->id, 403, 'The stock count creator or submitter cannot approve their own count.');
 
             foreach ($stockCount->lines as $line) {
+                Product::where('company_id', $companyId)->lockForUpdate()->findOrFail($line->product_id);
                 $currentQuantity = InventoryLedger::onHand($companyId, (int) $stockCount->warehouse_id, (int) $line->product_id);
                 if (abs($currentQuantity - (float) $line->system_quantity) > 0.0005) {
                     throw ValidationException::withMessages([
