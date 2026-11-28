@@ -11,12 +11,14 @@ on:
       - feature/phase-6-reporting-analytics
       - feature/phase-7-production-readiness
       - feature/phase-8-inventory-controls
+      - feature/phase-9-procurement-controls
   push:
     branches:
       - main
       - feature/phase-6-reporting-analytics
       - feature/phase-7-production-readiness
       - feature/phase-8-inventory-controls
+      - feature/phase-9-procurement-controls
 
 permissions:
   contents: read
