@@ -73,15 +73,16 @@ class SupplierInvoiceMatchingController extends Controller
                 $lineData = $request->validate([
                     'lines' => ['required', 'array', 'min:1'],
                     'lines.*.purchase_order_line_id' => ['required', 'integer', 'distinct'],
-                    'lines.*.quantity_billed' => ['required', 'numeric', 'gt:0'],
+                    'lines.*.quantity_billed' => ['nullable', 'numeric', 'min:0'],
                     'lines.*.unit_price' => ['required', 'numeric', 'min:0'],
                 ]);
                 $lines = collect($lineData['lines']);
                 $total = 0.0;
                 foreach ($lines as $lineData) {
+                    $quantity = (float) ($lineData['quantity_billed'] ?? 0);
+                    if ($quantity <= 0) { continue; }
                     $line = PurchaseOrderLine::where('purchase_order_id', $order->id)
                         ->lockForUpdate()->findOrFail($lineData['purchase_order_line_id']);
-                    $quantity = (float) $lineData['quantity_billed'];
                     $unitPrice = round((float) $lineData['unit_price'], 2);
                     $alreadyBilled = DB::table('supplier_bill_match_lines')
                         ->join('supplier_bills', 'supplier_bills.id', '=', 'supplier_bill_match_lines.supplier_bill_id')
@@ -104,6 +105,7 @@ class SupplierInvoiceMatchingController extends Controller
                         ['quantity_billed' => $quantity, 'unit_price' => $unitPrice, 'line_total' => $lineTotal, 'created_at' => now(), 'updated_at' => now()]
                     );
                 }
+                if ($total <= 0) { throw ValidationException::withMessages(['lines' => 'Enter a billed quantity for at least one received PO line.']); }
                 if (abs(round($total, 2) - (float) $document->amount) > 0.01) {
                     throw ValidationException::withMessages(['amount' => 'Supplier invoice total must equal the matched PO line total. Tax, freight and other charges must be entered as separate invoices until configured.']);
                 }
@@ -134,8 +136,9 @@ class SupplierInvoiceMatchingController extends Controller
         CompanyAuthorizer::requirePermission($request, 'procurement.invoice.approve');
         $companyId = CompanyAuthorizer::activeCompanyId($request);
         $branchId = CompanyAuthorizer::activeBranchId($request);
+        $approvalData = $request->validate(['allocation_basis' => ['nullable', 'in:line_value,quantity,equal']]);
 
-        DB::transaction(function () use ($bill, $allocator, $companyId, $branchId, $request) {
+        DB::transaction(function () use ($bill, $allocator, $companyId, $branchId, $request, $approvalData) {
             $document = SupplierBill::where('company_id', $companyId)
                 ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
                 ->lockForUpdate()->findOrFail($bill);
@@ -163,7 +166,7 @@ class SupplierInvoiceMatchingController extends Controller
                 }
                 $lines[] = [$accounts['2600']->id, $document->amount, 0];
             } elseif ($document->invoice_type === 'landed_cost') {
-                $allocation = $allocator->allocate($companyId, (int) $document->id, $order, (float) $document->amount);
+                $allocation = $allocator->allocate($companyId, (int) $document->id, $order, (float) $document->amount, $approvalData['allocation_basis'] ?? 'line_value');
                 if ($allocation['inventory'] > 0) $lines[] = [$accounts['1200']->id, $allocation['inventory'], 0];
                 if ($allocation['cogs'] > 0) $lines[] = [$accounts['5000']->id, $allocation['cogs'], 0];
             } else {
