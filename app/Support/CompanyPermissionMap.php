@@ -37,6 +37,7 @@ final class CompanyPermissionMap
             'procurement.view', 'procurement.approve', 'procurement.invoice.approve', 'reports.view',
         ],
         'sales_manager' => ['sales.view', 'sales.create', 'sales.fulfill', 'inventory.view', 'reports.view'],
+        'sales_cashier' => ['sales.view', 'sales.create', 'sales.fulfill'],
         'sales_approver' => ['sales.view', 'sales.approve', 'reports.view'],
         'finance_manager' => [
             'finance.view', 'finance.create', 'finance.post', 'finance.reconcile', 'procurement.view', 'procurement.invoice.match', 'procurement.invoice.approve',
