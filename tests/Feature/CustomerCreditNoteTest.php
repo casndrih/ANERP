@@ -34,6 +34,33 @@ final class CustomerCreditNoteTest extends TestCase
             ->assertOk()->assertSee('70.00');
     }
 
+    public function test_gst_bearing_credit_note_reverses_output_tax_and_adjusts_g1_summary(): void
+    {
+        [$company, $branch, $customer, $invoice, $creator, $approver, $revenue, $ar] = $this->fixture();
+        $output = Account::create(['company_id' => $company->id, 'account_code' => '2100', 'name' => 'GST output', 'account_type' => 'liability', 'normal_balance' => 'credit', 'is_control_account' => false, 'is_active' => true]);
+        $invoice->update(['amount' => 110, 'net_amount' => 100, 'gst_treatment' => 'standard', 'gst_rate' => 10, 'gst_amount' => 10]);
+
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('finance.credit-notes.store'), [
+                'invoice_id' => $invoice->id, 'credit_note_number' => 'CN-GST-001',
+                'credit_note_date' => '2026-11-28', 'description' => 'Partial GST sales adjustment', 'amount' => 55,
+            ])->assertRedirect()->assertSessionHasNoErrors();
+        $note = \App\Models\CustomerCreditNote::where('credit_note_number', 'CN-GST-001')->firstOrFail();
+        self::assertSame(50.0, (float) $note->net_amount);
+        self::assertSame(5.0, (float) $note->gst_amount);
+
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
+            ->post(route('finance.credit-notes.post', $note->id))->assertRedirect()->assertSessionHasNoErrors();
+        $note->refresh();
+        $this->assertDatabaseHas('journal_lines', ['account_id' => $revenue->id, 'debit' => '50.00', 'credit' => '0.00']);
+        $this->assertDatabaseHas('journal_lines', ['account_id' => $output->id, 'debit' => '5.00', 'credit' => '0.00']);
+        $this->assertDatabaseHas('journal_lines', ['account_id' => $ar->id, 'debit' => '0.00', 'credit' => '55.00']);
+
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
+            ->get(route('finance.gst-summary', ['from' => '2026-11-01', 'to' => '2026-11-30']))
+            ->assertOk()->assertSee('K 50.00')->assertSee('K 5.00');
+    }
+
     public function test_credit_note_cannot_exceed_invoice_balance_and_creator_cannot_post(): void
     {
         [$company, $branch, $customer, $invoice, $creator, $approver] = $this->fixture();
