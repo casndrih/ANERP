@@ -158,6 +158,7 @@ class PosSessionController extends Controller
             ]);
             JournalLine::create(['journal_entry_id' => $journal->id, 'account_id' => $bankLedger->id, 'description' => 'POS cash received', 'debit' => $outstanding, 'credit' => 0]);
             JournalLine::create(['journal_entry_id' => $journal->id, 'account_id' => $ar->id, 'description' => 'Settle customer invoice '.$invoice->invoice_number, 'debit' => 0, 'credit' => $outstanding]);
+            $receipt->update(['journal_entry_id' => $journal->id]);
             BankTransaction::create([
                 'company_id' => $companyId, 'branch_id' => $till->branch_id, 'bank_account_id' => $bank->id,
                 'journal_entry_id' => $journal->id, 'transaction_date' => now()->toDateString(),
@@ -177,7 +178,7 @@ class PosSessionController extends Controller
                 'created_by' => $request->user()->id, 'created_at' => now(), 'updated_at' => now(),
             ]);
             DB::table('pos_sessions')->where('id', $till->id)->update([
-                'expected_cash' => round((float) $till->opening_float + (float) DB::table('pos_transactions')->where('pos_session_id', $till->id)->sum('amount') + $outstanding, 2),
+                'expected_cash' => round((float) $till->opening_float + (float) DB::table('pos_transactions')->where('pos_session_id', $till->id)->sum('amount'), 2),
                 'updated_at' => now(),
             ]);
         });
