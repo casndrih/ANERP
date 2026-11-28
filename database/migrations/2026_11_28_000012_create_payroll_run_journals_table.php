@@ -16,9 +16,6 @@ return new class extends Migration {
             $table->unique(['payroll_run_id', 'branch_id']);
             $table->unique('journal_entry_id');
         });
-        Schema::table('payroll_run_journals', function (Blueprint $table) {
-            $table->index(['payroll_run_id', 'branch_id']);
-        });
     }
 
     public function down(): void
