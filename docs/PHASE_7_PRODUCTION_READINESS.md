@@ -44,11 +44,17 @@ Establish repeatable security, operational and acceptance controls before ANERP 
 - Validation, CSRF, login throttling and session invalidation are verified.
 - Backup restore reproduces a usable database and uploaded files in an isolated environment.
 
+## Branch-level access boundaries
+- Company membership `branch_id` is now enforced for HR employee/leave/attendance data, payroll employee lines and payslips, warehouse inventory balances and movements, and purchase orders/receiving.
+- Branch-restricted payroll users can calculate branch-only draft runs but cannot approve a company-wide payroll run; an unscoped payroll approver is required.
+- Finance ledgers and company-wide HR policy settings are deliberately unavailable to branch-restricted memberships until branch attribution is supported by those records.
+- Company-wide memberships (`branch_id` is null) retain company-level access.
+
 ## Go-live gates
 - [ ] All CI tests pass on the exact release commit.
 - [ ] Dependency and container scans have no unaccepted critical/high findings.
 - [ ] Independent security review and penetration test completed; findings triaged.
-- [ ] Tenant-isolation and authorization tests pass.
+- [ ] Tenant-isolation and authorization tests pass, including branch-level tests.
 - [ ] Audit-event append-only migration is applied and verified on the production PostgreSQL version.
 - [x] TOTP MFA enforcement for privileged company roles implemented; production enrollment and recovery drill still required.
 - [ ] TLS, firewall/VPN and private database/cache networking verified.
