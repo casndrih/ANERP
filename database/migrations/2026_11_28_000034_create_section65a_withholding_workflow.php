@@ -44,6 +44,8 @@ return new class extends Migration {
             $table->date('effective_from')->nullable();
             $table->date('effective_to')->nullable();
             $table->string('supplier_tin_snapshot', 80)->nullable();
+            $table->string('supplier_gst_registration_snapshot', 80)->nullable();
+            $table->text('supply_description')->nullable();
             $table->timestamps();
             $table->unique(['notice_id', 'supplier_id'], 'supplier_s65a_notice_supplier_unique');
         });
