@@ -39,6 +39,7 @@ final class CustomerReceiptTest extends TestCase
             ->post(route('finance.receipts.post', $receipt->id))->assertRedirect()->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('customer_receipts', ['id' => $receipt->id, 'status' => 'posted']);
+        $this->assertDatabaseHas('bank_transactions', ['bank_account_id' => $bank->id, 'journal_entry_id' => $receipt->journal_entry_id, 'direction' => 'in', 'amount' => 50]);
         $this->assertDatabaseHas('journal_lines', ['account_id' => $bankLedger->id, 'debit' => 50, 'credit' => 0]);
         $this->assertDatabaseHas('journal_lines', ['account_id' => $ar->id, 'debit' => 0, 'credit' => 40]);
         $this->assertDatabaseHas('journal_lines', ['account_id' => Account::where('company_id', $company->id)->where('account_code', '2500')->value('id'), 'debit' => 0, 'credit' => 10]);
