@@ -102,6 +102,7 @@ class SupplierPaymentController extends Controller
                     ->where('status', 'posted')
                     ->when($branchId, fn ($q) => $q->where('branch_id', $branchId), fn ($q) => $q->whereNull('branch_id'))
                     ->lockForUpdate()->findOrFail($row['bill_id']);
+                if ($bill->currency !== 'PGK') throw ValidationException::withMessages(['allocations' => 'Supplier bills must be in PGK until multi-currency settlement is implemented.']);
                 $amount = round((float) $row['amount'], 2);
                 $alreadyPaid = (float) DB::table('supplier_payment_allocations')
                     ->join('supplier_payments', 'supplier_payments.id', '=', 'supplier_payment_allocations.supplier_payment_id')
@@ -154,6 +155,7 @@ class SupplierPaymentController extends Controller
 
             $bank = BankAccount::where('company_id', $companyId)->where('is_active', true)
                 ->where('branch_id', $document->branch_id)->lockForUpdate()->findOrFail($document->bank_account_id);
+            if ($bank->currency !== 'PGK') throw ValidationException::withMessages(['bank_account_id' => 'Supplier payments currently support PGK bank accounts only.']);
             $allocations = SupplierPaymentAllocation::where('supplier_payment_id', $document->id)->lockForUpdate()->get();
             $allocated = round((float) $allocations->sum('amount'), 2);
             if (abs($allocated - (float) $document->amount) > 0.009) {
@@ -162,6 +164,7 @@ class SupplierPaymentController extends Controller
 
             foreach ($allocations as $allocation) {
                 $bill = SupplierBill::where('company_id', $companyId)->lockForUpdate()->findOrFail($allocation->supplier_bill_id);
+                abort_unless($bill->currency === 'PGK', 422, 'Supplier bills must be in PGK until multi-currency settlement is implemented.');
                 abort_unless($bill->status === 'posted' && (int) $bill->supplier_id === (int) $document->supplier_id, 409, 'Payment allocations must reference posted bills for this supplier.');
                 abort_unless((int) ($bill->branch_id ?? 0) === (int) ($document->branch_id ?? 0), 409, 'Payment and bill branch attribution must match.');
                 $paid = (float) DB::table('supplier_payment_allocations')
