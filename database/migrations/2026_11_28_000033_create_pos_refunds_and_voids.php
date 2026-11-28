@@ -45,7 +45,7 @@ return new class extends Migration {
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('branch_id')->constrained()->restrictOnDelete();
             $table->foreignId('pos_session_id')->constrained('pos_sessions')->restrictOnDelete();
-            $table->foreignId('pos_transaction_id')->unique()->constrained('pos_transactions')->restrictOnDelete();
+            $table->foreignId('pos_transaction_id')->constrained('pos_transactions')->restrictOnDelete();
             $table->foreignId('customer_receipt_id')->constrained('customer_receipts')->restrictOnDelete();
             $table->foreignId('customer_invoice_id')->constrained('customer_invoices')->restrictOnDelete();
             $table->foreignId('customer_id')->constrained()->restrictOnDelete();
@@ -60,6 +60,7 @@ return new class extends Migration {
             $table->timestamps();
             $table->index(['company_id', 'customer_invoice_id', 'status'], 'pos_void_invoice_status_idx');
             $table->index(['pos_session_id', 'status'], 'pos_void_session_status_idx');
+            $table->index(['pos_transaction_id', 'status'], 'pos_void_transaction_status_idx');
         });
     }
 
