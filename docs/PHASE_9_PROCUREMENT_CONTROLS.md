@@ -23,7 +23,7 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 
 ## Current limitations
 - Purchase orders now support multiple product lines in the authoring screen and the controller validates each submitted line.
-- GST input/output accounting, withholding tax, import-duty calculation from tariff classifications, supplier credit notes, debit notes, invoice attachments/OCR, supplier payment allocation and payment execution are not included.
+- GST input/output posting and return integration, withholding tax, tariff-driven import-duty integration, supplier credit/debit notes, invoice attachments/OCR and payment reversals remain outstanding. Supplier payment allocation and execution through an approved bank journal are implemented in the finance workspace.
 - Goods price variance beyond K0.01 is blocked for manual resolution; tolerance approval workflows are not yet available.
 - Landed costs are only capitalised when the product/warehouse cost pool is isolated and reconciled. Mixed stock pools and transferred stock require manual reconciliation before this feature can proceed.
 - Landed costs support received line value, received quantity and equal-share allocation. Weight-, volume- and charge-specific allocation bases are not configurable.
@@ -39,6 +39,7 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 - Confirm invoice creator/matcher cannot approve their own invoice.
 - Confirm goods invoice approval clears GRNI to AP.
 - Confirm landed cost is split between inventory and COGS based on remaining stock.
+- Verify supplier payment drafts allocate only to posted bills for the same supplier and branch, prevent overpayment, enforce maker-checker, create a balanced AP/bank journal and outgoing bank transaction, and reduce AP ageing.
 - Confirm mixed inbound sources and transfer history block unsafe landed-cost capitalisation.
 - Review all postings and stock valuation effects with an accountant before live use.
 
