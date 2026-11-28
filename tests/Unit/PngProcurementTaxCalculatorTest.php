@@ -15,6 +15,7 @@ final class PngProcurementTaxCalculatorTest extends TestCase
         self::assertSame(10.0, $calculator->domesticSupply(100, 'standard')['gst_amount']);
         self::assertSame(0.0, $calculator->domesticSupply(100, 'zero_rated')['gst_amount']);
         self::assertSame('exempt', $calculator->domesticSupply(100, 'exempt')['treatment']);
+        self::assertSame(0.0, $calculator->domesticSupply(100, 'out_of_scope')['gst_amount']);
         self::assertSame(0.0, $calculator->domesticSupply(100, 'standard', false)['gst_amount']);
     }
 
