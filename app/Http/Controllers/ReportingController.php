@@ -85,8 +85,11 @@ class ReportingController extends Controller
             $creditedBySupplierBill = $receivable
                 ? collect()
                 : DB::table('supplier_credit_notes')->whereIn('supplier_bill_id',$docs->pluck('id'))->where('company_id',$companyId)->where('status','posted')->whereDate('credit_note_date','<=',$to->toDateString())->select('supplier_bill_id')->selectRaw('SUM(amount) as credited_amount')->groupBy('supplier_bill_id')->get()->pluck('credited_amount','supplier_bill_id');
-            $rows=$docs->map(function($d) use($receivable,$relation,$dateCol,$to,$paidByInvoice,$creditedByInvoice,$creditedBySupplierBill) {
-                $due=Carbon::parse($d->due_date??$d->{$dateCol}); $days=ReportingCalculator::ageingDays($due,$to); $amount=round((float)$d->amount - (float)$paidByInvoice->get($d->id,0) - (float)$creditedByInvoice->get($d->id,0) - (float)$creditedBySupplierBill->get($d->id,0),2);
+            $stockReturnedBySupplierBill = $receivable
+                ? collect()
+                : DB::table('supplier_stock_returns')->whereIn('supplier_bill_id',$docs->pluck('id'))->where('company_id',$companyId)->where('status','posted')->whereDate('return_date','<=',$to->toDateString())->select('supplier_bill_id')->selectRaw('SUM(total_amount) as returned_amount')->groupBy('supplier_bill_id')->get()->pluck('returned_amount','supplier_bill_id');
+            $rows=$docs->map(function($d) use($receivable,$relation,$dateCol,$to,$paidByInvoice,$creditedByInvoice,$creditedBySupplierBill,$stockReturnedBySupplierBill) {
+                $due=Carbon::parse($d->due_date??$d->{$dateCol}); $days=ReportingCalculator::ageingDays($due,$to); $amount=round((float)$d->amount - (float)$paidByInvoice->get($d->id,0) - (float)$creditedByInvoice->get($d->id,0) - (float)$creditedBySupplierBill->get($d->id,0) - (float)$stockReturnedBySupplierBill->get($d->id,0),2);
                 return (object)['document'=>$receivable?$d->invoice_number:$d->bill_number,'counterparty'=>$d->{$relation}?->name??'','document_date'=>$d->{$dateCol}?->format('Y-m-d'),'due_date'=>$due->toDateString(),'days_overdue'=>$days,'current'=>ReportingCalculator::ageingBucket($days)==='current'?$amount:0,'1_30'=>ReportingCalculator::ageingBucket($days)==='1_30'?$amount:0,'31_60'=>ReportingCalculator::ageingBucket($days)==='31_60'?$amount:0,'61_90'=>ReportingCalculator::ageingBucket($days)==='61_90'?$amount:0,'over_90'=>ReportingCalculator::ageingBucket($days)==='over_90'?$amount:0,'amount'=>$amount];
             })->filter(fn($row) => $row->amount > 0.009)->values();
             $totals=['amount'=>round((float)$rows->sum('amount'),2)];
