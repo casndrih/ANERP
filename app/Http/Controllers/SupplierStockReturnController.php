@@ -52,7 +52,7 @@ class SupplierStockReturnController extends Controller
 
     public function store(Request $request)
     {
-        CompanyAuthorizer::requirePermission($request, 'finance.create');
+        CompanyAuthorizer::requirePermission($request, 'procurement.create');
         $companyId = CompanyAuthorizer::activeCompanyId($request);
         $branchId = CompanyAuthorizer::activeBranchId($request);
         $data = $request->validate([
