@@ -65,6 +65,7 @@ class MfaController extends Controller
         ])->save();
 
         $request->session()->forget('mfa_setup_secret');
+        $request->session()->regenerate();
         $request->session()->put('mfa_verified_user_id', $user->id);
         $request->session()->put('mfa_recovery_codes_once', $codes);
 
@@ -106,6 +107,7 @@ class MfaController extends Controller
             throw ValidationException::withMessages(['code' => 'The authenticator or recovery code is invalid.']);
         }
 
+        $request->session()->regenerate();
         $request->session()->put('mfa_verified_user_id', $user->id);
         return redirect()->intended(route('dashboard'));
     }
@@ -134,6 +136,7 @@ class MfaController extends Controller
             'mfa_recovery_codes' => null,
         ])->save();
 
+        $request->session()->regenerate();
         $request->session()->forget(['mfa_verified_user_id', 'mfa_recovery_codes_once']);
         return redirect()->route('mfa.settings')->with('status', 'MFA disabled for this account.');
     }
