@@ -23,7 +23,7 @@ class InventoryLedgerPoster
 
             $warehouse = Warehouse::where('company_id', $movement->company_id)->findOrFail($movement->warehouse_id);
             $branchId = $warehouse->branch_id;
-            $value = round((float) $movement->quantity * (float) $movement->unit_cost, 2);
+            $value = round((float) ($movement->cost_value ?? ((float) $movement->quantity * (float) $movement->unit_cost)), 2);
             if ($value <= 0) {
                 return;
             }
@@ -75,8 +75,8 @@ class InventoryLedgerPoster
             throw ValidationException::withMessages(['inventory' => 'Transfer must contain one outbound and one inbound movement.']);
         }
 
-        $outValue = round((float) $out->quantity * (float) $out->unit_cost, 2);
-        $inValue = round((float) $in->quantity * (float) $in->unit_cost, 2);
+        $outValue = round((float) ($out->cost_value ?? ((float) $out->quantity * (float) $out->unit_cost)), 2);
+        $inValue = round((float) ($in->cost_value ?? ((float) $in->quantity * (float) $in->unit_cost)), 2);
         if (abs($outValue - $inValue) > 0.009) {
             throw ValidationException::withMessages(['inventory' => 'Transfer valuation differs between source and destination movements.']);
         }
