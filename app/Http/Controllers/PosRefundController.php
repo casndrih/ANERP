@@ -235,7 +235,11 @@ class PosRefundController extends Controller
             $transaction = DB::table('pos_transactions')->where('company_id', $companyId)->lockForUpdate()->find($document->pos_transaction_id);
             abort_unless($transaction && $transaction->status === 'posted', 409, 'The original POS transaction is no longer posted.');
             $receipt = CustomerReceipt::where('company_id', $companyId)->lockForUpdate()->findOrFail($document->customer_receipt_id);
-            abort_unless($receipt->status === 'posted', 409, 'The original POS receipt is no longer posted.');
+            abort_unless($receipt->status === 'posted' && round((float) $receipt->amount, 2) === round((float) $document->amount, 2)
+                && round((float) $transaction->amount, 2) === round((float) $document->amount, 2), 409, 'The original POS receipt and transaction no longer match the requested void amount.');
+            $allocations = DB::table('customer_receipt_allocations')->where('customer_receipt_id', $receipt->id)->get();
+            abort_unless($allocations->count() === 1 && (int) $allocations->first()->customer_invoice_id === (int) $document->customer_invoice_id
+                && round((float) $allocations->first()->amount, 2) === round((float) $document->amount, 2), 409, 'The original receipt is no longer a single full invoice settlement.');
 
             $otherReceipts = (float) DB::table('customer_receipt_allocations as a')
                 ->join('customer_receipts as r', 'r.id', '=', 'a.customer_receipt_id')
