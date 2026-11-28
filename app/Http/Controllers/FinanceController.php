@@ -124,18 +124,18 @@ class FinanceController extends Controller {
             'expense_account_id'=>['required','integer',Rule::exists('accounts','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('account_type','expense'))],
             'amount'=>'required|numeric|gt:0','description'=>'required|string|max:255',
             'gst_treatment'=>['nullable',Rule::in(['standard','zero_rated','exempt','out_of_scope'])],
-            'supplier_gst_registered'=>['nullable','boolean'],'tax_invoice_reference'=>['nullable','string','max:120'],
+            'supplier_gst_registered'=>['nullable','boolean'],'supplier_gst_registration_number'=>['nullable','string','max:80'],'tax_invoice_reference'=>['nullable','string','max:120'],
         ]);
         $company=Company::findOrFail($companyId);
         $supplierRegistered=(bool)($data['supplier_gst_registered'] ?? false);
         $tax=(new PngProcurementTaxCalculator())->domesticSupply((float)$data['amount'],$data['gst_treatment'] ?? 'out_of_scope',$supplierRegistered);
-        $inputCreditEligible=$company->gst_registered && $supplierRegistered && !empty($data['tax_invoice_reference']) && $tax['gst_amount']>0;
+        $inputCreditEligible=$company->gst_registered && $supplierRegistered && !empty(trim($data['supplier_gst_registration_number'] ?? '')) && !empty(trim($data['tax_invoice_reference'] ?? '')) && $tax['gst_amount']>0;
         $branchId=$this->branchId($request,isset($data['branch_id'])?(int)$data['branch_id']:null);
         SupplierBill::create(array_merge($data,[
             'company_id'=>$companyId,'branch_id'=>$branchId,'currency'=>'PGK','status'=>'draft','created_by'=>$request->user()->id,
             'amount'=>$tax['total'],'net_amount'=>$tax['taxable_value'],'gst_treatment'=>$tax['treatment'],
             'gst_rate'=>$tax['gst_rate'],'gst_amount'=>$tax['gst_amount'],'supplier_gst_registered'=>$supplierRegistered,
-            'tax_invoice_reference'=>$data['tax_invoice_reference'] ?? null,'input_tax_credit_eligible'=>$inputCreditEligible,
+            'supplier_gst_registration_number'=>$data['supplier_gst_registration_number'] ?? null,'tax_invoice_reference'=>$data['tax_invoice_reference'] ?? null,'input_tax_credit_eligible'=>$inputCreditEligible,
         ]));
         return back()->with('status','Supplier bill saved as a draft with PNG GST calculated.');
     }
