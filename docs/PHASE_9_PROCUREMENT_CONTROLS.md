@@ -47,3 +47,9 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 - Review all postings and stock valuation effects with an accountant before live use.
 
 This phase is a draft implementation candidate. It is not merged or deployed and must pass CI, migration tests, stock reconciliation and accountant review before production use.
+
+
+Official GST references used for the current calculator and posting scope:
+- PNG Goods and Services Tax Act 2003, sections 6–9 and 30–31: https://www.paclii.org/pg/legis/consol_act/gasta2003226.pdf
+- IRC G1 GST return notes: https://static.irc.gov.pg/2021/December/h8qIml-media-2018-05-01-G1-Goods-Services-Tax-Return.pdf
+- IRC GST Section 65A fact sheet: https://static.irc.gov.pg/2021/December/5ExWcL-media-GST-Section-65A-Fact-Sheet.pdf
