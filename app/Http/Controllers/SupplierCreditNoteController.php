@@ -22,8 +22,9 @@ class SupplierCreditNoteController extends Controller
         CompanyAuthorizer::requirePermission($request, 'finance.view');
         $companyId = CompanyAuthorizer::activeCompanyId($request);
         $branchId = CompanyAuthorizer::activeBranchId($request);
+        $expenseAccountIds = Account::where('company_id', $companyId)->where('account_type', 'expense')->where('normal_balance', 'debit')->pluck('id');
         $bills = SupplierBill::with('supplier')->where('company_id', $companyId)->where('status', 'posted')
-            ->where('invoice_type', 'general')->where('match_status', 'not_required')
+            ->where('invoice_type', 'general')->where('match_status', 'not_required')->whereIn('expense_account_id', $expenseAccountIds)
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->select('supplier_bills.*')
             ->selectSub(function ($q) {
