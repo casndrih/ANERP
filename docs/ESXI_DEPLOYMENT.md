@@ -17,6 +17,10 @@ Use Ubuntu Server 24.04 LTS as the guest OS. Install a supported Docker Engine r
 
 The bootstrap script is repeatable: it preserves an existing `.env` and existing non-placeholder database password, generates an APP_KEY only when missing, and applies migrations. Do not run `php artisan key:generate` again on a live installation because rotating the key can invalidate encrypted data and sessions.
 
+## Upgrade and rollback preparation
+
+Use `deploy/upgrade.sh` for reviewed application upgrades. It creates a PostgreSQL custom-format dump, a compressed copy of the persistent storage volume and a restricted-permission `.env` copy before enabling maintenance mode, rebuilding app/web images and applying migrations. Retain these backups off-host. A failed migration does not automatically restore the database: follow the backup/restore runbook and restore into a verified recovery target before reopening production traffic. CI exercises the upgrade path on a disposable clean installation; it is not a production rollback drill.
+
 ## OVA export and import verification
 
 The repository supplies `deploy/export-esxi-ova.sh`, which uses VMware govmomi `govc` to export a powered-off, validated VM as OVF files, packages the descriptor and disks into an OVA, validates the tar archive and writes a SHA-256 checksum.
