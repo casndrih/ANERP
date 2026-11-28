@@ -36,7 +36,7 @@ final class CompanyPermissionMap
             'procurement.view', 'procurement.approve', 'procurement.invoice.approve', 'reports.view',
         ],
         'finance_manager' => [
-            'finance.view', 'finance.create', 'finance.post', 'finance.reconcile', 'procurement.invoice.approve',
+            'finance.view', 'finance.create', 'finance.post', 'finance.reconcile', 'procurement.view', 'procurement.invoice.approve',
             'reports.view', 'reports.export',
         ],
         'accountant' => [
