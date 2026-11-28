@@ -37,6 +37,7 @@ final class CustomerReceiptTest extends TestCase
         $receipt = CustomerReceipt::where('company_id', $company->id)->firstOrFail();
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->post(route('finance.receipts.post', $receipt->id))->assertRedirect()->assertSessionHasNoErrors();
+        $receipt->refresh();
 
         $receipt->refresh();
         $this->assertDatabaseHas('customer_receipts', ['id' => $receipt->id, 'status' => 'posted']);
