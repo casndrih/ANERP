@@ -7,6 +7,7 @@ use App\Models\StockCount;
 use App\Models\StockCountLine;
 use App\Models\Warehouse;
 use App\Support\CompanyAuthorizer;
+use App\Support\CompanyPermissionMap;
 use App\Support\InventoryLedger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,11 +26,15 @@ class StockCountController extends Controller
             ->orderBy('name')->get();
         $products = Product::where('company_id', $companyId)->where('is_active', true)->where('track_stock', true)
             ->orderBy('name')->get();
+        $membership = $request->user()->companies()->where('companies.id', $companyId)->wherePivot('is_active', true)->first();
+        $role = $membership?->pivot?->role_code ?? '';
+        $canManage = CompanyPermissionMap::allows($role, 'inventory.manage');
+        $canApprove = CompanyPermissionMap::allows($role, 'inventory.adjust.approve');
         $counts = StockCount::where('company_id', $companyId)
             ->when($branchId, fn ($query) => $query->whereHas('warehouse', fn ($warehouse) => $warehouse->where('branch_id', $branchId)))
             ->with(['warehouse', 'lines.product'])->latest('count_date')->paginate(20);
 
-        return view('inventory.counts.index', compact('warehouses', 'products', 'counts'));
+        return view('inventory.counts.index', compact('warehouses', 'products', 'counts', 'canManage', 'canApprove'));
     }
 
     public function store(Request $request)
@@ -110,7 +115,7 @@ class StockCountController extends Controller
                 ->when($branchId, fn ($query) => $query->whereHas('warehouse', fn ($warehouse) => $warehouse->where('branch_id', $branchId)))
                 ->with(['lines', 'warehouse'])->lockForUpdate()->findOrFail($count);
             abort_unless($stockCount->status === 'submitted', 409, 'Only submitted stock counts can be approved.');
-            abort_if((int) $stockCount->created_by === (int) $request->user()->id, 403, 'The stock count creator cannot approve their own count.');
+            abort_if((int) $stockCount->created_by === (int) $request->user()->id || (int) $stockCount->submitted_by === (int) $request->user()->id, 403, 'The stock count creator or submitter cannot approve their own count.');
 
             foreach ($stockCount->lines as $line) {
                 $currentQuantity = InventoryLedger::onHand($companyId, (int) $stockCount->warehouse_id, (int) $line->product_id);
