@@ -1,34 +1,48 @@
 # ANERP — Advanced Network Enterprise Resource Planning
 
-Multi-company ERP foundation for Papua New Guinea businesses.
+Multi-company ERP for Papua New Guinea businesses, under active phased implementation.
 
-**Target:** VMware ESXi 7.0+ | **Guest:** Ubuntu Server 24.04 LTS | **Stack:** Laravel 12 / PHP 8.4, PostgreSQL 17, Redis, Nginx | **Locale:** PGK / Pacific/Port_Moresby.
+**Stack:** Ubuntu Server 24.04 LTS, Docker Engine/Compose v2, Laravel 12, PHP 8.4, PostgreSQL 17, Redis 7 and Nginx. **Defaults:** PGK, Papua New Guinea, `Pacific/Port_Moresby`.
 
-> This is an actively developed foundation, not a finished production ERP. Payroll/tax calculations, complete financial posting, granular authorization, integrations and production security controls must be completed and tested before live use.
+ANERP is not production-certified. Use [the phase completion audit](docs/PHASE_COMPLETION_AUDIT.md) to track code, test, statutory and operational acceptance gates.
 
-## ESXi host sizing — 128 GB physical RAM
-For the current Compose deployment, start with one Ubuntu VM using 8–12 vCPU, 32 GB RAM and a 500 GB SSD-backed virtual disk. The application, PostgreSQL and Redis currently run together in Docker on this VM. Keep ESXi memory headroom and avoid CPU overcommit until real workload data is available.
+## ESXi host profile
 
-As usage grows, the host has room to separate the stack into an application VM (24–32 GB), database VM (16–24 GB), and monitoring/backup VM (8 GB), with the remaining memory reserved for ESXi, cache growth and future workloads. This split topology is a planned scale-out, not yet implemented by the current Compose files.
+The target host has 128 GB physical RAM. Start with one ANERP VM at 16 vCPU, 48 GB RAM and a 1 TB thin-provisioned virtual disk on SSD-backed datastore storage, with one server-VLAN vNIC. Leave memory and CPU headroom for ESXi and other guests. Validate actual CPU readiness, storage latency, concurrent-user load and datastore capacity before scaling. Separate app/database/monitoring VMs remain a future scale-out, not the current Compose topology.
 
-## Quick start
-1. Create an Ubuntu Server 24.04 LTS VM in ESXi and install Docker Engine + Compose.
-2. Copy this repository to the VM.
-3. Copy `.env.example` to `.env`. Set the same strong random secret in `DB_PASSWORD` and `POSTGRES_PASSWORD`.
-4. Run `docker compose build`.
-5. Generate a key with `docker compose run --rm app php artisan key:generate --show`; paste the returned `base64:...` value into `APP_KEY` in the host `.env` file.
-6. Run `docker compose up -d`.
-7. Run `docker compose exec app php artisan migrate --force`.
-8. Create the initial company and owner account with `docker compose exec app php artisan anerp:install-admin` (actual command: `anerp:install-admin`).
-9. Browse to the VM on your trusted LAN and sign in at `/login`.
+## Clean installation
 
-Do not expose the bootstrap system to the public internet. Add HTTPS, firewall/VPN, MFA, granular roles, tenant-isolation tests, SMTP, monitoring and encrypted off-host backups before production.
+1. Create an Ubuntu Server 24.04 LTS VM and install Docker Engine plus Compose v2.
+2. Copy/clone this repository to the VM.
+3. Run:
 
-## Current implementation
-- Session sign-in/sign-out and login throttling; public registration disabled
-- Initial company bootstrap and active company membership context
-- Tenant-scoped product catalogue create/list
-- PostgreSQL schema foundations for stock movements, suppliers, employees and double-entry journal records
-- Docker Compose deployment and CI container-build workflow
+   ```bash
+   chmod +x deploy/bootstrap.sh
+   ./deploy/bootstrap.sh
+   ```
 
-See docs/ROADMAP.md, docs/PNG_LOCALISATION.md, docs/ESXI_DEPLOYMENT.md, docs/SECURITY_BASELINE.md and docs/PHASE_2_AUTH_TENANCY.md.
+4. The bootstrap script creates a private `.env` if absent, generates a strong PostgreSQL password if the example placeholder is present, builds the app image, generates the Laravel `APP_KEY` only if missing, starts services and applies migrations.
+5. Create the initial company and owner account using `docker compose exec app php artisan aner p:install-admin` (command name: `anerp:install-admin`). Supply the company, administrator and strong password when prompted.
+6. Browse to the VM on the trusted LAN and sign in at `/login`.
+
+The bootstrap script preserves an existing `.env` and non-placeholder database password. Back up `.env` and the APP_KEY securely; losing the key can make encrypted application data unreadable. Never commit or email `.env`.
+
+## Upgrade and backups
+
+Run `chmod +x deploy/upgrade.sh && ./deploy/upgrade.sh` for a reviewed application release. It backs up PostgreSQL, the persistent storage volume and `.env` before enabling maintenance mode, rebuilding app/web images and applying migrations. Set `ANERP_BACKUP_DIR` to a secure backup location. Copy backups off-host and test restores; this script does not automatically roll back a failed migration.
+
+## ESXi OVA export
+
+After validating and powering off the guest VM, install VMware govmomi's `govc` on an authorized build host and set `GOVC_URL`, `GOVC_USERNAME`, `GOVC_PASSWORD` and `ANERP_ESXI_VM`. Then run `bash deploy/export-esxi-ova.sh ./dist`. The script exports OVF files, packages the OVA and writes a SHA-256 checksum. Import into a separate non-production ESXi inventory and verify boot, hardware compatibility, networking, persistence and backup/restore. No actual OVA is certified until that host import test is completed.
+
+## Current implementation scope
+
+- Company tenancy, owner bootstrap, login, membership administration, privileged-user MFA and permission controls.
+- Products, suppliers, warehouses, stock movements, procurement and receiving.
+- HR/payroll workflows and PNG statutory calculation foundations.
+- General ledger, supplier/customer settlements, GST management summaries and bank reconciliation.
+- Inventory valuation, stock counts, procurement invoice matching, landed costs and supplier returns.
+- Sales orders, POS till sessions, customer receipts, credit notes, customer credit limits and item-level customer returns.
+- Reporting, security checks and backup/restore documentation.
+
+See [roadmap](docs/ROADMAP.md), [ESXi deployment](docs/ESXI_DEPLOYMENT.md), [PNG localisation](docs/PNG_LOCALISATION.md), [PNG payroll statutory rules](docs/PNG_PAYROLL_STATUTORY_RULES.md), [security baseline](docs/SECURITY_BASELINE.md) and [phase audit](docs/PHASE_COMPLETION_AUDIT.md).
