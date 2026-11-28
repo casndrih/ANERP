@@ -93,6 +93,7 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::get('/finance/credit-notes', [CustomerCreditNoteController::class, 'index'])->name('finance.credit-notes.index');
     Route::post('/finance/credit-notes', [CustomerCreditNoteController::class, 'store'])->name('finance.credit-notes.store');
     Route::post('/finance/credit-notes/{creditNote}/post', [CustomerCreditNoteController::class, 'post'])->name('finance.credit-notes.post');
+    Route::post('/finance/credit-notes/{creditNote}/cancel', [CustomerCreditNoteController::class, 'cancel'])->name('finance.credit-notes.cancel');
     Route::get('/finance/receipts', [CustomerReceiptController::class, 'index'])->name('finance.receipts.index');
     Route::post('/finance/receipts', [CustomerReceiptController::class, 'store'])->name('finance.receipts.store');
     Route::post('/finance/receipts/{receipt}/post', [CustomerReceiptController::class, 'post'])->name('finance.receipts.post');
