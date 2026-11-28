@@ -135,7 +135,7 @@ class FinanceController extends Controller {
             'company_id'=>$companyId,'branch_id'=>$branchId,'currency'=>'PGK','status'=>'draft','created_by'=>$request->user()->id,
             'amount'=>$tax['total'],'net_amount'=>$tax['taxable_value'],'gst_treatment'=>$tax['treatment'],
             'gst_rate'=>$tax['gst_rate'],'gst_amount'=>$tax['gst_amount'],'supplier_gst_registered'=>$supplierRegistered,
-            'supplier_gst_registration_number'=>$data['supplier_gst_registration_number'] ?? null,'tax_invoice_reference'=>$data['tax_invoice_reference'] ?? null,'input_tax_credit_eligible'=>$inputCreditEligible,
+            'supplier_gst_registration_number'=>$data['supplier_gst_registration_number'] ?? null,'tax_invoice_reference'=>$data['tax_invoice_reference'] ?? null,'supply_province'=>$data['supply_province'] ?? null,'input_tax_credit_eligible'=>$inputCreditEligible,
         ]));
         return back()->with('status','Supplier bill saved as a draft with PNG GST calculated.');
     }
