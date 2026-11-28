@@ -10,7 +10,6 @@ use App\Models\Customer;
 use App\Models\CustomerReceipt;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 final class CustomerRefundTest extends TestCase
@@ -42,7 +41,7 @@ final class CustomerRefundTest extends TestCase
             ->post(route('finance.refunds.store'), [
                 'branch_id' => $branch->id, 'receipt_id' => $receipt->id, 'bank_account_id' => $bank->id,
                 'refund_number' => 'REF-OVER', 'refund_date' => '2026-11-28',
-                'description' => 'Over refund', 'amount' => 61,
+                'description' => 'Over refund', 'amount' => 101,
             ])->assertSessionHasErrors('amount');
         $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
             ->post(route('finance.refunds.store'), [
@@ -70,10 +69,6 @@ final class CustomerRefundTest extends TestCase
             'bank_account_id' => $bank->id, 'receipt_number' => 'RCPT-'.uniqid(), 'receipt_date' => '2026-11-20',
             'description' => 'Deposit receipt', 'amount' => 100, 'currency' => 'PGK',
             'status' => 'posted', 'created_by' => $creator->id, 'posted_by' => $approver->id, 'posted_at' => now(),
-        ]);
-        DB::table('customer_receipt_allocations')->insert([
-            'customer_receipt_id' => $receipt->id, 'customer_invoice_id' => null,
-            'amount' => 40, 'created_at' => now(), 'updated_at' => now(),
         ]);
         return [$company, $branch, $customer, $bank, $receipt, $creator, $approver, $depositAccount, $bankLedger];
     }
