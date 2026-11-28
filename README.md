@@ -24,7 +24,7 @@ As usage grows, the host has room to separate the stack into an application VM (
 8. Create the initial company and owner account with docker compose exec app php artisan anerp:install-admin.
 9. Browse to the VM on your trusted LAN and sign in at /login.
 
-Do not expose the bootstrap system to the public internet. Add HTTPS, firewall/VPN, MFA, granular roles, tenant-isolation tests, SMTP, monitoring and encrypted off-host backups before production.
+Do not expose the system publicly until HTTPS, firewall/VPN, MFA enrollment and recovery, role assignments, tenant-isolation tests, SMTP, monitoring and encrypted off-host backups have been verified.
 
 ## Current implementation
 - Session sign-in/sign-out and login throttling; public registration disabled.
