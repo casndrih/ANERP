@@ -49,6 +49,9 @@ final class CustomerReceiptTest extends TestCase
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->get(route('reports.index', ['report' => 'receivables', 'to' => '2026-11-28']))
             ->assertOk()->assertSee('60.00');
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
+            ->get(route('reports.index', ['report' => 'receivables', 'to' => '2026-11-15']))
+            ->assertOk()->assertSee('100.00');
     }
 
     public function test_receipt_cannot_overpay_invoice_after_prior_posted_receipts(): void
