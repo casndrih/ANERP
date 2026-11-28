@@ -79,8 +79,14 @@ class ReportingController extends Controller
             $paidByDocument = $receivable
                 ? collect()
                 : DB::table('supplier_payment_allocations')->join('supplier_payments','supplier_payments.id','=','supplier_payment_allocations.supplier_payment_id')->whereIn('supplier_payment_allocations.supplier_bill_id',$docs->pluck('id'))->where('supplier_payments.status','posted')->where('supplier_payments.company_id',$companyId)->whereDate('supplier_payments.payment_date','<=',$to->toDateString())->select('supplier_payment_allocations.supplier_bill_id')->selectRaw('SUM(supplier_payment_allocations.amount) as paid_amount')->groupBy('supplier_payment_allocations.supplier_bill_id')->get()->pluck('paid_amount','supplier_bill_id');
-            $rows=$docs->map(function($d) use($receivable,$relation,$dateCol,$to,$paidByDocument) {
-                $due=Carbon::parse($d->due_date??$d->{$dateCol}); $days=ReportingCalculator::ageingDays($due,$to); $amount=round((float)$d->amount - (float)$paidByDocument->get($d->id,0),2);
+            $creditedByDocument = $receivable
+                ? collect()
+                : DB::table('supplier_credit_notes')->whereIn('supplier_bill_id',$docs->pluck('id'))->where('company_id',$companyId)->where('status','posted')->whereDate('credit_note_date','<=',$to->toDateString())->select('supplier_bill_id')->selectRaw('SUM(amount) as credited_amount')->groupBy('supplier_bill_id')->get()->pluck('credited_amount','supplier_bill_id');
+            $stockReturnedByDocument = $receivable
+                ? collect()
+                : DB::table('supplier_stock_returns')->whereIn('supplier_bill_id',$docs->pluck('id'))->where('company_id',$companyId)->where('status','posted')->whereDate('return_date','<=',$to->toDateString())->select('supplier_bill_id')->selectRaw('SUM(total_amount) as returned_amount')->groupBy('supplier_bill_id')->get()->pluck('returned_amount','supplier_bill_id');
+            $rows=$docs->map(function($d) use($receivable,$relation,$dateCol,$to,$paidByDocument,$creditedByDocument,$stockReturnedByDocument) {
+                $due=Carbon::parse($d->due_date??$d->{$dateCol}); $days=ReportingCalculator::ageingDays($due,$to); $amount=round((float)$d->amount - (float)$paidByDocument->get($d->id,0) - (float)$creditedByDocument->get($d->id,0) - (float)$stockReturnedByDocument->get($d->id,0),2);
                 return (object)['document'=>$receivable?$d->invoice_number:$d->bill_number,'counterparty'=>$d->{$relation}?->name??'','document_date'=>$d->{$dateCol}?->format('Y-m-d'),'due_date'=>$due->toDateString(),'days_overdue'=>$days,'current'=>ReportingCalculator::ageingBucket($days)==='current'?$amount:0,'1_30'=>ReportingCalculator::ageingBucket($days)==='1_30'?$amount:0,'31_60'=>ReportingCalculator::ageingBucket($days)==='31_60'?$amount:0,'61_90'=>ReportingCalculator::ageingBucket($days)==='61_90'?$amount:0,'over_90'=>ReportingCalculator::ageingBucket($days)==='over_90'?$amount:0,'amount'=>$amount];
             });
             $totals=['amount'=>round((float)$rows->sum('amount'),2)];
@@ -99,7 +105,7 @@ class ReportingController extends Controller
             $moves=StockMovement::with(['product','warehouse'])->where('company_id',$companyId)->when($branchId,fn($q)=>$q->whereHas('warehouse',fn($w)=>$w->where('branch_id',$branchId)))->whereBetween('occurred_at',[$from,$to])->orderBy('occurred_at')->get();
             $rows=$moves->groupBy(fn($m)=>($m->product?->sku??'—').' · '.($m->product?->name??'Unknown').' / '.($m->warehouse?->name??'Unknown'))->map(function($items,$label) {
                 $in=$items->whereIn('movement_type',['opening','purchase_receipt','transfer_in','adjustment_in'])->sum('quantity');
-                $out=$items->whereIn('movement_type',['issue','transfer_out','adjustment_out'])->sum('quantity');
+                $out=$items->whereIn('movement_type',['issue','transfer_out','adjustment_out','supplier_return'])->sum('quantity');
                 return (object)['product_warehouse'=>$label,'movements'=>$items->count(),'quantity_in'=>round((float)$in,3),'quantity_out'=>round((float)$out,3),'net_quantity'=>round((float)$in-(float)$out,3),'movement_cost_value'=>ReportingCalculator::movementCostValue($items)];
             })->values();
             foreach(['quantity_in','quantity_out','net_quantity','movement_cost_value'] as $k) $totals[$k]=round((float)$rows->sum($k),3);

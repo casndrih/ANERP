@@ -5,6 +5,7 @@ use App\Http\Controllers\CompanySelectionController;
 use App\Http\Controllers\CompanyAdministrationController;
 use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\GstSummaryController;
 use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\MfaController;
 use App\Http\Controllers\HumanResourcesController;
@@ -15,6 +16,10 @@ use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\StockCountController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\SupplierInvoiceMatchingController;
+use App\Http\Controllers\SupplierStockReturnController;
+use App\Http\Controllers\ImportAssessmentController;
+use App\Http\Controllers\SupplierCreditNoteController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Middleware\AuditCompanyActivity;
 use App\Http\Middleware\EnsureMfaVerified;
@@ -65,6 +70,16 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::post('/procurement/orders/{order}/submit', [PurchaseOrderController::class, 'submit'])->name('procurement.orders.submit');
     Route::post('/procurement/orders/{order}/approve', [PurchaseOrderController::class, 'approve'])->name('procurement.orders.approve');
     Route::post('/procurement/orders/{order}/lines/{line}/receive', [PurchaseOrderController::class, 'receive'])->name('procurement.orders.receive');
+    Route::get('/procurement/matching', [SupplierInvoiceMatchingController::class, 'index'])->name('procurement.matching.index');
+    Route::get('/procurement/import-assessments', [ImportAssessmentController::class, 'index'])->name('procurement.import-assessments.index');
+    Route::post('/procurement/import-assessments', [ImportAssessmentController::class, 'store'])->name('procurement.import-assessments.store');
+    Route::get('/procurement/stock-returns', [SupplierStockReturnController::class, 'index'])->name('procurement.stock-returns.index');
+    Route::post('/procurement/stock-returns', [SupplierStockReturnController::class, 'store'])->name('procurement.stock-returns.store');
+    Route::post('/procurement/stock-returns/{return}/post', [SupplierStockReturnController::class, 'post'])->name('procurement.stock-returns.post');
+    Route::post('/procurement/stock-returns/{return}/cancel', [SupplierStockReturnController::class, 'cancel'])->name('procurement.stock-returns.cancel');
+
+    Route::post('/procurement/matching/{bill}', [SupplierInvoiceMatchingController::class, 'match'])->name('procurement.matching.match');
+    Route::post('/procurement/matching/{bill}/approve', [SupplierInvoiceMatchingController::class, 'approve'])->name('procurement.matching.approve');
 
     Route::get('/hr', [HumanResourcesController::class, 'index'])->name('hr.index');
     Route::post('/hr/employees', [HumanResourcesController::class, 'storeEmployee'])->name('hr.employees.store');
@@ -74,6 +89,9 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::post('/hr/leave/{leave}/decision', [HumanResourcesController::class, 'decideLeave'])->name('hr.leave.decision');
     Route::post('/hr/attendance', [HumanResourcesController::class, 'storeAttendance'])->name('hr.attendance.store');
     Route::get('/finance', [FinanceController::class, 'index'])->name('finance.index');
+    Route::post('/finance/tax-settings', [FinanceController::class, 'storeGstSettings'])->name('finance.tax-settings');
+    Route::get('/finance/gst-summary', [GstSummaryController::class, 'index'])->name('finance.gst-summary');
+
     Route::post('/finance/customers', [FinanceController::class, 'storeCustomer'])->name('finance.customers.store');
     Route::post('/finance/journals', [FinanceController::class, 'storeJournal'])->name('finance.journals.store');
     Route::post('/finance/journals/{journal}/post', [FinanceController::class, 'postJournal'])->name('finance.journals.post');
@@ -85,6 +103,11 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::post('/finance/payments', [SupplierPaymentController::class, 'store'])->name('finance.payments.store');
     Route::post('/finance/payments/{payment}/post', [SupplierPaymentController::class, 'post'])->name('finance.payments.post');
     Route::post('/finance/payments/{payment}/cancel', [SupplierPaymentController::class, 'cancel'])->name('finance.payments.cancel');
+    Route::get('/finance/supplier-credit-notes', [SupplierCreditNoteController::class, 'index'])->name('finance.supplier-credit-notes.index');
+    Route::post('/finance/supplier-credit-notes', [SupplierCreditNoteController::class, 'store'])->name('finance.supplier-credit-notes.store');
+    Route::post('/finance/supplier-credit-notes/{creditNote}/post', [SupplierCreditNoteController::class, 'post'])->name('finance.supplier-credit-notes.post');
+    Route::post('/finance/supplier-credit-notes/{creditNote}/cancel', [SupplierCreditNoteController::class, 'cancel'])->name('finance.supplier-credit-notes.cancel');
+
     Route::post('/finance/bank-accounts', [FinanceController::class, 'storeBankAccount'])->name('finance.bank-accounts.store');
     Route::post('/finance/bank-transactions', [FinanceController::class, 'storeBankTransaction'])->name('finance.bank-transactions.store');
     Route::post('/finance/bank-accounts/{bankAccount}/reconcile', [FinanceController::class, 'reconcile'])->name('finance.bank-accounts.reconcile');

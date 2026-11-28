@@ -23,8 +23,7 @@
 - The first valuation replay derives opening layers from existing movement records; it does not import supplier landed costs, freight allocation, batch expiry or serial-level costs.
 - Changing valuation method does not rewrite old stock movements or posted GL journals. It changes how future movements are costed after replaying the existing movement history.
 - If legacy movements have negative quantities or missing/inconsistent costs, an authorised accountant/stock controller must resolve the discrepancy before automatic issue costing can proceed.
-- Formal stock-count sessions and approval controls, supplier invoice three-way matching, and landed-cost allocation by received line value, quantity or equal share are now implemented in later branch increments. Barcode/batch/serial tracking, mixed-source landed-cost automation, and advanced allocation by weight/volume remain outstanding.
-- Supplier payment allocation and independent AP/bank posting are implemented in the finance workspace; posted allocations reduce AP ageing.
+- Phase 8 implements formal stock-count sessions and independent adjustment approvals. Phase 9 adds guarded landed-cost allocation and supplier invoice three-way matching. Barcode/batch/serial tracking remains future work.
 
 ## Stock-count controls
 - Draft stock counts capture system quantity and counted quantity for each warehouse/product line, including variance and a cost snapshot.

@@ -33,6 +33,7 @@ final class SupplierPaymentTest extends TestCase
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->post(route('finance.payments.post', $payment->id))->assertRedirect()->assertSessionHasNoErrors();
         $payment->refresh();
+        self::assertNotNull($payment->journal_entry_id, 'Posted supplier payment must retain its journal entry reference.');
 
         $this->assertDatabaseHas('supplier_payments', ['id' => $payment->id, 'status' => 'posted']);
         $this->assertDatabaseHas('bank_transactions', ['bank_account_id' => $bank->id, 'journal_entry_id' => $payment->journal_entry_id, 'direction' => 'out', 'amount' => '75.00']);
