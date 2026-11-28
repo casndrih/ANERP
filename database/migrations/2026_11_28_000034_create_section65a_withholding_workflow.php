@@ -44,8 +44,6 @@ return new class extends Migration {
             $table->date('effective_from')->nullable();
             $table->date('effective_to')->nullable();
             $table->string('supplier_tin_snapshot', 80)->nullable();
-            $table->string('supplier_gst_registration_snapshot', 80)->nullable();
-            $table->text('supply_description')->nullable();
             $table->timestamps();
             $table->unique(['notice_id', 'supplier_id'], 'supplier_s65a_notice_supplier_unique');
         });
@@ -53,7 +51,6 @@ return new class extends Migration {
         Schema::table('supplier_payments', function (Blueprint $table) {
             $table->decimal('cash_amount', 14, 2)->default(0)->after('amount');
             $table->decimal('withheld_amount', 14, 2)->default(0)->after('cash_amount');
-            $table->string('supplier_province_snapshot', 100)->nullable()->after('withheld_amount');
         });
         DB::table('supplier_payments')->update(['cash_amount' => DB::raw('amount')]);
 
@@ -62,6 +59,7 @@ return new class extends Migration {
                 ->constrained('supplier_gst_withholding_notices')->nullOnDelete();
             $table->decimal('cash_amount', 14, 2)->default(0)->after('amount');
             $table->decimal('withheld_amount', 14, 2)->default(0)->after('cash_amount');
+            $table->string('supplier_province_snapshot', 100)->nullable()->after('withheld_amount');
         });
         DB::table('supplier_payment_allocations')->update([
             'cash_amount' => DB::raw('amount'),
@@ -106,6 +104,8 @@ return new class extends Migration {
             $table->foreignId('remittance_id')->nullable()->constrained('supplier_gst_remittances')->nullOnDelete();
             $table->string('supplier_name_snapshot', 255);
             $table->string('supplier_tin_snapshot', 80)->nullable();
+            $table->string('supplier_gst_registration_snapshot', 80)->nullable();
+            $table->text('supply_description')->nullable();
             $table->string('supplier_province', 100)->nullable();
             $table->string('bill_number_snapshot', 100);
             $table->date('bill_date');
