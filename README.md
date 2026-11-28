@@ -2,22 +2,51 @@
 
 Multi-company ERP foundation for Papua New Guinea businesses.
 
-**Target:** VMware ESXi 7.0+ | **Guest:** Ubuntu Server 24.04 LTS | **Stack:** Laravel 12 / PHP 8.4, PostgreSQL 17, Redis, Nginx | **Locale:** PGK / Pacific/Port_Moresby.
+**Target stack:** Ubuntu Server 24.04 LTS, Docker Engine/Compose v2, Laravel 12, PHP 8.4, PostgreSQL 17, Redis 7 and Nginx. **Business defaults:** PGK, Papua New Guinea, `Pacific/Port_Moresby`.
 
-> This is an initial engineering foundation, not a finished production ERP. Payroll/tax calculations, financial posting, tenant authorization, integrations and security hardening must be completed and tested before live use.
+ANERP is under active implementation. Passing CI and producing an OVA do not certify accounting, payroll, tax compliance, security or production readiness. See [the phase completion audit](docs/PHASE_COMPLETION_AUDIT.md) for release gates.
 
-## Small ESXi host
-Start with one VM: 8 vCPU, 16 GB RAM (24 GB preferred), 250 GB SSD-backed disk and one server-VLAN vNIC. Keep app/PHP around 3–4 GB, PostgreSQL 4–6 GB and Redis around 512 MB, leaving headroom for Ubuntu and Nginx.
+## ESXi host profile
 
-## Quick start
-1. Create an Ubuntu Server 24.04 LTS VM in ESXi and install Docker Engine + Compose.
-2. Copy this repository to the VM.
-3. Copy .env.example to .env and set the same strong database password in DB_PASSWORD and POSTGRES_PASSWORD. Generate an APP_KEY with `docker compose exec app php artisan key:generate --show`, paste the returned base64 key into the host .env file, then restart the app container.
-4. Run docker compose build && docker compose up -d.
-5. Run docker compose exec app php artisan key:generate.
-6. Run docker compose exec app php artisan migrate --force.
-7. Browse to the VM on your trusted LAN.
+The intended host has 128 GB physical RAM. A sensible initial ANERP VM allocation is 16 vCPU, 48 GB RAM and a 1 TB thin-provisioned virtual disk on SSD-backed datastore storage, with a single server-VLAN vNIC. This leaves memory for ESXi and other guests. Confirm CPU contention, storage IOPS, actual workload and concurrent users before scaling; vCPU count is a starting allocation, not a processor compatibility guarantee.
 
-Do not expose the bootstrap system to the public internet. Add HTTPS, firewall/VPN, MFA, roles, tenant-isolation tests, SMTP, monitoring and encrypted off-host backups first.
+## Repeatable installation
 
-See docs/ROADMAP.md, docs/PNG_LOCALISATION.md, docs/ESXI_DEPLOYMENT.md and docs/SECURITY_BASELINE.md.
+1. Create an Ubuntu Server 24.04 LTS VM and install a supported Docker Engine release with Compose v2.
+2. Clone or copy this repository to the VM.
+3. From the repository root, run:
+
+   ```bash
+   chmod +x deploy/bootstrap.sh
+   ./deploy/bootstrap.sh
+   ```
+
+4. The bootstrap script creates a private `.env` from `.env.example` if absent, generates a strong database password when the example placeholder is present, builds the application image, generates the Laravel `APP_KEY` once, validates Compose, starts the services and applies database migrations.
+5. Browse to the VM on the trusted server LAN. Check `docker compose ps` and `docker compose logs --tail=100 app web db redis`.
+
+The script preserves an existing `.env` and non-placeholder database password. Back up `.env` securely: losing `APP_KEY` can make encrypted application data unreadable. Do not commit or email `.env`.
+
+## ESXi OVA export
+
+Build and validate the ANERP guest VM first, then power it off. Install VMware govmomi's `govc` on an authorized build host and set:
+
+```bash
+export GOVC_URL='https://your-esxi-or-vcenter/sdk'
+export GOVC_USERNAME='export-user'
+export GOVC_PASSWORD='use-a-secret-manager-or-secure-shell'
+export ANERP_ESXI_VM='ANERP-Production-Template'
+# Optional for a lab with a self-signed certificate only:
+# export GOVC_INSECURE=1
+./deploy/export-esxi-ova.sh ./dist
+```
+
+The script exports OVF files, packages them into an OVA, validates the archive and writes a SHA-256 checksum. Keep credentials out of shell history and CI logs. Import the resulting OVA into a separate, non-production ESXi inventory, verify virtual hardware compatibility, network mapping, boot, application health, persistence and backup/restore before distributing it. An OVA has not been built or imported until this procedure has actually been run against the target ESXi host.
+
+## Operations
+
+- PostgreSQL and Redis are internal Compose services; do not publish their ports to untrusted networks.
+- Restrict HTTP to the trusted LAN during bootstrap. Configure HTTPS termination, firewall/VPN, MFA, monitoring, SMTP, encrypted off-host backups and a tested restore process before production.
+- Preserve and securely back up the application key and database credentials.
+- Run migrations through the controlled release process, not by editing the production database manually.
+
+See [ESXi deployment](docs/ESXI_DEPLOYMENT.md), [PNG localisation](docs/PNG_LOCALISATION.md), [security baseline](docs/SECURITY_BASELINE.md), and [roadmap](docs/ROADMAP.md).
