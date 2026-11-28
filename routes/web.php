@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\CompanySelectionController;
+use App\Http\Controllers\CompanyAdministrationController;
+use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\MfaController;
 use App\Http\Controllers\HumanResourcesController;
@@ -23,6 +25,8 @@ Route::middleware('guest')->group(function () {
 });
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
 Route::post('/company/select', [CompanySelectionController::class, 'store'])->middleware('auth')->name('company.select');
+Route::get('/invitations/{token}', [CompanyInvitationController::class, 'show'])->name('invitations.accept');
+Route::post('/invitations/{token}', [CompanyInvitationController::class, 'accept'])->name('invitations.accept.store');
 
 Route::middleware(['auth', 'throttle:10,1'])->group(function () {
     Route::get('/mfa/challenge', [MfaController::class, 'challenge'])->name('mfa.challenge');
@@ -35,6 +39,11 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::post('/security/mfa/confirm', [MfaController::class, 'confirm'])->name('mfa.confirm');
     Route::post('/security/mfa/disable', [MfaController::class, 'disable'])->name('mfa.disable');
     Route::get('/', fn () => view('dashboard'))->name('dashboard');
+    Route::get('/company/users', [CompanyAdministrationController::class, 'index'])->name('company.users.index');
+    Route::post('/company/users/invitations', [CompanyAdministrationController::class, 'invite'])->name('company.users.invite');
+    Route::patch('/company/users/{user}', [CompanyAdministrationController::class, 'updateMembership'])->name('company.users.update');
+    Route::delete('/company/invitations/{invitation}', [CompanyAdministrationController::class, 'revokeInvitation'])->name('company.invitations.revoke');
+    Route::get('/company/audit', [CompanyAdministrationController::class, 'audit'])->name('company.audit');
     Route::get('/inventory/products', [ProductController::class, 'index'])->name('inventory.products.index');
     Route::post('/inventory/products', [ProductController::class, 'store'])->name('inventory.products.store');
     Route::get('/inventory/warehouses', [WarehouseController::class, 'index'])->name('inventory.warehouses.index');

@@ -6,7 +6,7 @@ Multi-company ERP foundation for Papua New Guinea businesses.
 
 > This is an actively developed foundation, not a finished production ERP. Payroll special cases, complete accounting workflows, granular authorization, integrations and production security controls must be completed and tested before live use.
 
-- Phase 7 branch access: company membership branch assignments restrict HR, payroll employee lines/payslips, warehouse stock movements/balances and purchase orders; branch-restricted users are blocked from company-wide finance and company-wide HR policy operations until those records support branch attribution.
+- Phase 7 branch access: company membership branch assignments restrict HR, payroll employee lines/payslips, warehouse stock movements/balances and purchase orders; branch-restricted users are blocked from company-wide finance and company-wide HR policy operations until those records support branch attribution.\n- Phase 7 company administration: single-use email invitations, tenant-scoped membership and branch assignment, role management, membership suspension/reactivation, invitation revocation, last-owner protection and company-scoped audit history.
 
 ## ESXi host sizing — 128 GB physical RAM
 For the current Compose deployment, start with one Ubuntu VM using 8–12 vCPU, 32 GB RAM and a 500 GB SSD-backed virtual disk. The application, PostgreSQL and Redis currently run together in Docker on this VM. Keep ESXi memory headroom and avoid CPU overcommit until real workload data is available.
@@ -37,4 +37,4 @@ Do not expose the system publicly until HTTPS, firewall/VPN, MFA enrollment and 
 - Phase 7 security increment: central company role/permission matrix, route-level permission checks across core modules, TOTP MFA enforced for privileged company roles, encrypted authenticator secrets and one-time recovery codes, audit event logging for authenticated company writes and report exports, PostgreSQL triggers to block audit-event updates/deletes, unit tests, secret/dependency/container scanning workflow, and backup/restore runbook.
 
 ## Documentation
-See docs/ROADMAP.md, docs/PNG_LOCALISATION.md, docs/PNG_PAYROLL_STATUTORY_RULES.md, docs/ESXI_DEPLOYMENT.md, docs/SECURITY_BASELINE.md, docs/PHASE_2_AUTH_TENANCY.md, docs/PHASE_3_INVENTORY_PROCUREMENT.md, docs/PHASE_4_HR_PAYROLL.md, docs/PHASE_5_FINANCE_ACCOUNTING.md, docs/PHASE_6_REPORTING_ANALYTICS.md, docs/PHASE_7_PRODUCTION_READINESS.md and docs/OPERATIONS_BACKUP_RESTORE.md.
+See docs/ROADMAP.md, docs/PNG_LOCALISATION.md, docs/PNG_PAYROLL_STATUTORY_RULES.md, docs/ESXI_DEPLOYMENT.md, docs/SECURITY_BASELINE.md, docs/PHASE_2_AUTH_TENANCY.md, docs/PHASE_3_INVENTORY_PROCUREMENT.md, docs/PHASE_4_HR_PAYROLL.md, docs/PHASE_5_FINANCE_ACCOUNTING.md, docs/PHASE_6_REPORTING_ANALYTICS.md, docs/PHASE_7_PRODUCTION_READINESS.md, docs/PHASE_7_COMPANY_ADMINISTRATION.md and docs/OPERATIONS_BACKUP_RESTORE.md.

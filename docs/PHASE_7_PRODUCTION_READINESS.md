@@ -12,7 +12,7 @@ Establish repeatable security, operational and acceptance controls before ANERP 
 - PostgreSQL-backed feature tests for cross-company inventory visibility, tenant-bound product creation, unauthorized company selection and inactive-company selection.
 - Additional PostgreSQL-backed tests verify finance journals, payroll runs and procurement orders are isolated to the active company, finance CSV exports exclude another company's ledger rows, and cross-company posting/approval is denied.
 - Branch-level feature tests cover HR employee and leave access, payroll report aggregation, warehouse visibility, procurement orders, and denial of company-wide finance access for branch-restricted users.
-- TOTP authenticator MFA with encrypted secrets, six-digit time-based codes, one-time hashed recovery codes, and password-plus-code disable flow for non-privileged users. Privileged company roles must enroll before workspace access and cannot disable MFA themselves.
+- Company and user administration: single-use email invitations, tenant-scoped role and branch assignments, suspension/reactivation, invitation revocation, last-owner safeguards and company-scoped audit history.\n- TOTP authenticator MFA with encrypted secrets, six-digit time-based codes, one-time hashed recovery codes, and password-plus-code disable flow for non-privileged users. Privileged company roles must enroll before workspace access and cannot disable MFA themselves.
 
 ## Scope
 - Automated dependency and container vulnerability checks in GitHub Actions.
