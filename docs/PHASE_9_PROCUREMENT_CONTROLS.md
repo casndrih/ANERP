@@ -7,8 +7,8 @@
 - Goods invoice unit prices must match the approved PO price within K0.01; total invoice value must reconcile to matched line totals. Tax, freight and other charges must be entered separately until tax handling is implemented.
 - Pending and approved invoice matches are counted when preventing duplicate billing, including invoices that have been matched but not yet posted.
 - Goods invoice approval clears goods-received-not-invoiced (GRNI) into accounts payable through a balanced posted journal.
-- Landed-cost invoices are allocated across received stock by PO line receipt value.
-- The allocation capitalises the share represented by on-hand inventory and expenses the consumed share to cost of goods sold.
+- Landed-cost invoices can be allocated across received stock by received line value, received quantity or equal share per received product line; the selected basis is persisted for audit.
+- The allocation capitalises the share represented by on-hand inventory and expenses the consumed share to cost of goods sold. The allocation basis is selected by the independent approver and stored on each allocation record.
 - FIFO remaining layers and weighted-average inventory balances are updated when landed costs are capitalised.
 - Invoice creator and invoice matcher cannot approve their own invoice. The approval action requires the dedicated procurement.invoice.approve permission, granted to procurement approvers, finance managers and accountants; owners/admins retain all permissions.
 - Direct posting of a supplier bill linked to a purchase order is blocked in the general finance bill workflow. It must pass through matching approval.
@@ -22,14 +22,15 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 - All journals are posted in the supplier bill's branch and retain the bill's creator and the independent approver.
 
 ## Current limitations
-- Purchase-order entry still creates one product line per PO. Matching storage supports multiple lines, but multi-line PO authoring UI is not yet implemented.
-- GST, withholding tax, import duty calculation, supplier credit notes, debit notes, invoice attachments/OCR, supplier payment allocation and payment execution are not included.
+- Purchase orders now support multiple product lines in the authoring screen and the controller validates each submitted line.
+- GST input/output accounting, withholding tax, import-duty calculation from tariff classifications, supplier credit notes, debit notes, invoice attachments/OCR, supplier payment allocation and payment execution are not included.
 - Goods price variance beyond K0.01 is blocked for manual resolution; tolerance approval workflows are not yet available.
 - Landed costs are only capitalised when the product/warehouse cost pool is isolated and reconciled. Mixed stock pools and transferred stock require manual reconciliation before this feature can proceed.
-- The landed-cost allocator distributes by received PO line value; customs, insurance, freight and other charge-specific allocation bases are not separately configurable.
+- The landed-cost allocator currently distributes by received PO line value only; quantity-, equal-share-, weight-, volume- and charge-specific allocation bases are not configurable.
 - Supplier invoice matching is not an external tax or statutory compliance certification.
 
 ## Acceptance checks
+- Create and submit a purchase order with multiple distinct product lines; verify each line is independently received and matched.
 - Apply migrations against a clean PostgreSQL database and run the complete test suite.
 - Confirm a bill cannot be matched to another company's PO or another supplier's PO.
 - Confirm invoice quantity cannot exceed received quantity less all matched/posted invoices.
