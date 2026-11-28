@@ -119,7 +119,7 @@ class CustomerCreditNoteController extends Controller
                 ->where('customer_receipt_allocations.customer_invoice_id', $invoice->id)->where('customer_receipts.status', 'posted')
                 ->where('customer_receipts.company_id', $companyId)->sum('customer_receipt_allocations.amount');
             $otherCredits = (float) CustomerCreditNote::where('company_id', $companyId)->where('customer_invoice_id', $invoice->id)
-                ->where('status', 'posted')->where('id', '!=', $note->id)->sum('amount');
+                ->whereIn('status', ['draft', 'posted'])->where('id', '!=', $note->id)->sum('amount');
             if ((float) $note->amount > round((float) $invoice->amount - $paid - $otherCredits, 2) + 0.009) {
                 throw ValidationException::withMessages(['credit_note' => 'Posting would credit more than the invoice outstanding balance.']);
             }
