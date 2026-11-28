@@ -21,11 +21,12 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 ## Accounting behavior
 - Goods invoice: debit GRNI (2600), credit accounts payable (2000).
 - Landed-cost invoice: debit inventory (1200) for the remaining-stock portion, debit COGS (5000) for the consumed portion, and credit accounts payable (2000) for the invoice total.
+- Supplier stock-return credit note: debit AP for gross credit, credit eligible GST input tax, credit inventory at FIFO/weighted-average carrying value, and post any difference to purchase-price variance. Stock issue and journal links are atomic and branch-attributed.
 - All journals are posted in the supplier bill's branch and retain the bill's creator and the independent approver.
 
 ## Current limitations
 - Purchase orders now support multiple product lines in the authoring screen and the controller validates each submitted line.
-- Full statutory GST return automation and tax adjustment notes, import GST/customs assessment postings, withholding under section 65A, private-use and exempt-sale input-credit adjustments, inventory/GRNI supplier debit/credit notes, invoice attachments/OCR and payment reversals remain outstanding. The GST summary is a management estimate, not a filing-ready G1 return. Supplier payment allocation is implemented. Invoice-level supplier credit notes are supported for posted general expense bills only; matched inventory/GRNI bills are deliberately blocked until stock-return accounting exists.
+- Full statutory GST return automation and tax adjustment notes, import GST/customs assessment postings, withholding under section 65A, private-use and exempt-sale input-credit adjustments, invoice attachments/OCR and payment reversals remain outstanding. The GST summary is a management estimate, not a filing-ready G1 return. Supplier payment allocation and inventory credit notes are implemented; general expense credit notes remain separate from stock returns.
 - Goods price variance beyond K0.01 is blocked for manual resolution; tolerance approval workflows are not yet available.
 - Landed costs are only capitalised when the product/warehouse cost pool is isolated and reconciled. Mixed stock pools and transferred stock require manual reconciliation before this feature can proceed.
 - Landed costs support received line value, received quantity, equal-share, product weight and product volume allocation. Charge-specific allocation rules and customs-specific landed cost allocation are not yet implemented.
@@ -41,8 +42,9 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 - Confirm invoice creator/matcher cannot approve their own invoice.
 - Confirm goods invoice approval clears GRNI to AP.
 - Confirm landed cost is split between inventory and COGS based on remaining stock.
+- Confirm supplier stock return postings reduce on-hand quantities, FIFO/weighted-average valuation and AP; confirm the credit note journal reverses GST input tax and balances to the carrying-value variance.
 - Verify supplier payment drafts allocate only to posted bills for the same supplier and branch, prevent overpayment, enforce maker-checker, create a balanced AP/bank journal and outgoing bank transaction, and reduce AP ageing.
-- Verify supplier credit notes are limited to posted PGK general expense bills, cannot exceed outstanding AP after payments/other credits, enforce maker-checker, reverse the original expense and AP, and reduce AP ageing. Inventory/GRNI bills must be rejected.
+- Verify general supplier credit notes remain limited to posted PGK expense bills. Verify inventory returns are limited to received quantities on posted, PO-matched goods bills, cannot exceed available stock or outstanding AP, enforce maker-checker, update valuation layers, reverse eligible input GST, post AP/inventory/variance journals and reduce AP ageing.
 - Confirm mixed inbound sources and transfer history block unsafe landed-cost capitalisation.
 - Review all postings and stock valuation effects with an accountant before live use.
 
