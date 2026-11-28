@@ -38,6 +38,7 @@ return new class extends Migration {
             $table->foreignId('customer_sales_return_id')->constrained('customer_sales_returns')->cascadeOnDelete();
             $table->foreignId('customer_invoice_line_id')->constrained('customer_invoice_lines')->restrictOnDelete();
             $table->foreignId('product_id')->constrained()->restrictOnDelete();
+            $table->foreignId('original_issue_movement_id')->nullable()->constrained('stock_movements')->nullOnDelete();
             $table->foreignId('stock_movement_id')->nullable()->constrained('stock_movements')->nullOnDelete();
             $table->decimal('quantity', 14, 3);
             $table->string('condition', 20);
