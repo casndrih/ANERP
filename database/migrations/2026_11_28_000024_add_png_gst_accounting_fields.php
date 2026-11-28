@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->decimal('gst_rate', 5, 2)->default(0);
             $table->decimal('gst_amount', 14, 2)->default(0);
             $table->boolean('supplier_gst_registered')->default(false);
+            $table->string('supplier_gst_registration_number', 80)->nullable();
             $table->string('tax_invoice_reference', 120)->nullable();
             $table->boolean('input_tax_credit_eligible')->default(false);
         });
@@ -34,7 +35,7 @@ return new class extends Migration {
             $table->dropColumn(['net_amount', 'gst_treatment', 'gst_rate', 'gst_amount']);
         });
         Schema::table('supplier_bills', function (Blueprint $table) {
-            $table->dropColumn(['net_amount', 'gst_treatment', 'gst_rate', 'gst_amount', 'supplier_gst_registered', 'tax_invoice_reference', 'input_tax_credit_eligible']);
+            $table->dropColumn(['net_amount', 'gst_treatment', 'gst_rate', 'gst_amount', 'supplier_gst_registered', 'supplier_gst_registration_number', 'tax_invoice_reference', 'input_tax_credit_eligible']);
         });
         Schema::table('companies', function (Blueprint $table) {
             $table->dropColumn(['gst_registered', 'gst_registration_number']);
