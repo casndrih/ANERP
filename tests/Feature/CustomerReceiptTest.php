@@ -38,6 +38,7 @@ final class CustomerReceiptTest extends TestCase
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->post(route('finance.receipts.post', $receipt->id))->assertRedirect()->assertSessionHasNoErrors();
 
+        $receipt->refresh();
         $this->assertDatabaseHas('customer_receipts', ['id' => $receipt->id, 'status' => 'posted']);
         $this->assertDatabaseHas('bank_transactions', ['bank_account_id' => $bank->id, 'journal_entry_id' => $receipt->journal_entry_id, 'direction' => 'in', 'amount' => 50]);
         $this->assertDatabaseHas('journal_lines', ['account_id' => $bankLedger->id, 'debit' => 50, 'credit' => 0]);
