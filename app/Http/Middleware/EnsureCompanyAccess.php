@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Middleware;
 use Closure;
+use App\Models\Branch;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 class EnsureCompanyAccess {
@@ -16,6 +17,10 @@ class EnsureCompanyAccess {
             $request->session()->put('active_company_id', $company->id);
         }
         if (!$company) return response()->view('companies.select', ['companies'=>$memberships], 200);
+        $branchId = $company->pivot->branch_id;
+        if ($branchId !== null) {
+            abort_unless(Branch::where('company_id', $company->id)->whereKey($branchId)->where('is_active', true)->exists(), 403, 'Your assigned branch is inactive or unavailable.');
+        }
         $request->attributes->set('activeCompany', $company);
         view()->share('activeCompany', $company);
         return $next($request);
