@@ -35,7 +35,7 @@ final class InventoryLedgerPostingTest extends TestCase
             'source' => 'inventory_movement', 'status' => 'posted',
             'journal_number' => 'INV-GL-'.$issue->id,
         ]);
-        $this->assertDatabaseCount('stock_movement_journals', 3);
+        $this->assertDatabaseCount('stock_movement_journals', 2);
         $this->assertSame(0.0, (float) \DB::table('journal_lines')
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
             ->where('journal_entries.company_id', $company->id)
@@ -60,7 +60,7 @@ final class InventoryLedgerPostingTest extends TestCase
         InventoryLedger::record($company->id, $source->id, $product->id, 'transfer_out', 4, 5, $user->id, 'stock_transfer', $transfer->id);
         InventoryLedger::record($company->id, $destination->id, $product->id, 'transfer_in', 4, 5, $user->id, 'stock_transfer', $transfer->id);
 
-        $this->assertDatabaseCount('stock_movement_journals', 2);
+        $this->assertDatabaseCount('stock_movement_journals', 3);
         $this->assertDatabaseHas('journal_entries', [
             'company_id' => $company->id, 'branch_id' => $branchA->id,
             'source' => 'stock_transfer', 'status' => 'posted',
