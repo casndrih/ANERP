@@ -41,7 +41,7 @@ class SupplierInvoiceMatchingController extends Controller
 
     public function match(Request $request, int $bill)
     {
-        CompanyAuthorizer::requirePermission($request, 'procurement.create');
+        CompanyAuthorizer::requirePermission($request, 'procurement.invoice.match');
         $companyId = CompanyAuthorizer::activeCompanyId($request);
         $branchId = CompanyAuthorizer::activeBranchId($request);
         $data = $request->validate([
