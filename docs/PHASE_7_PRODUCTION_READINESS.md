@@ -8,7 +8,9 @@ Establish repeatable security, operational and acceptance controls before ANERP 
 - Permission enforcement on product management, procurement create/submit/approve/receive, finance access/posting/reconciliation, and payroll access/create/approval.
 - Append-only audit events for authenticated company mutations and report exports, including actor, active company, route, outcome, HTTP status, safe route record identifiers and source IP. Request bodies and secrets are deliberately not captured.
 - PostgreSQL triggers reject UPDATE and DELETE against audit_events, protecting event history from ordinary application/database statements. Database superusers remain trusted administrators and can bypass/alter database protections.
-- Unit tests for role/permission separation and deny-by-default behavior.
+- Unit tests for role/permission separation, deny-by-default behavior and RFC-compatible TOTP generation.
+- PostgreSQL-backed feature tests for cross-company inventory visibility, tenant-bound product creation, unauthorized company selection and inactive-company selection.
+- TOTP authenticator MFA with encrypted secrets, six-digit time-based codes, one-time hashed recovery codes, and password-plus-code disable flow for non-privileged users. Privileged company roles must enroll before workspace access and cannot disable MFA themselves.
 
 ## Scope
 - Automated dependency and container vulnerability checks in GitHub Actions.
