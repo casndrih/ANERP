@@ -41,7 +41,7 @@ export GOVC_PASSWORD='use-a-secret-manager-or-secure-shell'
 export ANERP_ESXI_VM='ANERP-Production-Template'
 # Optional for a lab with a self-signed certificate only:
 # export GOVC_INSECURE=1
-./deploy/export-esxi-ova.sh ./dist
+bash deploy/export-esxi-ova.sh ./dist
 ```
 
 The script exports OVF files, packages them into an OVA, validates the archive and writes a SHA-256 checksum. Keep credentials out of shell history and CI logs. Import the resulting OVA into a separate, non-production ESXi inventory, verify virtual hardware compatibility, network mapping, boot, application health, persistence and backup/restore before distributing it. An OVA has not been built or imported until this procedure has actually been run against the target ESXi host.
