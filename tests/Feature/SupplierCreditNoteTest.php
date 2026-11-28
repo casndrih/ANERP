@@ -49,6 +49,25 @@ final class SupplierCreditNoteTest extends TestCase
             ])->assertSessionHasErrors('bill_id');
     }
 
+    public function test_cancelled_draft_releases_supplier_bill_credit_balance(): void
+    {
+        [$company, $branch, $supplier, $bill, $creator, $approver] = $this->fixture();
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('finance.supplier-credit-notes.store'), [
+                'bill_id' => $bill->id, 'credit_note_number' => 'SCN-CANCEL-1',
+                'credit_note_date' => '2026-11-28', 'description' => 'Cancelled draft', 'amount' => 40,
+            ])->assertRedirect()->assertSessionHasNoErrors();
+        $note = \App\Models\SupplierCreditNote::where('credit_note_number', 'SCN-CANCEL-1')->firstOrFail();
+        $this->actingAs(approver)->withSession($this->sessionData($company, $approver))
+            ->post(route('finance.supplier-credit-notes.cancel', $note->id))->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('supplier_credit_notes', ['id' => $note->id, 'status' => 'cancelled']);
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('finance.supplier-credit-notes.store'), [
+                'bill_id' => $bill->id, 'credit_note_number' => 'SCN-CANCEL-2',
+                'credit_note_date' => '2026-11-28', 'description' => 'Replacement draft', 'amount' => 100,
+            ])->assertRedirect()->assertSessionHasNoErrors();
+    }
+
     private function fixture(): array
     {
         $company = Company::create(['name' => 'Supplier Credits Co', 'is_active' => true]);
