@@ -16,7 +16,7 @@ final class PngProcurementTaxCalculator
      */
     public function domesticSupply(float $netValue, string $treatment = 'standard', bool $supplierRegistered = true): array
     {
-        if ($netValue < 0 || !in_array($treatment, ['standard', 'zero_rated', 'exempt'], true)) {
+        if ($netValue < 0 || !in_array($treatment, ['standard', 'zero_rated', 'exempt', 'out_of_scope'], true)) {
             throw new InvalidArgumentException('Invalid domestic GST input.');
         }
 
