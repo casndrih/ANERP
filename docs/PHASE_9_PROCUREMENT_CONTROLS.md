@@ -26,7 +26,7 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 - GST input/output accounting, withholding tax, import-duty calculation from tariff classifications, supplier credit notes, debit notes, invoice attachments/OCR, supplier payment allocation and payment execution are not included.
 - Goods price variance beyond K0.01 is blocked for manual resolution; tolerance approval workflows are not yet available.
 - Landed costs are only capitalised when the product/warehouse cost pool is isolated and reconciled. Mixed stock pools and transferred stock require manual reconciliation before this feature can proceed.
-- The landed-cost allocator currently distributes by received PO line value only; quantity-, equal-share-, weight-, volume- and charge-specific allocation bases are not configurable.
+- Landed costs support received line value, received quantity and equal-share allocation. Weight-, volume- and charge-specific allocation bases are not configurable.
 - Supplier invoice matching is not an external tax or statutory compliance certification.
 
 ## Acceptance checks
