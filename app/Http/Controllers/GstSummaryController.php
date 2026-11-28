@@ -8,6 +8,7 @@ use App\Models\SupplierBill;
 use App\Support\CompanyAuthorizer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class GstSummaryController extends Controller
 {
@@ -25,10 +26,11 @@ class GstSummaryController extends Controller
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->whereBetween('invoice_date', [$from->toDateString(), $to->toDateString()])
             ->whereIn('gst_treatment', ['standard', 'zero_rated', 'exempt']);
-        $totalSales = (float) (clone $sales)->sum('amount');
-        $exemptSales = (float) (clone $sales)->where('gst_treatment', 'exempt')->sum('amount');
-        $zeroRatedSales = (float) (clone $sales)->where('gst_treatment', 'zero_rated')->sum('amount');
-        $taxableSales = round($totalSales - $exemptSales - $zeroRatedSales, 2);
+        $netSalesExpression = DB::raw('COALESCE(net_amount, amount - gst_amount)');
+        $totalSales = (float) (clone $sales)->sum($netSalesExpression);
+        $exemptSales = (float) (clone $sales)->where('gst_treatment', 'exempt')->sum($netSalesExpression);
+        $zeroRatedSales = (float) (clone $sales)->where('gst_treatment', 'zero_rated')->sum($netSalesExpression);
+        $taxableSales = (float) (clone $sales)->where('gst_treatment', 'standard')->sum($netSalesExpression);
         $outputGst = (float) (clone $sales)->where('gst_treatment', 'standard')->sum('gst_amount');
 
         $purchases = SupplierBill::where('company_id', $companyId)->where('status', 'posted')
