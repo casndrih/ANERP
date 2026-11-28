@@ -19,6 +19,7 @@ return new class extends Migration {
             $table->decimal('expected_cash', 14, 2)->default(0);
             $table->decimal('counted_cash', 14, 2)->nullable();
             $table->decimal('cash_variance', 14, 2)->nullable();
+            $table->foreignId('variance_journal_entry_id')->nullable()->constrained('journal_entries')->nullOnDelete();
             $table->foreignId('opened_by')->constrained('users')->restrictOnDelete();
             $table->timestamp('opened_at');
             $table->foreignId('closed_by')->nullable()->constrained('users')->nullOnDelete();
