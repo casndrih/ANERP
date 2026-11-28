@@ -157,6 +157,11 @@ class SupplierStockReturnController extends Controller
             abort_if((int) $document->created_by === (int) $request->user()->id, 403, 'The stock return creator cannot post their own return.');
             $bill = SupplierBill::where('company_id', $companyId)->lockForUpdate()->findOrFail($document->supplier_bill_id);
             abort_unless($bill->status === 'posted' && $bill->invoice_type === 'goods' && $bill->match_status === 'approved', 409, 'Original supplier invoice must remain posted and matched.');
+            if ($document->return_date < $bill->bill_date->toDateString()) throw ValidationException::withMessages(['return' => 'Return date cannot be earlier than the original invoice date.']);
+            $company = Company::findOrFail($companyId);
+            if ((float) $document->gst_amount > 0 && (!(bool) $company->gst_registered || !(bool) $bill->supplier_gst_registered || !(bool) $bill->input_tax_credit_eligible || !filled(trim((string) $bill->supplier_gst_registration_number)) || !filled(trim((string) $bill->tax_invoice_reference)))) {
+                throw ValidationException::withMessages(['return' => 'The original input GST credit cannot be reversed because company or supplier tax-invoice evidence is no longer valid.']);
+            }
             $order = PurchaseOrder::where('company_id', $companyId)->lockForUpdate()->findOrFail($bill->purchase_order_id);
             $warehouse = $order->warehouse;
             abort_unless((int) $warehouse->id === (int) $document->warehouse_id, 409, 'Return warehouse must match the original purchase order.');
@@ -176,6 +181,12 @@ class SupplierStockReturnController extends Controller
 
             $lines = DB::table('supplier_stock_return_lines')->where('supplier_stock_return_id', $document->id)->orderBy('id')->lockForUpdate()->get();
             if ($lines->isEmpty()) throw ValidationException::withMessages(['return' => 'A stock return must contain at least one product line.']);
+            $lineNet = round((float) $lines->sum('net_amount'), 2);
+            $lineGst = round((float) $lines->sum('gst_amount'), 2);
+            $lineGross = round((float) $lines->sum('total_amount'), 2);
+            if (abs($lineNet - (float) $document->net_amount) > 0.009 || abs($lineGst - (float) $document->gst_amount) > 0.009 || abs($lineGross - (float) $document->total_amount) > 0.009 || abs($lineNet + $lineGst - $lineGross) > 0.009) {
+                throw ValidationException::withMessages(['return' => 'Supplier stock return line totals do not reconcile to the credit note header.']);
+            }
             $movementValues = [];
             $costTotal = 0.0;
             foreach ($lines as $line) {
