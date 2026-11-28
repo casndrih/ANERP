@@ -108,10 +108,10 @@ class SupplierGstWithholdingController extends Controller
             }
 
             $newEnd = $document->effective_to?->toDateString() ?? '9999-12-31';
-            $overlapping = SupplierGstWithholdingNotice::where('company_id', $companyId)->where('status', 'active')
+            $overlapping = SupplierGstWithholdingNotice::where('company_id', $companyId)->whereIn('status', ['active', 'revoked'])
                 ->whereDate('effective_from', '<=', $newEnd)
                 ->where(fn ($q) => $q->whereNull('effective_to')->orWhereDate('effective_to', '>=', $document->effective_from))
-                ->whereKeyNot($document->id)->get();
+                ->where('id', '!=', $document->id)->get();
 
             foreach ($overlapping as $existing) {
                 if ($document->supplier_scope === 'all_suppliers' || $existing->supplier_scope === 'all_suppliers') {
@@ -169,7 +169,7 @@ class SupplierGstWithholdingController extends Controller
             'form_code' => ['required', Rule::in(['G2', 'G4', 'G5', 'G6'])],
             'period_start' => ['required', 'date'],
             'period_end' => ['required', 'date', 'after_or_equal:period_start'],
-            'due_date' => ['nullable', 'date'],
+            'due_date' => ['required', 'date'],
             'remittance_date' => ['required', 'date', 'after_or_equal:period_end'],
             'reference' => ['nullable', 'string', 'max:120'],
         ]);
@@ -190,7 +190,7 @@ class SupplierGstWithholdingController extends Controller
             $withholdings = SupplierGstWithholding::where('company_id', $companyId)
                 ->where('notice_id', $notice->id)->where('status', 'unremitted')->whereNull('remittance_id')
                 ->whereBetween('payment_date', [$data['period_start'], $data['period_end']])
-                ->whereNotIn('id', $reserved)->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+                ->whereNotIn('id', $reserved)->when($bank->branch_id, fn ($q) => $q->where('branch_id', $bank->branch_id), fn ($q) => $q->whereNull('branch_id'))
                 ->lockForUpdate()->get();
             if ($withholdings->isEmpty()) {
                 throw ValidationException::withMessages(['period_start' => 'No unremitted Section 65A withholding records are available for this notice and period.']);
@@ -235,9 +235,13 @@ class SupplierGstWithholdingController extends Controller
             $withholdingIds = $lines->pluck('withholding_id')->all();
             $withholdings = SupplierGstWithholding::where('company_id', $companyId)->whereIn('id', $withholdingIds)->lockForUpdate()->get();
             abort_unless($withholdings->count() === $lines->count(), 409, 'One or more withholding records are no longer available.');
+            $lineAmounts = $lines->keyBy('withholding_id');
             foreach ($withholdings as $withholding) {
+                $line = $lineAmounts->get($withholding->id);
                 abort_unless($withholding->status === 'unremitted' && $withholding->remittance_id === null
-                    && (int) $withholding->notice_id === (int) $document->notice_id, 409, 'A withholding record is already remitted or belongs to another notice.');
+                    && (int) $withholding->notice_id === (int) $document->notice_id
+                    && $line && abs((float) $line->amount - (float) $withholding->gst_withheld) <= 0.009,
+                    409, 'A withholding record is already remitted, has changed or belongs to another notice.');
             }
             $amount = round((float) $lines->sum('amount'), 2);
             abort_unless(abs($amount - (float) $document->amount) <= 0.009, 409, 'Remittance total does not reconcile to its supplier listing.');
@@ -322,9 +326,9 @@ class SupplierGstWithholdingController extends Controller
         $filename = 'ANERP-Section65A-'.$document->remittance_number.'.csv';
         return response()->streamDownload(function () use ($rows, $document) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['Supplier name', 'Supplier TIN', 'Supplier GST registration number', 'Supplier invoice', 'Invoice date', 'Payment date', 'Supply description', 'Gross amount incurred', 'GST remitted for supplier', 'Province of supply', 'Supplier advised at', 'Supplier advice reference']);
+            fputcsv($out, ['Remittance number', 'Form code', 'Supplier name', 'Supplier TIN', 'Supplier GST registration number', 'Supplier invoice', 'Invoice date', 'Payment date', 'Supply description', 'Gross amount incurred', 'GST remitted for supplier', 'Province of supply', 'Supplier advised at', 'Supplier advice reference']);
             foreach ($rows as $row) {
-                fputcsv($out, [$row->supplier_name_snapshot, $row->supplier_tin_snapshot, $row->supplier_gst_registration_snapshot,
+                fputcsv($out, [$document->remittance_number, $document->form_code, $row->supplier_name_snapshot, $row->supplier_tin_snapshot, $row->supplier_gst_registration_snapshot,
                     $row->bill_number_snapshot, $row->bill_date, $row->payment_date, $row->supply_description,
                     $row->gross_settlement, $row->gst_withheld, $row->supplier_province, $row->supplier_advised_at, $row->supplier_advice_reference]);
             }
