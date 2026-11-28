@@ -24,7 +24,7 @@ class SupplierCreditNoteController extends Controller
         $branchId = CompanyAuthorizer::activeBranchId($request);
         $expenseAccountIds = Account::where('company_id', $companyId)->where('account_type', 'expense')->where('normal_balance', 'debit')->pluck('id');
         $bills = SupplierBill::with('supplier')->where('company_id', $companyId)->where('status', 'posted')
-            ->where('invoice_type', 'general')->where('match_status', 'not_required')->whereIn('expense_account_id', $expenseAccountIds)
+            ->where('invoice_type', 'general')->where('match_status', 'not_required')->where('gst_amount', 0)->whereIn('expense_account_id', $expenseAccountIds)
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->select('supplier_bills.*')
             ->selectSub(function ($q) {
@@ -50,7 +50,7 @@ class SupplierCreditNoteController extends Controller
         $companyId = CompanyAuthorizer::activeCompanyId($request);
         $branchId = CompanyAuthorizer::activeBranchId($request);
         $data = $request->validate([
-            'bill_id' => ['required', 'integer', Rule::exists('supplier_bills', 'id')->where(fn ($q) => $q->where('company_id', $companyId)->where('status', 'posted')->where('invoice_type', 'general')->where('match_status', 'not_required'))],
+            'bill_id' => ['required', 'integer', Rule::exists('supplier_bills', 'id')->where(fn ($q) => $q->where('company_id', $companyId)->where('status', 'posted')->where('invoice_type', 'general')->where('match_status', 'not_required')->where('gst_amount', 0))],
             'credit_note_number' => ['required', 'string', 'max:80', Rule::unique('supplier_credit_notes')->where(fn ($q) => $q->where('company_id', $companyId))],
             'credit_note_date' => ['required', 'date'], 'description' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'gt:0'],
@@ -60,6 +60,7 @@ class SupplierCreditNoteController extends Controller
                 ->where('invoice_type', 'general')->where('match_status', 'not_required')
                 ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))->lockForUpdate()->findOrFail($data['bill_id']);
             if ($bill->currency !== 'PGK') throw ValidationException::withMessages(['bill_id' => 'Supplier credit notes currently support PGK bills only.']);
+            if ((float)$bill->gst_amount > 0) throw ValidationException::withMessages(['bill_id' => 'GST-bearing supplier bills require a GST adjustment-note workflow before they can be credited.']);
             if ($data['credit_note_date'] < $bill->bill_date->toDateString()) {
                 throw ValidationException::withMessages(['credit_note_date' => 'Credit note date cannot be earlier than the original supplier bill date.']);
             }
@@ -112,7 +113,7 @@ class SupplierCreditNoteController extends Controller
             abort_if((int) $note->created_by === (int) $request->user()->id, 403, 'The credit note creator cannot post their own credit note.');
             $bill = SupplierBill::where('company_id', $companyId)->lockForUpdate()->findOrFail($note->supplier_bill_id);
             abort_unless($bill->status === 'posted' && $bill->invoice_type === 'general' && $bill->match_status === 'not_required', 409, 'Credit note must reference a posted non-inventory general bill.');
-            abort_unless($bill->currency === 'PGK' && (int) $bill->supplier_id === (int) $note->supplier_id, 409, 'Credit note supplier and currency must match the original bill.');
+            abort_unless($bill->currency === 'PGK' && (int) $bill->supplier_id === (int) $note->supplier_id && (float)$bill->gst_amount === 0.0, 409, 'Credit note supplier, currency and GST treatment must match an eligible original bill.');
             abort_unless((int) ($bill->branch_id ?? 0) === (int) ($note->branch_id ?? 0), 409, 'Credit note and bill branch attribution must match.');
             $paid = (float) SupplierPaymentAllocation::query()->join('supplier_payments', 'supplier_payments.id', '=', 'supplier_payment_allocations.supplier_payment_id')
                 ->where('supplier_payment_allocations.supplier_bill_id', $bill->id)->where('supplier_payments.company_id', $companyId)
