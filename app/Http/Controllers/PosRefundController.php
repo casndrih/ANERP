@@ -48,6 +48,9 @@ class PosRefundController extends Controller
                 && (int) $note->customer_id === (int) $transaction->customer_id
                 && (int) $note->branch_id === (int) $till->branch_id, 409, 'Credit note and original POS sale must belong to the same customer, invoice and branch.');
 
+            $activeVoid = DB::table('pos_voids')->where('company_id', $companyId)
+                ->where('pos_transaction_id', $transaction->id)->whereIn('status', ['draft', 'posted'])->exists();
+            if ($activeVoid) throw ValidationException::withMessages(['original_pos_transaction_id' => 'A POS void request is already active for this sale.']);
             $reserved = (float) DB::table('pos_refunds')->where('company_id', $companyId)
                 ->where('customer_credit_note_id', $note->id)->whereIn('status', ['draft', 'posted'])->sum('amount');
             $reservedForSale = (float) DB::table('pos_refunds')->where('company_id', $companyId)
@@ -95,6 +98,9 @@ class PosRefundController extends Controller
             abort_unless($note->status === 'posted' && $note->source_sales_return_id
                 && (int) $transaction->customer_invoice_id === (int) $note->customer_invoice_id, 409, 'Refund source credit note is not posted from a sales return for this POS invoice.');
 
+            $activeVoid = DB::table('pos_voids')->where('company_id', $companyId)
+                ->where('pos_transaction_id', $transaction->id)->whereIn('status', ['draft', 'posted'])->exists();
+            abort_if($activeVoid, 409, 'An active POS void request prevents refund posting.');
             $reservedOther = (float) DB::table('pos_refunds')->where('company_id', $companyId)
                 ->where('customer_credit_note_id', $note->id)->whereIn('status', ['draft', 'posted'])
                 ->where('id', '!=', $document->id)->sum('amount');
