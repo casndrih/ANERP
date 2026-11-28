@@ -64,6 +64,7 @@ class PosSessionController extends Controller
         ]);
 
         DB::transaction(function () use ($data, $companyId, $branchId, $request) {
+            DB::table('companies')->where('id', $companyId)->lockForUpdate()->first();
             $warehouse = Warehouse::where('company_id', $companyId)->where('is_active', true)
                 ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                 ->lockForUpdate()->findOrFail($data['warehouse_id']);
