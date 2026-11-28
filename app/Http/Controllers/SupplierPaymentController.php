@@ -101,7 +101,7 @@ class SupplierPaymentController extends Controller
                 $bill = SupplierBill::where('company_id', $companyId)->where('supplier_id', $data['supplier_id'])
                     ->where('status', 'posted')
                     ->when($branchId, fn ($q) => $q->where('branch_id', $branchId), fn ($q) => $q->whereNull('branch_id'))
-                    ->findOrFail($row['bill_id']);
+                    ->lockForUpdate()->findOrFail($row['bill_id']);
                 $amount = round((float) $row['amount'], 2);
                 $alreadyPaid = (float) DB::table('supplier_payment_allocations')
                     ->join('supplier_payments', 'supplier_payments.id', '=', 'supplier_payment_allocations.supplier_payment_id')
