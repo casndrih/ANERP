@@ -50,6 +50,7 @@ final class InventoryLedgerPostingTest extends TestCase
         $product = $this->product($company);
         $source = $this->warehouse($company, $branchA, 'WH-SOURCE');
         $destination = $this->warehouse($company, $branchB, 'WH-DEST');
+        InventoryLedger::record($company->id, $source->id, $product->id, 'opening', 10, 5, $user->id);
         $transfer = StockTransfer::create([
             'company_id' => $company->id, 'transfer_number' => 'TRF-LEDGER-01',
             'from_warehouse_id' => $source->id, 'to_warehouse_id' => $destination->id,
@@ -59,7 +60,7 @@ final class InventoryLedgerPostingTest extends TestCase
         InventoryLedger::record($company->id, $source->id, $product->id, 'transfer_out', 4, 5, $user->id, 'stock_transfer', $transfer->id);
         InventoryLedger::record($company->id, $destination->id, $product->id, 'transfer_in', 4, 5, $user->id, 'stock_transfer', $transfer->id);
 
-        $this->assertDatabaseCount('stock_movement_journals', 2);
+        $this->assertDatabaseCount('stock_movement_journals', 3);
         $this->assertDatabaseHas('journal_entries', [
             'company_id' => $company->id, 'branch_id' => $branchA->id,
             'source' => 'stock_transfer', 'status' => 'posted',

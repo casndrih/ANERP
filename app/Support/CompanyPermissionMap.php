@@ -12,7 +12,7 @@ final class CompanyPermissionMap
     private const ALL = ['*'];
 
     private const KNOWN_PERMISSIONS = [
-        'inventory.view', 'inventory.manage', 'inventory.receive', 'inventory.transfer',
+        'inventory.view', 'inventory.manage', 'inventory.receive', 'inventory.transfer', 'inventory.adjust.approve',
         'procurement.view', 'procurement.create', 'procurement.submit', 'procurement.receive', 'procurement.approve',
         'finance.view', 'finance.create', 'finance.post', 'finance.reconcile',
         'hr.view', 'hr.manage', 'company.settings.manage',

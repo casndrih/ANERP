@@ -7,7 +7,7 @@ Multi-company ERP foundation for Papua New Guinea businesses.
 > This is an actively developed foundation, not a finished production ERP. Payroll special cases, complete accounting workflows, granular authorization, integrations and production security controls must be completed and tested before live use.
 
 - Phase 7 payroll-to-ledger integration: payroll approval generates balanced, branch-attributed accrual journals for gross wages, PAYE, employee/employer superannuation and net wages payable; payment execution remains separate.
-- Phase 7 inventory-to-ledger integration: opening stock, receipts, issues, adjustments and inter-branch transfers generate balanced, branch-attributed journals using recorded movement costs. FIFO/weighted-average valuation and adjustment approval remain future controls.
+- Phase 7 inventory-to-ledger integration: opening stock, receipts, issues, adjustments and inter-branch transfers generate balanced, branch-attributed journals. Phase 8 adds company-configurable FIFO/weighted-average valuation and exact movement cost values; stock-count approvals and supplier invoice matching remain future increments.
 - Phase 7 branch access: company membership branch assignments restrict HR, payroll employee lines/payslips, warehouse stock movements/balances and purchase orders; branch-restricted users are blocked from company-wide HR policy operations; finance records and reports now support branch attribution while company-wide users retain consolidated access.
 - Phase 7 company administration: single-use email invitations, tenant-scoped membership and branch assignment, role management, membership suspension/reactivation, invitation revocation, last-owner protection and company-scoped audit history.
 
@@ -29,6 +29,8 @@ As usage grows, the host has room to separate the stack into an application VM (
 
 Do not expose the system publicly until HTTPS, firewall/VPN, MFA enrollment and recovery, role assignments, tenant-isolation tests, SMTP, monitoring and encrypted off-host backups have been verified.
 
+- Phase 8 inventory controls: FIFO and moving weighted-average costing, warehouse/product cost balances and FIFO layers; stock counts capture system-vs-physical variance and require independent owner/admin approval before adjustment movements and GL journals post. Historical posted journals are never silently rewritten.
+
 ## Current implementation
 - Session sign-in/sign-out and login throttling; public registration disabled.
 - Initial company bootstrap and active company membership context.
@@ -41,4 +43,4 @@ Do not expose the system publicly until HTTPS, firewall/VPN, MFA enrollment and 
 - Phase 7 security increment: central company role/permission matrix, route-level permission checks across core modules, TOTP MFA enforced for privileged company roles, encrypted authenticator secrets and one-time recovery codes, audit event logging for authenticated company writes and report exports, PostgreSQL triggers to block audit-event updates/deletes, unit tests, secret/dependency/container scanning workflow, and backup/restore runbook.
 
 ## Documentation
-See docs/ROADMAP.md, docs/PNG_LOCALISATION.md, docs/PNG_PAYROLL_STATUTORY_RULES.md, docs/ESXI_DEPLOYMENT.md, docs/SECURITY_BASELINE.md, docs/PHASE_2_AUTH_TENANCY.md, docs/PHASE_3_INVENTORY_PROCUREMENT.md, docs/PHASE_4_HR_PAYROLL.md, docs/PHASE_5_FINANCE_ACCOUNTING.md, docs/PHASE_6_REPORTING_ANALYTICS.md, docs/PHASE_7_PRODUCTION_READINESS.md, docs/PHASE_7_COMPANY_ADMINISTRATION.md, docs/PHASE_7_PAYROLL_LEDGER_INTEGRATION.md, docs/PHASE_7_INVENTORY_LEDGER_INTEGRATION.md and docs/OPERATIONS_BACKUP_RESTORE.md.
+See docs/ROADMAP.md, docs/PNG_LOCALISATION.md, docs/PNG_PAYROLL_STATUTORY_RULES.md, docs/ESXI_DEPLOYMENT.md, docs/SECURITY_BASELINE.md, docs/PHASE_2_AUTH_TENANCY.md, docs/PHASE_3_INVENTORY_PROCUREMENT.md, docs/PHASE_4_HR_PAYROLL.md, docs/PHASE_5_FINANCE_ACCOUNTING.md, docs/PHASE_6_REPORTING_ANALYTICS.md, docs/PHASE_7_PRODUCTION_READINESS.md, docs/PHASE_7_COMPANY_ADMINISTRATION.md, docs/PHASE_7_PAYROLL_LEDGER_INTEGRATION.md, docs/PHASE_7_INVENTORY_LEDGER_INTEGRATION.md, docs/PHASE_8_INVENTORY_VALUATION.md and docs/OPERATIONS_BACKUP_RESTORE.md.

@@ -35,7 +35,7 @@ final class SupplierPaymentTest extends TestCase
         $payment->refresh();
 
         $this->assertDatabaseHas('supplier_payments', ['id' => $payment->id, 'status' => 'posted']);
-        $this->assertDatabaseHas('bank_transactions', ['bank_account_id' => $bank->id, 'journal_entry_id' => $payment->journal_entry_id, 'direction' => 'out', 'amount' => 75]);
+        $this->assertDatabaseHas('bank_transactions', ['bank_account_id' => $bank->id, 'journal_entry_id' => $payment->journal_entry_id, 'direction' => 'out', 'amount' => '75.00']);
         $this->assertDatabaseHas('journal_lines', ['account_id' => $ap->id, 'debit' => 75, 'credit' => 0]);
         $this->assertDatabaseHas('journal_lines', ['account_id' => $bankLedger->id, 'debit' => 0, 'credit' => 75]);
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))

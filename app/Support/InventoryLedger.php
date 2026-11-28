@@ -16,13 +16,16 @@ class InventoryLedger {
     }
 
     public static function record(int $companyId, int $warehouseId, int $productId, string $type, float $quantity, float $cost, ?int $userId, ?string $referenceType = null, ?int $referenceId = null, ?string $notes = null): StockMovement {
-        $movement = StockMovement::create([
-            'company_id'=>$companyId,'warehouse_id'=>$warehouseId,'product_id'=>$productId,
-            'movement_type'=>$type,'quantity'=>$quantity,'unit_cost'=>$cost,
-            'reference_type'=>$referenceType,'reference_id'=>$referenceId,
-            'occurred_at'=>now(),'created_by'=>$userId,'notes'=>$notes,
-        ]);
-        app(\App\Services\InventoryLedgerPoster::class)->post($movement);
-        return $movement;
+        return DB::transaction(function () use ($companyId,$warehouseId,$productId,$type,$quantity,$cost,$userId,$referenceType,$referenceId,$notes) {
+            $movement = StockMovement::create([
+                'company_id'=>$companyId,'warehouse_id'=>$warehouseId,'product_id'=>$productId,
+                'movement_type'=>$type,'quantity'=>$quantity,'unit_cost'=>$cost,
+                'reference_type'=>$referenceType,'reference_id'=>$referenceId,
+                'occurred_at'=>now(),'created_by'=>$userId,'notes'=>$notes,
+            ]);
+            app(\App\Services\InventoryCostingService::class)->apply($movement);
+            app(\App\Services\InventoryLedgerPoster::class)->post($movement->fresh());
+            return $movement->fresh();
+        });
     }
 }
