@@ -21,9 +21,9 @@ This is the working completion register for Phases 1–10. A green workflow prov
 ## Phase-by-phase outstanding register
 
 ### Phase 1 — Foundation
-**Delivered:** Laravel application foundation, PNG defaults, database/container configuration, dashboard and ESXi deployment documentation.
+**Delivered:** Laravel application foundation, PNG defaults, multi-stage PHP-FPM/Nginx images, Docker Compose health dependencies, secure first-install bootstrap, backup-first upgrade (PostgreSQL, storage and .env), OVA packaging/checksum script, 128 GB ESXi VM profile and automated clean-install/migration/upgrade/HTTP/OVA-packaging checks. Phase 1 head `0cb0c39` passed the full foundation workflow twice.
 
-**Still required:** clean-install and upgrade verification on the selected PostgreSQL version; reproducible deployment build; ESXi appliance/OVA build and import test; guest sizing and network configuration validation; secrets-free appliance build; install/upgrade/rollback smoke tests; evidence that the documented 128 GB ESXi host deployment works. No production appliance is certified.
+**Still required:** real OVA export from the target ESXi/vCenter, import/boot/network/persistence verification on that host, witnessed database/storage restore and rollback drill, workload-based CPU/storage sizing and production HTTPS/firewall validation. No production appliance is certified.
 
 ### Phase 2 — Authentication and company tenancy
 **Delivered across Phase 2 and later hardening:** session authentication, company membership selection, invitation/role administration, MFA for privileged roles, permission checks, audit events and multiple tenant/branch isolation tests.
@@ -58,7 +58,7 @@ This is the working completion register for Phases 1–10. A green workflow prov
 ### Phase 8 — Inventory valuation and stock-count controls
 **Delivered:** FIFO and moving weighted-average valuation, cost balances/layers, stock-count sessions and independent adjustment approval.
 
-**Still required:** batch/lot/serial/expiry costing; opening-cost and stock conversion tooling; historical stock/GL reconciliation tooling; valuation replay and cutover rehearsal on representative data; concurrency and negative-stock stress tests; mixed inbound/transfer pool resolution workflow; accountant/stock-controller sign-off.
+**Still required:** batch/lot/serial/expiry costing; per-layer FIFO issue-consumption provenance and exact FIFO layer restoration on customer sales returns (current partial returns use weighted unit cost of the original issue movement); opening-cost and stock conversion tooling; historical stock/GL reconciliation tooling; valuation replay and cutover rehearsal on representative data; concurrency and negative-stock stress tests; mixed inbound/transfer pool resolution workflow; accountant/stock-controller sign-off.
 
 ### Phase 9 — Procurement controls
 **Delivered:** PO multi-line authoring, three-way invoice matching, GRNI-to-AP, landed-cost allocation, supplier payments/credit notes/stock returns and import assessment capture.
