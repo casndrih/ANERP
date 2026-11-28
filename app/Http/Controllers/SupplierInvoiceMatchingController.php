@@ -107,8 +107,9 @@ class SupplierInvoiceMatchingController extends Controller
                     );
                 }
                 if ($total <= 0) { throw ValidationException::withMessages(['lines' => 'Enter a billed quantity for at least one received PO line.']); }
-                if (abs(round($total, 2) - (float) $document->amount) > 0.01) {
-                    throw ValidationException::withMessages(['amount' => 'Supplier invoice total must equal the matched PO line total. Tax, freight and other charges must be entered as separate invoices until configured.']);
+                $netAmount = round((float) ($document->net_amount ?? ((float) $document->amount - (float) ($document->gst_amount ?? 0))), 2);
+                if (abs(round($total, 2) - $netAmount) > 0.01) {
+                    throw ValidationException::withMessages(['amount' => 'Matched PO line totals must equal the supplier invoice net amount. GST is accounted for separately when the supplier tax invoice is eligible.']);
                 }
             } else {
                 $received = $order->lines()->where('quantity_received', '>', 0)->exists();
@@ -177,10 +178,11 @@ class SupplierInvoiceMatchingController extends Controller
             $lines = [];
             if ($document->invoice_type === 'goods') {
                 $matchedTotal = (float) DB::table('supplier_bill_match_lines')->where('supplier_bill_id', $document->id)->sum('line_total');
-                if (abs(round($matchedTotal, 2) - (float) $document->amount) > 0.01) {
-                    throw ValidationException::withMessages(['bill' => 'The matched lines no longer reconcile to the supplier invoice total.']);
+                if (abs(round($matchedTotal, 2) - $netAmount) > 0.01) {
+                    throw ValidationException::withMessages(['bill' => 'The matched lines no longer reconcile to the supplier invoice net amount.']);
                 }
-                $lines[] = [$accounts['2600']->id, $document->amount, 0];
+                $lines[] = [$accounts['2600']->id, $netAmount, 0];
+                if ($gstAmount > 0) $lines[] = [$accounts['1300']->id, $gstAmount, 0];
             } elseif ($document->invoice_type === 'landed_cost') {
                 $allocation = $allocator->allocate($companyId, (int) $document->id, $order, $netAmount, $approvalData['allocation_basis'] ?? 'line_value');
                 if ($gstAmount > 0) $lines[] = [$accounts['1300']->id, $gstAmount, 0];
