@@ -76,9 +76,9 @@ class SupplierCreditNoteController extends Controller
             if ($expense->account_type !== 'expense' || $expense->normal_balance !== 'debit') {
                 throw ValidationException::withMessages(['bill_id' => 'This bill is not a general expense bill. Inventory and GRNI credit notes require a stock-return workflow.']);
             }
-            $rate = (float) ($bill->gst_rate ?? 0);
+            $rate = (bool) $bill->input_tax_credit_eligible ? (float) ($bill->gst_rate ?? 0) : 0.0;
             $netAmount = $rate > 0 ? round($amount / (1 + $rate / 100), 2) : $amount;
-            $gstAmount = round($amount - $netAmount, 2);
+            $gstAmount = $rate > 0 ? round($amount - $netAmount, 2) : 0.0;
             if ($netAmount > (float) ($bill->net_amount ?? $bill->amount) + 0.009) {
                 throw ValidationException::withMessages(['amount' => 'Credit note net value cannot exceed the original supplier bill net value.']);
             }
@@ -133,7 +133,7 @@ class SupplierCreditNoteController extends Controller
             if (abs(round((float) $note->net_amount + (float) $note->gst_amount, 2) - (float) $note->amount) > 0.009) {
                 throw ValidationException::withMessages(['credit_note' => 'Credit note net, GST and gross amounts do not reconcile.']);
             }
-            if (abs((float) $note->gst_rate - (float) ($bill->gst_rate ?? 0)) > 0.009 || ($note->gst_treatment ?? 'out_of_scope') !== ($bill->gst_treatment ?? 'out_of_scope')) {
+            if (abs((float) $note->gst_rate - ((bool) $bill->input_tax_credit_eligible ? (float) ($bill->gst_rate ?? 0) : 0.0)) > 0.009 || ($note->gst_treatment ?? 'out_of_scope') !== ($bill->gst_treatment ?? 'out_of_scope')) {
                 throw ValidationException::withMessages(['credit_note' => 'Credit note GST treatment must match the original supplier bill.']);
             }
             $ap = Account::where('company_id', $companyId)->where('account_code', '2000')->firstOrFail();
