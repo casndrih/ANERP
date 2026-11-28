@@ -41,6 +41,34 @@ class LandedCostAllocator
                 : round($amount * ($basis / $basisTotal), 2);
             $remainingAmount = round($remainingAmount - $allocated, 2);
 
+            $otherInbound = DB::table('stock_movements')
+                ->where('company_id', $companyId)
+                ->where('warehouse_id', $order->warehouse_id)
+                ->where('product_id', $line->product_id)
+                ->whereIn('movement_type', ['opening', 'adjustment_in', 'transfer_in', 'purchase_receipt'])
+                ->where(function ($query) use ($order) {
+                    $query->where('movement_type', '!=', 'purchase_receipt')
+                        ->orWhere(function ($receipt) use ($order) {
+                            $receipt->where('movement_type', 'purchase_receipt')
+                                ->where(function ($reference) use ($order) {
+                                    $reference->where('reference_type', '!=', 'purchase_order')
+                                        ->orWhere('reference_id', '!=', $order->id);
+                                });
+                        });
+                })
+                ->exists();
+            $transferredOut = DB::table('stock_movements')
+                ->where('company_id', $companyId)
+                ->where('warehouse_id', $order->warehouse_id)
+                ->where('product_id', $line->product_id)
+                ->where('movement_type', 'transfer_out')
+                ->exists();
+            if ($otherInbound || $transferredOut) {
+                throw ValidationException::withMessages([
+                    'purchase_order_id' => 'Landed-cost capitalisation needs a reconciled PO-only warehouse stock pool. This product has other inbound stock or inter-warehouse transfers; reconcile the stock layers before allocating freight.',
+                ]);
+            }
+
             $balance = DB::table('inventory_cost_balances')
                 ->where('company_id', $companyId)
                 ->where('warehouse_id', $order->warehouse_id)
@@ -63,6 +91,9 @@ class LandedCostAllocator
                     'updated_at' => now(),
                 ]);
 
+                $method = DB::table('inventory_valuation_settings')
+                    ->where('company_id', $companyId)
+                    ->value('valuation_method') ?? 'weighted_average';
                 $layers = DB::table('inventory_cost_layers')
                     ->where('company_id', $companyId)
                     ->where('warehouse_id', $order->warehouse_id)
@@ -76,6 +107,9 @@ class LandedCostAllocator
                 if ($layers->isNotEmpty()) {
                     $qty = $layers->sum(fn ($layer) => (float) $layer->quantity_remaining);
                     if ($qty > 0) {
+                        if ($method === 'fifo' && abs($qty - $onHandQty) > 0.0005) {
+                            throw ValidationException::withMessages(['inventory' => 'FIFO layers do not reconcile to on-hand stock. Reconcile valuation before allocating landed costs.']);
+                        }
                         $perUnitIncrease = $inventoryShare / $qty;
                         foreach ($layers as $layer) {
                             DB::table('inventory_cost_layers')->where('id', $layer->id)->update([
@@ -84,6 +118,8 @@ class LandedCostAllocator
                             ]);
                         }
                     }
+                } elseif ($method === 'fifo' && $onHandQty > 0) {
+                    throw ValidationException::withMessages(['inventory' => 'FIFO cost layers are missing for stock on hand. Reconcile valuation before allocating landed costs.']);
                 }
             }
 
