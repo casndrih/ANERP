@@ -31,6 +31,14 @@ class SupplierStockReturnController extends Controller
             ->where('status', 'posted')->where('invoice_type', 'goods')->where('match_status', 'approved')
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->latest('bill_date')->limit(40)->get();
+        $matchedLines = DB::table('supplier_bill_match_lines')
+            ->join('purchase_order_lines', 'purchase_order_lines.id', '=', 'supplier_bill_match_lines.purchase_order_line_id')
+            ->join('products', 'products.id', '=', 'purchase_order_lines.product_id')
+            ->whereIn('supplier_bill_match_lines.supplier_bill_id', $bills->pluck('id'))
+            ->select('supplier_bill_match_lines.supplier_bill_id', 'supplier_bill_match_lines.purchase_order_line_id',
+                'supplier_bill_match_lines.quantity_billed', 'supplier_bill_match_lines.unit_price',
+                'products.sku', 'products.name')
+            ->orderBy('products.name')->get()->groupBy('supplier_bill_id');
         $returns = DB::table('supplier_stock_returns')
             ->join('supplier_bills', 'supplier_bills.id', '=', 'supplier_stock_returns.supplier_bill_id')
             ->join('suppliers', 'suppliers.id', '=', 'supplier_bills.supplier_id')
@@ -39,7 +47,7 @@ class SupplierStockReturnController extends Controller
             ->select('supplier_stock_returns.*', 'supplier_bills.bill_number', 'suppliers.name as supplier_name')
             ->orderByDesc('supplier_stock_returns.return_date')->limit(40)->get();
 
-        return view('procurement.stock-returns.index', compact('bills', 'returns'));
+        return view('procurement.stock-returns.index', compact('bills', 'matchedLines', 'returns'));
     }
 
     public function store(Request $request)
@@ -54,8 +62,11 @@ class SupplierStockReturnController extends Controller
             'description' => ['required', 'string', 'max:255'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.purchase_order_line_id' => ['required', 'integer', 'distinct'],
-            'lines.*.quantity' => ['required', 'numeric', 'gt:0'],
+            'lines.*.quantity' => ['nullable', 'numeric', 'gt:0'],
         ]);
+
+        $data['lines'] = array_values(array_filter($data['lines'], fn ($line) => isset($line['quantity']) && $line['quantity'] !== ''));
+        if (count($data['lines']) === 0) throw ValidationException::withMessages(['lines' => 'Enter a return quantity for at least one matched product line.']);
 
         DB::transaction(function () use ($data, $companyId, $branchId, $request) {
             $bill = SupplierBill::where('company_id', $companyId)
