@@ -37,7 +37,7 @@ docker compose exec -T app php artisan down --retry=60
 
 echo "Building and replacing application and web images..."
 docker compose build app web
-docker compose up -d --no-deps app web
+docker compose up -d --no-deps --wait app web
 
 echo "Applying database migrations..."
 docker compose exec -T app php artisan migrate --force
