@@ -8,6 +8,7 @@ use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\CustomerSalesReturnController;
 use App\Http\Controllers\PosSessionController;
+use App\Http\Controllers\PosRefundController;
 use App\Http\Controllers\GstSummaryController;
 use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\CustomerReceiptController;
@@ -127,6 +128,13 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::post('/sales/pos/sessions', [PosSessionController::class, 'open'])->name('sales.pos.open');
     Route::post('/sales/pos/sessions/{session}/sales', [PosSessionController::class, 'sale'])->name('sales.pos.sale');
     Route::post('/sales/pos/sessions/{session}/close', [PosSessionController::class, 'close'])->name('sales.pos.close');
+    Route::post('/sales/pos/sessions/{session}/refunds', [PosRefundController::class, 'storeRefund'])->name('sales.pos.refunds.store');
+    Route::post('/sales/pos/refunds/{refund}/post', [PosRefundController::class, 'postRefund'])->name('sales.pos.refunds.post');
+    Route::post('/sales/pos/refunds/{refund}/cancel', [PosRefundController::class, 'cancelRefund'])->name('sales.pos.refunds.cancel');
+    Route::post('/sales/pos/sessions/{session}/voids', [PosRefundController::class, 'storeVoid'])->name('sales.pos.voids.store');
+    Route::post('/sales/pos/voids/{void}/post', [PosRefundController::class, 'postVoid'])->name('sales.pos.voids.post');
+    Route::post('/sales/pos/voids/{void}/cancel', [PosRefundController::class, 'cancelVoid'])->name('sales.pos.voids.cancel');
+
     Route::get('/sales/returns', [CustomerSalesReturnController::class, 'index'])->name('sales.returns.index');
     Route::post('/sales/returns', [CustomerSalesReturnController::class, 'store'])->name('sales.returns.store');
     Route::post('/sales/returns/{salesReturn}/post', [CustomerSalesReturnController::class, 'post'])->name('sales.returns.post');
