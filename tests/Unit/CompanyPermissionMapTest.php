@@ -47,6 +47,9 @@ final class CompanyPermissionMapTest extends TestCase
     {
         self::assertTrue(CompanyPermissionMap::allows('sales_manager', 'sales.create'));
         self::assertTrue(CompanyPermissionMap::allows('sales_manager', 'sales.fulfill'));
+        self::assertTrue(CompanyPermissionMap::allows('sales_cashier', 'sales.create'));
+        self::assertTrue(CompanyPermissionMap::allows('sales_cashier', 'sales.fulfill'));
+        self::assertFalse(CompanyPermissionMap::allows('sales_cashier', 'sales.approve'));
         self::assertFalse(CompanyPermissionMap::allows('sales_manager', 'sales.approve'));
         self::assertTrue(CompanyPermissionMap::allows('sales_approver', 'sales.approve'));
         self::assertFalse(CompanyPermissionMap::allows('sales_approver', 'sales.create'));
