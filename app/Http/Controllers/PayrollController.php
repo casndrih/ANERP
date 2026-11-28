@@ -14,7 +14,17 @@ class PayrollController extends Controller {
     public function index(Request $request) {
         CompanyAuthorizer::requirePermission($request,'payroll.view');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
-        return view('payroll.index',['runs'=>PayrollRun::with('lines.employee')->where('company_id',$companyId)->latest()->paginate(15),'employees'=>Employee::where('company_id',$companyId)->where('status','active')->orderBy('last_name')->get()]);
+        $branchId=CompanyAuthorizer::activeBranchId($request);
+        $runs=PayrollRun::with(['lines'=>function($query) use($branchId) {
+            if($branchId!==null) $query->whereHas('employee',fn($employee)=>$employee->where('branch_id',$branchId));
+            $query->with('employee');
+        }])->where('company_id',$companyId)
+            ->when($branchId,fn($q)=>$q->whereHas('lines.employee',fn($employee)=>$employee->where('branch_id',$branchId)))
+            ->latest()->paginate(15);
+        $employees=Employee::where('company_id',$companyId)->where('status','active')
+            ->when($branchId,fn($q)=>$q->where('branch_id',$branchId))
+            ->orderBy('last_name')->get();
+        return view('payroll.index',compact('runs','employees'));
     }
     public function store(Request $request, PngPayrollCalculator $calculator) {
         CompanyAuthorizer::requirePermission($request,'payroll.create');
@@ -31,7 +41,8 @@ class PayrollController extends Controller {
             || ($data['pay_frequency']==='monthly' && ($days<28 || $days>31))) {
             throw ValidationException::withMessages(['period_end'=>'The selected dates do not match the chosen weekly, fortnightly or monthly pay period.']);
         }
-        $employees=Employee::where('company_id',$companyId)->where('status','active')->where('pay_frequency',$data['pay_frequency'])->get();
+        $branchId=CompanyAuthorizer::activeBranchId($request);
+        $employees=Employee::where('company_id',$companyId)->where('status','active')->where('pay_frequency',$data['pay_frequency'])->when($branchId,fn($q)=>$q->where('branch_id',$branchId))->get();
         abort_if($employees->isEmpty(),422,'No active employees use this pay frequency.');
         $employerVoluntary=(bool)Company::whereKey($companyId)->value('superannuation_voluntary_participant');
         $companyHeadcount=Employee::where('company_id',$companyId)->where('status','active')
@@ -74,6 +85,7 @@ class PayrollController extends Controller {
     }
     public function approve(Request $request, PayrollRun $run) {
         CompanyAuthorizer::requirePermission($request,'payroll.approve');
+        CompanyAuthorizer::requireCompanyWideAccess($request);
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         abort_unless($run->company_id===$companyId,404);
         abort_unless($run->status==='draft',422,'Only draft payroll runs can be approved.');
@@ -85,8 +97,10 @@ class PayrollController extends Controller {
     public function payslip(Request $request, PayrollLine $line) {
         CompanyAuthorizer::requirePermission($request,'payroll.view');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
+        $branchId=CompanyAuthorizer::activeBranchId($request);
         $line->load(['employee','run']);
         abort_unless($line->run->company_id===$companyId,404);
+        if($branchId!==null) abort_unless((int)$line->employee->branch_id===$branchId,404);
         abort_unless($line->run->status==='approved',403,'Payslips are available after payroll approval.');
         return view('payroll.payslip',['line'=>$line]);
     }
