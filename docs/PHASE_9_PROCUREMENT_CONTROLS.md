@@ -30,6 +30,7 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 - Supplier invoice matching is not an external tax or statutory compliance certification.
 
 ## Acceptance checks
+- Verify domestic standard, zero-rated and exempt GST treatments; verify import GST base includes customs value, customs duty, excise and freight/insurance not already included.
 - Create and submit a purchase order with multiple distinct product lines; verify each line is independently received and matched.
 - Apply migrations against a clean PostgreSQL database and run the complete test suite.
 - Confirm a bill cannot be matched to another company's PO or another supplier's PO.
