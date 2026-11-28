@@ -29,7 +29,7 @@ As usage grows, the host has room to separate the stack into an application VM (
 
 Do not expose the system publicly until HTTPS, firewall/VPN, MFA enrollment and recovery, role assignments, tenant-isolation tests, SMTP, monitoring and encrypted off-host backups have been verified.
 
-- Phase 8 inventory valuation: FIFO and moving weighted-average costing, warehouse/product cost balances and FIFO layers; movement costs are resolved before general-ledger posting. Company owners/admins manage the valuation policy. Historical posted journals are never silently rewritten.
+- Phase 8 inventory controls: FIFO and moving weighted-average costing, warehouse/product cost balances and FIFO layers; stock counts capture system-vs-physical variance and require independent owner/admin approval before adjustment movements and GL journals post. Historical posted journals are never silently rewritten.
 
 ## Current implementation
 - Session sign-in/sign-out and login throttling; public registration disabled.
