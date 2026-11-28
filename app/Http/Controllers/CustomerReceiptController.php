@@ -180,7 +180,7 @@ class CustomerReceiptController extends Controller
                     ->where('customer_receipts.company_id', $companyId)
                     ->sum('customer_receipt_allocations.amount');
                 $alreadyCredited = (float) CustomerCreditNote::where('company_id', $companyId)
-                    ->where('customer_invoice_id', $invoice->id)->where('status', 'posted')->sum('amount');
+                    ->where('customer_invoice_id', $invoice->id)->whereIn('status', ['draft', 'posted'])->sum('amount');
                 $outstanding = round((float) $invoice->amount - $alreadyPaid - $alreadyCredited, 2);
                 if ((float) $allocation->amount > $outstanding + 0.009) {
                     throw ValidationException::withMessages(['allocations' => "Allocation exceeds the outstanding balance of invoice {$invoice->invoice_number} (K".number_format(max(0, $outstanding), 2).")."]);
