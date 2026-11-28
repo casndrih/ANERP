@@ -12,6 +12,8 @@ return new class extends Migration {
         });
 
         Schema::table('pos_transactions', function (Blueprint $table) {
+            $table->dropUnique('pos_tx_invoice_unique');
+            $table->index(['customer_invoice_id', 'status'], 'pos_tx_invoice_status_idx');
             $table->string('status', 20)->default('posted')->after('payment_method');
             $table->timestamp('voided_at')->nullable()->after('created_by');
         });
@@ -66,6 +68,8 @@ return new class extends Migration {
         Schema::dropIfExists('pos_voids');
         Schema::dropIfExists('pos_refunds');
         Schema::table('pos_transactions', function (Blueprint $table) {
+            $table->dropIndex('pos_tx_invoice_status_idx');
+            $table->unique('customer_invoice_id', 'pos_tx_invoice_unique');
             $table->dropColumn(['status', 'voided_at']);
         });
         Schema::table('customer_credit_notes', function (Blueprint $table) {
