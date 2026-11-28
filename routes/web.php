@@ -50,6 +50,7 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::post('/inventory/warehouses', [WarehouseController::class, 'store'])->name('inventory.warehouses.store');
     Route::get('/inventory/movements', [StockMovementController::class, 'index'])->name('inventory.movements.index');
     Route::post('/inventory/movements', [StockMovementController::class, 'store'])->name('inventory.movements.store');
+    Route::post('/inventory/costing', [StockMovementController::class, 'updateValuationMethod'])->name('inventory.costing.update');
     Route::post('/inventory/transfers', [StockMovementController::class, 'transfer'])->name('inventory.movements.transfer');
     Route::get('/procurement/suppliers', [SupplierController::class, 'index'])->name('procurement.suppliers.index');
     Route::post('/procurement/suppliers', [SupplierController::class, 'store'])->name('procurement.suppliers.store');
