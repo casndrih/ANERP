@@ -52,6 +52,25 @@ final class CustomerCreditNoteTest extends TestCase
             ->post(route('finance.credit-notes.post', $note->id))->assertForbidden();
     }
 
+    public function test_cancelled_draft_releases_invoice_credit_limit(): void
+    {
+        [$company, $branch, $customer, $invoice, $creator, $approver] = $this->fixture();
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('finance.credit-notes.store'), [
+                'invoice_id' => $invoice->id, 'credit_note_number' => 'CN-CANCEL-1',
+                'credit_note_date' => '2026-11-28', 'description' => 'Cancelled draft', 'amount' => 40,
+            ])->assertRedirect()->assertSessionHasNoErrors();
+        $note = \App\Models\CustomerCreditNote::where('credit_note_number', 'CN-CANCEL-1')->firstOrFail();
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
+            ->post(route('finance.credit-notes.cancel', $note->id))->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('customer_credit_notes', ['id' => $note->id, 'status' => 'cancelled']);
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('finance.credit-notes.store'), [
+                'invoice_id' => $invoice->id, 'credit_note_number' => 'CN-CANCEL-2',
+                'credit_note_date' => '2026-11-28', 'description' => 'Replacement draft', 'amount' => 100,
+            ])->assertRedirect()->assertSessionHasNoErrors();
+    }
+
     private function fixture(): array
     {
         $company = Company::create(['name' => 'Credit Notes Co', 'is_active' => true]);
