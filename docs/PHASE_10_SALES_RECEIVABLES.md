@@ -36,6 +36,7 @@ The K20 remains a customer liability until allocated or refunded through a separ
 - Customer statement PDF/email delivery and automated reminders.
 - Customer advance allocation changes, refunds and receipt reversals.
 - Multi-currency receipts and foreign exchange gains/losses.
+- Supplier payment drafts, multi-bill allocations, maker-checker posting, AP/bank journal posting and outgoing bank transaction capture are now implemented; posted allocations reduce AP ageing. Supplier advances and payment reversals remain out of scope.
 
 ## Acceptance checks
 - Apply all migrations to a clean PostgreSQL database.
