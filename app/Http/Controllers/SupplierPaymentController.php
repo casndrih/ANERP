@@ -33,7 +33,7 @@ class SupplierPaymentController extends Controller
                 $q->from('supplier_payment_allocations')
                     ->join('supplier_payments', 'supplier_payments.id', '=', 'supplier_payment_allocations.supplier_payment_id')
                     ->whereColumn('supplier_payment_allocations.supplier_bill_id', 'supplier_bills.id')
-                    ->where('supplier_payments.status', 'posted')
+                    ->whereIn('supplier_payments.status', ['draft', 'posted'])
                     ->whereColumn('supplier_payments.company_id', 'supplier_bills.company_id')
                     ->selectRaw('COALESCE(SUM(supplier_payment_allocations.amount), 0)');
             }, 'amount_paid')
