@@ -88,6 +88,7 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::get('/finance/payments', [SupplierPaymentController::class, 'index'])->name('finance.payments.index');
     Route::post('/finance/payments', [SupplierPaymentController::class, 'store'])->name('finance.payments.store');
     Route::post('/finance/payments/{payment}/post', [SupplierPaymentController::class, 'post'])->name('finance.payments.post');
+    Route::post('/finance/payments/{payment}/cancel', [SupplierPaymentController::class, 'cancel'])->name('finance.payments.cancel');
     Route::get('/finance/receipts', [CustomerReceiptController::class, 'index'])->name('finance.receipts.index');
     Route::post('/finance/receipts', [CustomerReceiptController::class, 'store'])->name('finance.receipts.store');
     Route::post('/finance/receipts/{receipt}/post', [CustomerReceiptController::class, 'post'])->name('finance.receipts.post');
