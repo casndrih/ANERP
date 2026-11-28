@@ -2,13 +2,19 @@
 
 namespace Tests\Feature;
 
+use App\Models\Account;
+use App\Models\BankAccount;
 use App\Models\Branch;
+use App\Models\CustomerCreditNote;
+use App\Models\CustomerInvoice;
+use App\Models\CustomerReceipt;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\SalesOrder;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
