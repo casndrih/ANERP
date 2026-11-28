@@ -19,6 +19,7 @@ jobs:
       - name: Validate deployment scripts
         run: |
           bash -n deploy/bootstrap.sh
+          bash -n deploy/upgrade.sh
           bash -n deploy/export-esxi-ova.sh
 
       - name: Validate Docker Compose configuration
@@ -36,6 +37,10 @@ jobs:
             docker compose logs --no-color app web db redis || true
             exit 1
           fi
+          chmod +x deploy/upgrade.sh
+          ANERP_BACKUP_DIR="$RUNNER_TEMP/anerp-backups" ./deploy/upgrade.sh
+          test -s "$RUNNER_TEMP/anerp-backups"/anerp-db-*.dump
+          test -s "$RUNNER_TEMP/anerp-backups"/anerp-storage-*.tar.gz
           docker compose exec -T app php artisan migrate:status
           docker compose ps
 
