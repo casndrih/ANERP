@@ -22,5 +22,7 @@ class InventoryLedger {
             'reference_type'=>$referenceType,'reference_id'=>$referenceId,
             'occurred_at'=>now(),'created_by'=>$userId,'notes'=>$notes,
         ]);
+        app(\App\Services\InventoryLedgerPoster::class)->post($movement);
+        return $movement;
     }
 }
