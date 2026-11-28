@@ -12,7 +12,7 @@ class SupplierPayment extends Model
 
     protected function casts(): array
     {
-        return ['payment_date' => 'date', 'posted_at' => 'datetime', 'amount' => 'decimal:2'];
+        return ['payment_date' => 'date', 'posted_at' => 'datetime', 'amount' => 'decimal:2', 'cash_amount' => 'decimal:2', 'withheld_amount' => 'decimal:2'];
     }
 
     public function supplier(): BelongsTo { return $this->belongsTo(Supplier::class); }
