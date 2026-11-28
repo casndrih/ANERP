@@ -40,6 +40,7 @@ class ReportingController extends Controller
         $report=$v['report']??'trial_balance';
         if (in_array($report,['trial_balance','profit_loss','balance_sheet','cash_flow','receivables','payables'],true)) {
             CompanyAuthorizer::requirePermission($request,'finance.view');
+            CompanyAuthorizer::requireCompanyWideAccess($request);
         } elseif ($report==='payroll') {
             CompanyAuthorizer::requirePermission($request,'payroll.view');
         } elseif ($report==='inventory') {
@@ -80,11 +81,18 @@ class ReportingController extends Controller
             });
             $totals=['amount'=>round((float)$rows->sum('amount'),2)];
         } elseif($report==='payroll') {
-            $runs=PayrollRun::with('lines')->where('company_id',$companyId)->where('status','approved')->whereBetween('period_end',[$from->toDateString(),$to->toDateString()])->orderBy('period_end')->get();
+            $branchId=CompanyAuthorizer::activeBranchId($request);
+            $runs=PayrollRun::with(['lines'=>function($query) use($branchId) {
+                if($branchId!==null) $query->whereHas('employee',fn($employee)=>$employee->where('branch_id',$branchId));
+                $query->with('employee');
+            }])->where('company_id',$companyId)->where('status','approved')
+                ->when($branchId,fn($q)=>$q->whereHas('lines.employee',fn($employee)=>$employee->where('branch_id',$branchId)))
+                ->whereBetween('period_end',[$from->toDateString(),$to->toDateString()])->orderBy('period_end')->get();
             $rows=$runs->map(fn($r)=>(object)['run_number'=>$r->run_number,'period_start'=>$r->period_start?->format('Y-m-d'),'period_end'=>$r->period_end?->format('Y-m-d'),'employees'=>$r->lines->count(),'gross_pay'=>round((float)$r->lines->sum('gross_pay'),2),'paye'=>round((float)$r->lines->sum('tax_deduction'),2),'employee_super'=>round((float)$r->lines->sum('employee_super'),2),'employer_super'=>round((float)$r->lines->sum('employer_super'),2),'net_pay'=>round((float)$r->lines->sum('net_pay'),2)]);
             foreach(['gross_pay','paye','employee_super','employer_super','net_pay'] as $k) $totals[$k]=round((float)$rows->sum($k),2);
         } else {
-            $moves=StockMovement::with(['product','warehouse'])->where('company_id',$companyId)->whereBetween('occurred_at',[$from,$to])->orderBy('occurred_at')->get();
+            $branchId=CompanyAuthorizer::activeBranchId($request);
+            $moves=StockMovement::with(['product','warehouse'])->where('company_id',$companyId)->when($branchId,fn($q)=>$q->whereHas('warehouse',fn($w)=>$w->where('branch_id',$branchId)))->whereBetween('occurred_at',[$from,$to])->orderBy('occurred_at')->get();
             $rows=$moves->groupBy(fn($m)=>($m->product?->sku??'—').' · '.($m->product?->name??'Unknown').' / '.($m->warehouse?->name??'Unknown'))->map(function($items,$label) {
                 $in=$items->whereIn('movement_type',['opening','purchase_receipt','transfer_in','adjustment_in'])->sum('quantity');
                 $out=$items->whereIn('movement_type',['issue','transfer_out','adjustment_out'])->sum('quantity');
