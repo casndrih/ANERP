@@ -27,7 +27,7 @@ final class BranchAccessIsolationTest extends TestCase
         $this->employee($company, $branchB, 'EMP-B');
 
         $response = $this->actingAs($user)
-            ->withSession($this->session($user, $company))
+            ->withSession($this->companySession($user, $company))
             ->get(route('hr.index'));
 
         $response->assertOk()->assertViewHas('employees', function ($employees) {
@@ -36,7 +36,7 @@ final class BranchAccessIsolationTest extends TestCase
         });
 
         $this->actingAs($user)
-            ->withSession($this->session($user, $company))
+            ->withSession($this->companySession($user, $company))
             ->post(route('hr.employees.store'), [
                 'employee_number' => 'EMP-FORCED-A',
                 'first_name' => 'Branch',
@@ -64,7 +64,7 @@ final class BranchAccessIsolationTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->withSession($this->session($user, $company))
+            ->withSession($this->companySession($user, $company))
             ->post(route('hr.leave.store'), [
                 'employee_id' => $employeeB->id,
                 'leave_type_id' => $leaveType->id,
@@ -95,7 +95,7 @@ final class BranchAccessIsolationTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->withSession($this->session($user, $company))
+            ->withSession($this->companySession($user, $company))
             ->get(route('procurement.orders.index'))
             ->assertOk()
             ->assertViewHas('orders', fn($orders) => $orders->contains('order_number', 'PO-BR-A')
@@ -104,7 +104,7 @@ final class BranchAccessIsolationTest extends TestCase
                 && !$warehouses->contains('id', $warehouseB->id));
 
         $this->actingAs($user)
-            ->withSession($this->session($user, $company))
+            ->withSession($this->companySession($user, $company))
             ->get(route('inventory.warehouses.index'))
             ->assertOk()
             ->assertViewHas('warehouses', fn($warehouses) => $warehouses->contains('id', $warehouseA->id)
@@ -134,7 +134,7 @@ final class BranchAccessIsolationTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->withSession($this->session($user, $company))
+            ->withSession($this->companySession($user, $company))
             ->get(route('inventory.movements.index'))
             ->assertOk()
             ->assertViewHas('movements', fn($movements) => $movements->contains('id', $movementA->id)
@@ -166,7 +166,7 @@ final class BranchAccessIsolationTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->withSession($this->session($user, $company))
+            ->withSession($this->companySession($user, $company))
             ->get(route('reports.index', [
                 'report' => 'payroll', 'from' => '2026-11-01', 'to' => '2026-11-30',
             ]))
@@ -183,7 +183,7 @@ final class BranchAccessIsolationTest extends TestCase
         [$user, $company] = $this->branchUser('finance_manager');
 
         $this->actingAs($user)
-            ->withSession($this->session($user, $company))
+            ->withSession($this->companySession($user, $company))
             ->get(route('finance.index'))
             ->assertForbidden();
     }
@@ -216,7 +216,7 @@ final class BranchAccessIsolationTest extends TestCase
         ]);
     }
 
-    private function session(User $user, Company $company): array
+    private function companySession(User $user, Company $company): array
     {
         return ['active_company_id' => $company->id, 'mfa_verified_user_id' => $user->id];
     }
