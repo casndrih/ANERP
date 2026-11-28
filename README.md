@@ -36,6 +36,7 @@ Do not expose the system publicly until HTTPS, firewall/VPN, MFA enrollment and 
 - Inventory and procurement workflows: warehouses, stock ledger, transfers, suppliers and purchase orders.
 - HR and payroll: employee records, leave, attendance, PNG 2026 core PAYE and superannuation calculations, maker-checker approval and payslips.
 - Finance foundation: company chart of accounts, balanced journals, supplier bills, customer invoices, bank transactions and statement reconciliation.
+- Automated ledger posting: payroll approval generates branch-level wage and statutory liability accruals; inventory movements generate branch-level inventory/COGS/GRNI/adjustment journals and cross-branch clearing entries. These use recorded movement cost and still require accountant validation.
 - Reporting: company-scoped trial balance, P&L, balance sheet, bank cash movement, AP/AR ageing, approved payroll summaries, inventory movement reports and CSV exports.
 - Phase 7 security increment: central company role/permission matrix, route-level permission checks across core modules, TOTP MFA enforced for privileged company roles, encrypted authenticator secrets and one-time recovery codes, audit event logging for authenticated company writes and report exports, PostgreSQL triggers to block audit-event updates/deletes, unit tests, secret/dependency/container scanning workflow, and backup/restore runbook.
 
