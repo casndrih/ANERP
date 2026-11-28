@@ -10,6 +10,7 @@ COPY --from=composer-bin /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer create-project laravel/laravel:^12.0 . --no-interaction --prefer-dist --no-progress
+COPY app/ app/
 COPY routes/ routes/
 COPY database/ database/
 COPY resources/ resources/
