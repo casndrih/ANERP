@@ -97,6 +97,7 @@ class CustomerReceiptController extends Controller
                 ->when($assignedBranch, fn ($query) => $query->where('branch_id', $assignedBranch))
                 ->lockForUpdate()->findOrFail($data['bank_account_id']);
             $branchId = $assignedBranch ?? $requestedBranch ?? $bank->branch_id;
+            if ($bank->currency !== 'PGK') throw ValidationException::withMessages(['bank_account_id' => 'Customer receipts currently support PGK bank accounts only.']);
             if ($requestedBranch !== null && $bank->branch_id !== $requestedBranch) {
                 throw ValidationException::withMessages(['bank_account_id' => 'The selected bank account must belong to the receipt branch.']);
             }
@@ -128,6 +129,7 @@ class CustomerReceiptController extends Controller
                     ->where('status', 'posted')
                     ->when($branchId, fn ($query) => $query->where('branch_id', $branchId), fn ($query) => $query->whereNull('branch_id'))
                     ->lockForUpdate()->findOrFail($allocation['invoice_id']);
+                if ($invoice->currency !== 'PGK') throw ValidationException::withMessages(['allocations' => 'Customer invoices must be in PGK until multi-currency settlement is implemented.']);
                 $reservedReceipts = (float) DB::table('customer_receipt_allocations')
                     ->join('customer_receipts', 'customer_receipts.id', '=', 'customer_receipt_allocations.customer_receipt_id')
                     ->where('customer_receipt_allocations.customer_invoice_id', $invoice->id)
@@ -187,6 +189,7 @@ class CustomerReceiptController extends Controller
             $bank = BankAccount::where('company_id', $companyId)->where('is_active', true)
                 ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
                 ->lockForUpdate()->findOrFail($document->bank_account_id);
+            if ($bank->currency !== 'PGK') throw ValidationException::withMessages(['bank_account_id' => 'Customer receipts currently support PGK bank accounts only.']);
             $allocations = CustomerReceiptAllocation::where('customer_receipt_id', $document->id)->lockForUpdate()->get();
             $allocated = round((float) $allocations->sum('amount'), 2);
             if ($allocated - (float) $document->amount > 0.009) {
@@ -195,6 +198,7 @@ class CustomerReceiptController extends Controller
 
             foreach ($allocations as $allocation) {
                 $invoice = CustomerInvoice::where('company_id', $companyId)->lockForUpdate()->findOrFail($allocation->customer_invoice_id);
+                abort_unless($invoice->currency === 'PGK', 422, 'Customer invoices must be in PGK until multi-currency settlement is implemented.');
                 abort_unless($invoice->status === 'posted' && (int) $invoice->customer_id === (int) $document->customer_id, 409, 'A receipt can only be allocated to posted invoices belonging to the same customer.');
                 if ((int) ($invoice->branch_id ?? 0) !== (int) ($document->branch_id ?? 0)) {
                     throw ValidationException::withMessages(['allocations' => 'Receipt and invoice branch attribution must match.']);
