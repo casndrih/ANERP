@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class CompanyAdministrationController extends Controller {
- private const ROLES=['owner','admin','inventory_manager','procurement_manager','procurement_approver','sales_manager','sales_approver','finance_manager','accountant','payroll_manager','hr_manager','viewer'];
+ private const ROLES=['owner','admin','inventory_manager','procurement_manager','procurement_approver','sales_manager','sales_cashier','sales_approver','finance_manager','accountant','payroll_manager','hr_manager','viewer'];
  private function company(Request $r): Company {
   CompanyAuthorizer::requirePermission($r,'users.manage');
   CompanyAuthorizer::requirePermission($r,'roles.manage');
