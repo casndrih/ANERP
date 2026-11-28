@@ -6,6 +6,7 @@ use App\Http\Controllers\CompanyAdministrationController;
 use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\GstSummaryController;
+use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\CustomerReceiptController;
 use App\Http\Controllers\CustomerCreditNoteController;
 use App\Http\Controllers\CustomerRefundController;
