@@ -13,9 +13,9 @@ return new class extends Migration {
 
         Schema::table('pos_transactions', function (Blueprint $table) {
             $table->dropUnique('pos_tx_invoice_unique');
-            $table->index(['customer_invoice_id', 'status'], 'pos_tx_invoice_status_idx');
             $table->string('status', 20)->default('posted')->after('payment_method');
             $table->timestamp('voided_at')->nullable()->after('created_by');
+            $table->index(['customer_invoice_id', 'status'], 'pos_tx_invoice_status_idx');
         });
 
         Schema::create('pos_refunds', function (Blueprint $table) {
