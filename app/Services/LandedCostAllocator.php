@@ -23,8 +23,22 @@ class LandedCostAllocator
         $lines = $order->lines()->with('product')->lockForUpdate()->get()
             ->filter(fn ($line) => (float) $line->quantity_received > 0 && $line->product?->track_stock);
 
-        if (!in_array($basis, ['line_value', 'quantity', 'equal'], true)) { throw ValidationException::withMessages(['allocation_basis' => 'Unsupported landed-cost allocation basis.']); }
-        $basisTotal = $lines->sum(fn ($line) => match ($basis) { 'quantity' => (float) $line->quantity_received, 'equal' => 1.0, default => (float) $line->quantity_received * (float) $line->unit_cost });
+        if (!in_array($basis, ['line_value', 'quantity', 'equal', 'weight', 'volume'], true)) {
+            throw ValidationException::withMessages(['allocation_basis' => 'Unsupported landed-cost allocation basis.']);
+        }
+        if ($basis === 'weight' && $lines->contains(fn ($line) => (float) ($line->product?->weight_kg ?? 0) <= 0)) {
+            throw ValidationException::withMessages(['allocation_basis' => 'Enter a positive unit weight (kg) for every received product before allocating by weight.']);
+        }
+        if ($basis === 'volume' && $lines->contains(fn ($line) => (float) ($line->product?->volume_m3 ?? 0) <= 0)) {
+            throw ValidationException::withMessages(['allocation_basis' => 'Enter a positive unit volume (m³) for every received product before allocating by volume.']);
+        }
+        $basisTotal = $lines->sum(fn ($line) => match ($basis) {
+            'quantity' => (float) $line->quantity_received,
+            'equal' => 1.0,
+            'weight' => (float) $line->quantity_received * (float) $line->product->weight_kg,
+            'volume' => (float) $line->quantity_received * (float) $line->product->volume_m3,
+            default => (float) $line->quantity_received * (float) $line->unit_cost,
+        });
         if ($lines->isEmpty() || $basisTotal <= 0) {
             throw ValidationException::withMessages(['purchase_order_id' => 'The selected purchase order has no received stock to allocate landed costs against.']);
         }
@@ -36,7 +50,13 @@ class LandedCostAllocator
         $lastIndex = $lines->count() - 1;
 
         foreach ($lines->values() as $index => $line) {
-            $lineBasis = match ($basis) { 'quantity' => (float) $line->quantity_received, 'equal' => 1.0, default => (float) $line->quantity_received * (float) $line->unit_cost };
+            $lineBasis = match ($basis) {
+                'quantity' => (float) $line->quantity_received,
+                'equal' => 1.0,
+                'weight' => (float) $line->quantity_received * (float) $line->product->weight_kg,
+                'volume' => (float) $line->quantity_received * (float) $line->product->volume_m3,
+                default => (float) $line->quantity_received * (float) $line->unit_cost,
+            };
             $allocated = $index === $lastIndex
                 ? $remainingAmount
                 : round($amount * ($lineBasis / $basisTotal), 2);
