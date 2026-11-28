@@ -25,7 +25,8 @@ class InventoryCostingService
                 ->where('movement_type', 'transfer_out')
                 ->first();
             if ($outbound) {
-                $movement->unit_cost = $outbound->unit_cost;
+                $movement->cost_value = $outbound->cost_value ?? ((float) $movement->quantity * (float) $outbound->unit_cost);
+                $movement->unit_cost = round((float) $movement->cost_value / (float) $movement->quantity, 2);
                 $movement->save();
             }
         }
@@ -63,7 +64,8 @@ class InventoryCostingService
 
         if ($this->isInbound($movement->movement_type)) {
             $unitCost = (float) $movement->unit_cost;
-            $costValue = round($quantity * $unitCost, 2);
+            $costValue = round((float) ($movement->cost_value ?? ($quantity * $unitCost)), 2);
+            $layerUnitCost = $quantity > 0 ? round($costValue / $quantity, 4) : $unitCost;
             $movement->cost_value = $costValue;
             $movement->save();
             $newQty = round($currentQty + $quantity, 3);
@@ -76,7 +78,7 @@ class InventoryCostingService
                     'source_movement_id' => $movement->id,
                     'quantity_received' => $quantity,
                     'quantity_remaining' => $quantity,
-                    'unit_cost' => $unitCost,
+                    'unit_cost' => $layerUnitCost,
                     'received_at' => $movement->occurred_at,
                     'created_at' => now(),
                     'updated_at' => now(),
