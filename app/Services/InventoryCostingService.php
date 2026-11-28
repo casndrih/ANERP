@@ -98,8 +98,8 @@ class InventoryCostingService
                 if ($currentQty <= 0) {
                     throw ValidationException::withMessages(['quantity' => 'No valued stock is available for this issue.']);
                 }
-                $unitCost = round($currentValue / $currentQty, 2);
-                $costValue = round($quantity * $unitCost, 2);
+                $costValue = round($quantity * ($currentValue / $currentQty), 2);
+                $unitCost = round($costValue / $quantity, 2);
             }
 
             $movement->unit_cost = $unitCost;
@@ -142,7 +142,8 @@ class InventoryCostingService
             $unitCost = (float) $old->unit_cost;
             if ($this->isInbound($old->movement_type)) {
                 $qty += $movementQty;
-                $value += (float) ($old->cost_value ?? ($movementQty * $unitCost));
+                $historicalCost = (float) ($old->cost_value ?? ($movementQty * $unitCost));
+                $value += $historicalCost;
                 if ($method === 'fifo') {
                     DB::table('inventory_cost_layers')->updateOrInsert(
                         ['source_movement_id' => $old->id],
@@ -152,7 +153,7 @@ class InventoryCostingService
                             'product_id' => $old->product_id,
                             'quantity_received' => $movementQty,
                             'quantity_remaining' => $movementQty,
-                            'unit_cost' => $unitCost,
+                            'unit_cost' => $movementQty > 0 ? round($historicalCost / $movementQty, 4) : $unitCost,
                             'received_at' => $old->occurred_at,
                             'created_at' => now(),
                             'updated_at' => now(),
