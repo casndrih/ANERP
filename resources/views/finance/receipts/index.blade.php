@@ -55,7 +55,7 @@
 @if($receipt->allocations->isNotEmpty())<p class="mt-1 text-xs text-slate-500 dark:text-zinc-400">Allocations: @foreach($receipt->allocations as $allocation){{ $allocation->invoice?->invoice_number }} K{{ number_format((float)$allocation->amount,2) }}@if(!$loop->last), @endif @endforeach</p>@endif
 </div>
 <div class="flex items-center gap-3"><div class="text-right"><b class="tabular-nums">K {{ number_format((float)$receipt->amount,2) }}</b><p class="text-xs uppercase text-slate-500 dark:text-zinc-400">{{ $receipt->status }}</p></div>
-@if($receipt->status === 'draft')<form method="POST" action="{{ route('finance.receipts.post',$receipt->id) }}">@csrf<button class="rounded-full bg-blue-600 px-4 py-2 text-xs text-white">Post receipt</button></form>@endif
+@if($receipt->status === 'draft')<div class="flex gap-2"><form method="POST" action="{{ route('finance.receipts.post',$receipt->id) }}">@csrf<button class="rounded-full bg-blue-600 px-4 py-2 text-xs text-white">Post receipt</button></form><form method="POST" action="{{ route('finance.receipts.cancel',$receipt->id) }}">@csrf<button class="rounded-full bg-slate-200 px-4 py-2 text-xs text-slate-700">Cancel draft</button></form></div>@endif
 </div>
 </div>
 @empty
