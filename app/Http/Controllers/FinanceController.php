@@ -19,7 +19,7 @@ use Illuminate\Validation\ValidationException;
 
 class FinanceController extends Controller {
     private function company(Request $request): int { return CompanyAuthorizer::activeCompanyId($request); }
-    private function financeRole(Request $request): void { CompanyAuthorizer::requirePermission($request,'finance.create'); }
+    private function financeRole(Request $request): void { CompanyAuthorizer::requirePermission($request,'finance.create'); CompanyAuthorizer::requireCompanyWideAccess($request); }
     private function seedChart(int $companyId): void {
         $rows=[
             ['1000','Cash at bank','asset','debit',true],['1100','Accounts receivable','asset','debit',true],
@@ -40,6 +40,7 @@ class FinanceController extends Controller {
     }
     public function index(Request $request) {
         CompanyAuthorizer::requirePermission($request,'finance.view');
+        CompanyAuthorizer::requireCompanyWideAccess($request);
         $companyId=$this->company($request); $this->seedChart($companyId);
         return view('finance.index',[
             'accounts'=>Account::where('company_id',$companyId)->where('is_active',true)->orderBy('account_code')->get(),
