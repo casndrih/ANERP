@@ -23,6 +23,8 @@ return new class extends Migration {
             $table->string('supplier_scope', 24)->default('all_suppliers');
             $table->string('remittance_form_code', 3);
             $table->string('document_reference', 255)->nullable();
+            $table->string('revocation_reference', 120)->nullable();
+            $table->string('revocation_document_reference', 255)->nullable();
             $table->text('notes')->nullable();
             $table->string('status', 20)->default('draft');
             $table->foreignId('created_by')->constrained('users')->restrictOnDelete();
