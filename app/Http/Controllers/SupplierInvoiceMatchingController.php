@@ -79,7 +79,8 @@ class SupplierInvoiceMatchingController extends Controller
                     $alreadyBilled = DB::table('supplier_bill_match_lines')
                         ->join('supplier_bills', 'supplier_bills.id', '=', 'supplier_bill_match_lines.supplier_bill_id')
                         ->where('supplier_bills.company_id', $companyId)
-                        ->where('supplier_bills.status', 'posted')
+                        ->whereIn('supplier_bills.match_status', ['matched', 'approved'])
+                        ->where('supplier_bills.id', '!=', $document->id)
                         ->where('supplier_bill_match_lines.purchase_order_line_id', $line->id)
                         ->sum('supplier_bill_match_lines.quantity_billed');
                     $available = round((float) $line->quantity_received - (float) $alreadyBilled, 3);
@@ -123,8 +124,7 @@ class SupplierInvoiceMatchingController extends Controller
 
     public function approve(Request $request, int $bill, LandedCostAllocator $allocator)
     {
-        CompanyAuthorizer::requirePermission($request, 'procurement.approve');
-        CompanyAuthorizer::requirePermission($request, 'finance.post');
+        CompanyAuthorizer::requirePermission($request, 'procurement.invoice.approve');
         $companyId = CompanyAuthorizer::activeCompanyId($request);
         $branchId = CompanyAuthorizer::activeBranchId($request);
 
