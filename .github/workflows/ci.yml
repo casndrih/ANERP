@@ -19,8 +19,29 @@ permissions:
 
 jobs:
   reporting-unit-tests:
-    name: Reporting unit tests
+    name: Reporting and tenant-isolation tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: anerp_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d anerp_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: anerp_test
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -37,7 +58,8 @@ jobs:
           composer create-project laravel/laravel:^12.0 /tmp/anerp-test --no-interaction
           cp -a app routes database resources tests /tmp/anerp-test/
           cd /tmp/anerp-test
-          php artisan test tests/Unit
+          php artisan migrate:fresh --force
+          php artisan test
 
   container-build:
     name: Build deployment image
