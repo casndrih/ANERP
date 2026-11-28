@@ -33,6 +33,43 @@ final class PngProcurementTaxCalculator
     }
 
     /**
+     * Calculate import GST from the actual customs duty assessed on the import
+     * entry. This avoids assuming all PNG tariff lines are ad-valorem.
+     *
+     * @return array{customs_value:float, customs_duty:float, excise:float, freight_insurance:float, gst_base:float, import_gst_rate:float, import_gst:float, total_border_taxes:float}
+     */
+    public function importAssessmentFromCustomsEntry(
+        float $customsValue,
+        float $assessedCustomsDuty,
+        float $excise = 0.0,
+        float $freightInsuranceNotIncluded = 0.0,
+        bool $gstExempt = false
+    ): array {
+        if ($customsValue < 0 || $assessedCustomsDuty < 0 || $excise < 0 || $freightInsuranceNotIncluded < 0) {
+            throw new InvalidArgumentException('Invalid customs entry assessment input.');
+        }
+
+        $customsValue = round($customsValue, 2);
+        $duty = round($assessedCustomsDuty, 2);
+        $excise = round($excise, 2);
+        $freight = round($freightInsuranceNotIncluded, 2);
+        $gstBase = round($customsValue + $duty + $excise + $freight, 2);
+        $gstRate = $gstExempt ? 0.0 : self::STANDARD_GST_RATE;
+        $gst = round($gstBase * $gstRate / 100, 2);
+
+        return [
+            'customs_value' => $customsValue,
+            'customs_duty' => $duty,
+            'excise' => $excise,
+            'freight_insurance' => $freight,
+            'gst_base' => $gstBase,
+            'import_gst_rate' => $gstRate,
+            'import_gst' => $gst,
+            'total_border_taxes' => round($duty + $gst + $excise, 2),
+        ];
+    }
+
+    /**
      * Import GST base follows GST Act 2003 s.6(2): customs value, customs
      * duty, excise, and freight/insurance to PNG when not already included.
      * Duty rate must come from the current Customs tariff/assessment; it is
