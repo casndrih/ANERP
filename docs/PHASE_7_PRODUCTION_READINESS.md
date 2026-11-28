@@ -52,6 +52,13 @@ Establish repeatable security, operational and acceptance controls before ANERP 
 - Finance records now carry nullable branch attribution on journals, supplier bills, customer invoices, bank accounts, bank transactions and reconciliations. Branch-restricted finance users can work only with records attributed to their assigned branch; legacy records with no branch remain visible only to company-wide memberships. Company-wide users may create either company-wide or branch-attributed entries.
 - Company-wide memberships (`branch_id` is null) retain company-level access.
 
+## Automated accounting integrations
+- Payroll approval creates balanced accrual journals per employee branch: gross wages and employer super expense are debited; PAYE, employee super, employer super and net wages payable are credited. This is an accrual only; payment and remittance are not executed.
+- Inventory movements create balanced journals using recorded unit cost: opening stock, purchase receipts, issues and positive/negative adjustments. Cross-branch transfers use branch-level clearing journals; same-branch transfers do not change total inventory value.
+- Payroll runs and stock movements have unique links to generated journals to prevent duplicate posting.
+- Historical payroll and stock movements are not backfilled. Inventory costing remains recorded-cost based, not FIFO or weighted average.
+- Accountant review is required for opening-equity, GRNI, inventory-adjustment, inter-branch clearing and payroll-liability mappings. Inventory adjustment approval and payroll payment/remittance remain outstanding.
+
 ## Go-live gates
 - [ ] All CI tests pass on the exact release commit.
 - [ ] Dependency and container scans have no unaccepted critical/high findings.
