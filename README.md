@@ -29,7 +29,10 @@ As usage grows, the host has room to separate the stack into an application VM (
 
 Do not expose the system publicly until HTTPS, firewall/VPN, MFA enrollment and recovery, role assignments, tenant-isolation tests, SMTP, monitoring and encrypted off-host backups have been verified.
 
-- Phase 8 inventory controls: FIFO and moving weighted-average costing, warehouse/product cost balances and FIFO layers; stock counts capture system-vs-physical variance and require independent owner/admin approval before adjustment movements and GL journals post. Historical posted journals are never silently rewritten.\n- Phase 9 procurement controls: supplier goods invoices are matched to approved POs and received quantities before GRNI-to-AP posting; landed-cost invoices allocate freight/insurance charges between remaining inventory and COGS, with safeguards for mixed or transferred stock.
+- Phase 8 inventory controls: FIFO and moving weighted-average costing, warehouse/product cost balances and FIFO layers; stock counts capture system-vs-physical variance and require independent owner/admin approval before adjustment movements and GL journals post. Historical posted journals are never silently rewritten.
+- Phase 9 procurement controls: supplier goods invoices are matched to approved POs and received quantities before GRNI-to-AP posting; landed-cost invoices allocate freight/insurance charges between remaining inventory and COGS, with safeguards for mixed or transferred stock.
+- Supplier settlements: draft payments reserve bill balances, support partial multi-bill allocations, require independent posting, create balanced AP/bank journals and outgoing bank transactions, and reduce AP ageing. General expense supplier credit notes reverse AP/expense; inventory/GRNI credits are blocked pending stock-return accounting.
+- PNG GST: domestic GST is calculated and posted for general supplier bills and customer invoices; input credits require company registration, supplier registration details and a tax invoice reference. A G1-style management summary is available but is not filing-ready.
 
 ## Current implementation
 - Session sign-in/sign-out and login throttling; public registration disabled.
@@ -37,7 +40,7 @@ Do not expose the system publicly until HTTPS, firewall/VPN, MFA enrollment and 
 - Tenant-scoped product catalogue create/list.
 - Inventory and procurement workflows: warehouses, stock ledger, transfers, suppliers and purchase orders.
 - HR and payroll: employee records, leave, attendance, PNG 2026 core PAYE and superannuation calculations, maker-checker approval and payslips.
-- Finance foundation: company chart of accounts, balanced journals, supplier bills, customer invoices, bank transactions and statement reconciliation.
+- Finance foundation: company chart of accounts, balanced journals, supplier bills, customer invoices, supplier payment allocations, supplier credit notes for general expense bills, bank transactions and statement reconciliation.
 - Automated ledger posting: payroll approval generates branch-level wage and statutory liability accruals; inventory movements generate branch-level inventory/COGS/GRNI/adjustment journals and cross-branch clearing entries. These use recorded movement cost and still require accountant validation.
 - Reporting: company-scoped trial balance, P&L, balance sheet, bank cash movement, AP/AR ageing, approved payroll summaries, inventory movement reports and CSV exports.
 - Phase 7 security increment: central company role/permission matrix, route-level permission checks across core modules, TOTP MFA enforced for privileged company roles, encrypted authenticator secrets and one-time recovery codes, audit event logging for authenticated company writes and report exports, PostgreSQL triggers to block audit-event updates/deletes, unit tests, secret/dependency/container scanning workflow, and backup/restore runbook.
