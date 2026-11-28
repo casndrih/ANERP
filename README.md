@@ -7,7 +7,7 @@ Multi-company ERP foundation for Papua New Guinea businesses.
 > This is an actively developed foundation, not a finished production ERP. Payroll special cases, complete accounting workflows, granular authorization, integrations and production security controls must be completed and tested before live use.
 
 - Phase 7 payroll-to-ledger integration: payroll approval generates balanced, branch-attributed accrual journals for gross wages, PAYE, employee/employer superannuation and net wages payable; payment execution remains separate.
-- Phase 7 inventory-to-ledger integration: opening stock, receipts, issues, adjustments and inter-branch transfers generate balanced, branch-attributed journals. Phase 8 adds company-configurable FIFO/weighted-average valuation, exact movement cost values and independent stock-count approvals. Phase 9 adds supplier invoice matching and controlled landed-cost allocation. Phase 10 adds customer receipts, invoice allocations, net receivables ageing and bank reconciliation integration.
+- Phase 7 inventory-to-ledger integration: opening stock, receipts, issues, adjustments and inter-branch transfers generate balanced, branch-attributed journals. Phase 8 adds company-configurable FIFO/weighted-average valuation, exact movement cost values and independent stock-count approvals. Phase 9 adds supplier invoice matching and controlled landed-cost allocation. Phase 10 adds customer receipts, invoice allocations, net receivables ageing, invoice credit notes, unallocated-deposit refunds and bank reconciliation integration.
 - Phase 7 branch access: company membership branch assignments restrict HR, payroll employee lines/payslips, warehouse stock movements/balances and purchase orders; branch-restricted users are blocked from company-wide HR policy operations; finance records and reports now support branch attribution while company-wide users retain consolidated access.
 - Phase 7 company administration: single-use email invitations, tenant-scoped membership and branch assignment, role management, membership suspension/reactivation, invitation revocation, last-owner protection and company-scoped audit history.
 
@@ -31,6 +31,8 @@ Do not expose the system publicly until HTTPS, firewall/VPN, MFA enrollment and 
 
 - Phase 8 inventory controls: FIFO and moving weighted-average costing, warehouse/product cost balances and FIFO layers; stock counts capture system-vs-physical variance and require independent owner/admin approval before adjustment movements and GL journals post. Historical posted journals are never silently rewritten.
 - Phase 9 procurement controls: supplier goods invoices are matched to approved POs and received quantities before GRNI-to-AP posting; landed-cost invoices allocate freight/insurance charges between remaining inventory and COGS, with safeguards for mixed or transferred stock.
+- Supplier settlements: draft payments reserve bill balances, support partial multi-bill allocations, require independent posting, create balanced AP/bank journals and outgoing bank transactions, and reduce AP ageing. General expense supplier credit notes reverse AP/expense; inventory/GRNI credits are blocked pending stock-return accounting.
+- PNG GST: domestic GST is calculated and posted for general supplier bills and customer invoices; input credits require company registration, supplier registration details and a tax invoice reference. A G1-style management summary is available but is not filing-ready.
 
 ## Current implementation
 - Session sign-in/sign-out and login throttling; public registration disabled.
@@ -38,9 +40,9 @@ Do not expose the system publicly until HTTPS, firewall/VPN, MFA enrollment and 
 - Tenant-scoped product catalogue create/list.
 - Inventory and procurement workflows: warehouses, stock ledger, transfers, suppliers and purchase orders.
 - HR and payroll: employee records, leave, attendance, PNG 2026 core PAYE and superannuation calculations, maker-checker approval and payslips.
-- Finance foundation: company chart of accounts, balanced journals, supplier bills, customer invoices, customer receipts and invoice allocations, bank transactions and statement reconciliation.
+- Finance foundation: company chart of accounts, balanced journals, supplier bills, customer invoices, customer receipts and invoice allocations, customer credit notes, deposit refunds, supplier payment/credit-note controls, bank transactions and statement reconciliation.
 - Automated ledger posting: payroll approval generates branch-level wage and statutory liability accruals; inventory movements generate branch-level inventory/COGS/GRNI/adjustment journals and cross-branch clearing entries. These use recorded movement cost and still require accountant validation.
-- Reporting: company-scoped trial balance, P&L, balance sheet, bank cash movement, AP/AR ageing net of posted customer receipts, approved payroll summaries, inventory movement reports and CSV exports.
+- Reporting: company-scoped trial balance, P&L, balance sheet, bank cash movement, AP/AR ageing net of posted payments and credit notes, approved payroll summaries, inventory movement reports and CSV exports.
 - Phase 7 security increment: central company role/permission matrix, route-level permission checks across core modules, TOTP MFA enforced for privileged company roles, encrypted authenticator secrets and one-time recovery codes, audit event logging for authenticated company writes and report exports, PostgreSQL triggers to block audit-event updates/deletes, unit tests, secret/dependency/container scanning workflow, and backup/restore runbook.
 
 ## Documentation
