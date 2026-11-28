@@ -61,11 +61,18 @@ class SupplierInvoiceMatchingController extends Controller
                 ->where('supplier_id', $document->supplier_id)
                 ->whereIn('status', ['approved', 'partially_received', 'received'])
                 ->lockForUpdate()->findOrFail($data['purchase_order_id']);
+            $orderBranchId = $order->warehouse()->value('branch_id');
+            if ($document->branch_id !== null && (int) $document->branch_id !== (int) $orderBranchId) {
+                throw ValidationException::withMessages(['purchase_order_id' => 'Supplier invoice and purchase order must belong to the same branch.']);
+            }
+            if ($document->branch_id === null && $orderBranchId !== null) {
+                $document->branch_id = $orderBranchId;
+            }
 
             if ($data['invoice_type'] === 'goods') {
                 $lineData = $request->validate([
                     'lines' => ['required', 'array', 'min:1'],
-                    'lines.*.purchase_order_line_id' => ['required', 'integer'],
+                    'lines.*.purchase_order_line_id' => ['required', 'integer', 'distinct'],
                     'lines.*.quantity_billed' => ['required', 'numeric', 'gt:0'],
                     'lines.*.unit_price' => ['required', 'numeric', 'min:0'],
                 ]);
