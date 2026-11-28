@@ -11,7 +11,7 @@ Use Ubuntu Server 24.04 LTS with Docker Engine and Compose v2. Use a virtual har
 1. Provision the VM, configure static addressing or DHCP reservation, DNS, NTP and server VLAN.
 2. Install Ubuntu updates, Docker Engine and Compose v2.
 3. Clone/copy ANERP and run `./deploy/bootstrap.sh`.
-4. Create the first company and owner with `docker compose exec app php artisan aner p:install-admin` (command name `anerp:install-admin`).
+4. Create the first company and owner with `docker compose exec app php artisan anerp:install-admin` (command name `anerp:install-admin`).
 5. Verify `docker compose ps`, application logs and the `/up` health endpoint.
 6. Verify persistence after container recreation. Back up PostgreSQL, storage and `.env`/APP_KEY and test a restore before production.
 
