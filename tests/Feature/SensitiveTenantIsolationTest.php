@@ -93,6 +93,46 @@ final class SensitiveTenantIsolationTest extends TestCase
         });
     }
 
+    public function test_finance_report_export_excludes_another_company_ledger_rows(): void
+    {
+        [$user, $companyA, $companyB] = $this->userWithCompanies('finance_manager');
+
+        $accountA = Account::create([
+            'company_id' => $companyA->id, 'account_code' => 'A-4000',
+            'name' => 'Tenant A permitted ledger', 'account_type' => 'income',
+            'normal_balance' => 'credit', 'is_active' => true,
+        ]);
+        $accountB = Account::create([
+            'company_id' => $companyB->id, 'account_code' => 'B-4000',
+            'name' => 'Tenant B confidential ledger', 'account_type' => 'income',
+            'normal_balance' => 'credit', 'is_active' => true,
+        ]);
+
+        foreach ([[$companyA, $accountA, 'A-LEDGER'], [$companyB, $accountB, 'B-LEDGER']] as [$company, $account, $number]) {
+            $entry = JournalEntry::create([
+                'company_id' => $company->id, 'journal_number' => $number,
+                'journal_date' => '2026-11-20', 'source' => 'manual',
+                'status' => 'posted', 'description' => $number,
+                'created_by' => $user->id, 'posted_by' => $user->id, 'posted_at' => now(),
+            ]);
+            JournalLine::create([
+                'journal_entry_id' => $entry->id, 'account_id' => $account->id,
+                'description' => $number, 'debit' => 0, 'credit' => 125,
+            ]);
+        }
+
+        $response = $this->actingAs($user)
+            ->withSession($this->companySession($user, $companyA))
+            ->get(route('reports.export', [
+                'report' => 'trial_balance', 'from' => '2026-11-01', 'to' => '2026-11-30',
+            ]));
+
+        $response->assertOk();
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString('Tenant A permitted ledger', $csv);
+        $this->assertStringNotContainsString('Tenant B confidential ledger', $csv);
+    }
+
     public function test_finance_user_cannot_post_another_companys_journal(): void
     {
         [$user, $companyA, $companyB] = $this->userWithCompanies('finance_manager');
