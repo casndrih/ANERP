@@ -67,7 +67,7 @@ final class PosSessionTest extends TestCase
         $session = DB::table('pos_sessions')->where('session_number', 'TILL-002')->first();
 
         $this->actingAs($cashier)->withSession($this->sessionData($company, $cashier))
-            ->post(route('sales.pos.open'), $payload + ['session_number' => 'TILL-003'])->assertSessionHasErrors('session_number');
+            ->post(route('sales.pos.open'), array_merge($payload, ['session_number' => 'TILL-003']))->assertSessionHasErrors('session_number');
         $this->actingAs($cashier)->withSession($this->sessionData($company, $cashier))
             ->post(route('sales.pos.sale', $session->id), [
                 'invoice_id' => $invoice->id, 'transaction_number' => 'POS-SHORT',
