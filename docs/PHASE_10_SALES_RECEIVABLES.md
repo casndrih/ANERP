@@ -40,7 +40,7 @@ The K20 remains a customer liability until allocated or refunded through a separ
 
 ## Not included in this increment
 - Picking/packing scans, dispatch manifests, proof of delivery, EFTPOS terminal integrations, POS refunds and automated end-of-day settlement remain outstanding.
-- General manual invoice entry remains single-line; sales-order-generated invoices preserve product-level lines. Price lists, discount controls, customer credit limits and GST-bearing customer/supplier adjustment notes remain outstanding.
+- General manual invoice entry remains single-line; sales-order-generated invoices preserve product-level lines. Price lists, discount controls, customer credit limits and GST debit notes remain outstanding. GST-bearing customer and supplier credit notes reverse output/input GST and adjust the G1 management summary.
 - Customer statement PDF/email delivery and automated reminders.
 - Customer advance allocation changes, refunds and receipt reversals.
 - Multi-currency receipts and foreign exchange gains/losses.
