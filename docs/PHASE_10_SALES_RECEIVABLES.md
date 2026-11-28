@@ -11,7 +11,8 @@
 - Posting also creates an incoming bank transaction linked to the journal so the receipt is available to bank reconciliation.
 - Receivables ageing reports now show net outstanding invoice balances after posted receipts, rather than original gross invoice values.
 - Finance workspace links to dedicated customer receipt and supplier payment registers.
-- Supplier payments support drafts, multi-bill allocations, partial bill settlements, maker-checker posting, balanced AP/bank journals and linked outgoing bank transactions.
+- Supplier payments support drafts, multi-bill allocations, partial bill settlements, maker-checker posting, balanced AP/bank journals, outgoing bank transactions and draft cancellation.
+- Customer credit notes support invoice-linked drafts, outstanding-balance controls, independent posting, balanced revenue/AR reversals, cancellation and AR ageing integration.
 - Accounts payable ageing nets posted supplier payment allocations; draft payments do not reduce reported AP.
 
 ## Accounting example
