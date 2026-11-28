@@ -232,6 +232,6 @@ class InventoryCostingService
 
     private function isOutbound(string $type): bool
     {
-        return in_array($type, ['issue', 'transfer_out', 'adjustment_out'], true);
+        return in_array($type, ['issue', 'transfer_out', 'adjustment_out', 'supplier_return'], true);
     }
 }
