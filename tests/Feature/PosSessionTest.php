@@ -75,6 +75,18 @@ final class PosSessionTest extends TestCase
             ])->assertSessionHasErrors('cash_tendered');
         $this->assertDatabaseMissing('pos_transactions', ['transaction_number' => 'POS-SHORT']);
         $this->assertDatabaseHas('pos_sessions', ['id' => $session->id, 'status' => 'open']);
+
+        $this->actingAs($manager)->withSession($this->sessionData($company, $manager))
+            ->post(route('sales.pos.close', $session->id), ['counted_cash' => 18, 'notes' => 'Cash shortage'])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $closed = DB::table('pos_sessions')->where('id', $session->id)->first();
+        self::assertSame(-2.0, (float) $closed->cash_variance);
+        self::assertNotNull($closed->variance_journal_entry_id);
+        $this->assertDatabaseHas('journal_lines', [
+            'journal_entry_id' => $closed->variance_journal_entry_id,
+            'account_id' => Account::where('company_id', $company->id)->where('account_code', '6590')->value('id'),
+            'debit' => '2.00', 'credit' => '0.00',
+        ]);
     }
 
     private function fixture(): array
