@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\BankAccount;
+use App\Models\BankTransaction;
 use App\Models\Customer;
 use App\Models\CustomerInvoice;
 use App\Models\CustomerReceipt;
@@ -36,6 +37,7 @@ class CustomerReceiptController extends Controller
                     ->join('customer_receipts', 'customer_receipts.id', '=', 'customer_receipt_allocations.customer_receipt_id')
                     ->whereColumn('customer_receipt_allocations.customer_invoice_id', 'customer_invoices.id')
                     ->where('customer_receipts.status', 'posted')
+                    ->whereColumn('customer_receipts.company_id', 'customer_invoices.company_id')
                     ->selectRaw('COALESCE(SUM(customer_receipt_allocations.amount), 0)');
             }, 'amount_paid')
             ->orderBy('due_date')
@@ -167,6 +169,7 @@ class CustomerReceiptController extends Controller
                     ->where('customer_receipt_allocations.customer_invoice_id', $invoice->id)
                     ->where('customer_receipts.status', 'posted')
                     ->where('customer_receipts.id', '!=', $document->id)
+                    ->where('customer_receipts.company_id', $companyId)
                     ->sum('customer_receipt_allocations.amount');
                 $outstanding = round((float) $invoice->amount - $alreadyPaid, 2);
                 if ((float) $allocation->amount > $outstanding + 0.009) {
