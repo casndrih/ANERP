@@ -88,12 +88,12 @@ class PosRefundController extends Controller
 
             $till = DB::table('pos_sessions')->where('company_id', $companyId)->lockForUpdate()->find($document->pos_session_id);
             abort_unless($till && $till->status === 'open' && (int) $till->branch_id === (int) $document->branch_id, 409, 'The refund till must still be open in the original branch.');
-            $note = CustomerCreditNote::where('company_id', $companyId)->lockForUpdate()->findOrFail($document->customer_credit_note_id);
-            abort_unless($note->status === 'posted' && $note->source_sales_return_id, 409, 'Refund source credit note is not posted from a sales return.');
             $transaction = DB::table('pos_transactions')->where('company_id', $companyId)
                 ->lockForUpdate()->find($document->original_pos_transaction_id);
-            abort_unless($transaction && $transaction->status === 'posted'
-                && (int) $transaction->customer_invoice_id === (int) $note->customer_invoice_id, 409, 'Original POS cash sale is no longer eligible for a refund.');
+            abort_unless($transaction && $transaction->status === 'posted', 409, 'Original POS cash sale is no longer eligible for a refund.');
+            $note = CustomerCreditNote::where('company_id', $companyId)->lockForUpdate()->findOrFail($document->customer_credit_note_id);
+            abort_unless($note->status === 'posted' && $note->source_sales_return_id
+                && (int) $transaction->customer_invoice_id === (int) $note->customer_invoice_id, 409, 'Refund source credit note is not posted from a sales return for this POS invoice.');
 
             $reservedOther = (float) DB::table('pos_refunds')->where('company_id', $companyId)
                 ->where('customer_credit_note_id', $note->id)->whereIn('status', ['draft', 'posted'])
