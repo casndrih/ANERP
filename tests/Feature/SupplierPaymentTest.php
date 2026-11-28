@@ -96,7 +96,6 @@ final class SupplierPaymentTest extends TestCase
     private function owner(Company $company, string $label): User
     {
         $user = User::create(['name' => $label, 'email' => $label.'-'.uniqid().'@example.test', 'password' => 'password']);
-        $user->forceFill(['mfa_enabled_at' => now(), 'mfa_secret' => 'encrypted-test-secret'])->save();
         $user->companies()->attach($company->id, ['role_code' => 'owner', 'is_active' => true]);
         return $user;
     }
