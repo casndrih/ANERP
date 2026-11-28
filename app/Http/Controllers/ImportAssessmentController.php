@@ -122,6 +122,7 @@ class ImportAssessmentController extends Controller
                 'hs_code' => $data['hs_code'],
                 'verified_duty_rate' => $data['verified_duty_rate'] ?? null,
                 'customs_value' => $assessment['customs_value'],
+                'gst_base' => $assessment['gst_base'],
                 'customs_duty_amount' => $assessment['customs_duty'],
                 'excise_amount' => $assessment['excise'],
                 'freight_insurance_amount' => $assessment['freight_insurance'],
