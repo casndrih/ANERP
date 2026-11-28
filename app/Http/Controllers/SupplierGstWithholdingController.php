@@ -316,6 +316,26 @@ class SupplierGstWithholdingController extends Controller
         return back()->with('status', 'Supplier withholding advice confirmation recorded. ANERP does not send the supplier notification automatically.');
     }
 
+    public function downloadNoticeDocument(Request $request, int $notice)
+    {
+        CompanyAuthorizer::requirePermission($request, 'finance.view');
+        $companyId = CompanyAuthorizer::activeCompanyId($request);
+        $document = SupplierGstWithholdingNotice::where('company_id', $companyId)->findOrFail($notice);
+        $path = $document->document_reference;
+        abort_unless($path && Storage::disk('local')->exists($path), 404, 'Uploaded written notice file was not found.');
+        return Storage::disk('local')->download($path);
+    }
+
+    public function downloadRevocationDocument(Request $request, int $notice)
+    {
+        CompanyAuthorizer::requirePermission($request, 'finance.view');
+        $companyId = CompanyAuthorizer::activeCompanyId($request);
+        $document = SupplierGstWithholdingNotice::where('company_id', $companyId)->findOrFail($notice);
+        $path = $document->revocation_document_reference;
+        abort_unless($path && Storage::disk('local')->exists($path), 404, 'Uploaded revocation notice file was not found.');
+        return Storage::disk('local')->download($path);
+    }
+
     public function exportSupplierListing(Request $request, int $remittance)
     {
         CompanyAuthorizer::requirePermission($request, 'finance.view');
