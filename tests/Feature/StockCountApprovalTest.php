@@ -33,13 +33,13 @@ final class StockCountApprovalTest extends TestCase
             'counted_quantity' => 8.5, 'variance_quantity' => -1.5,
         ]);
 
-        $this->actingAs($creator)->withSession($this->session($company, $creator))
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
             ->post(route('inventory.counts.submit', $countId))->assertRedirect();
 
-        $this->actingAs($creator)->withSession($this->session($company, $creator))
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
             ->post(route('inventory.counts.approve', $countId))->assertForbidden();
 
-        $this->actingAs($approver)->withSession($this->session($company, $approver))
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->post(route('inventory.counts.approve', $countId))->assertRedirect();
 
         $this->assertDatabaseHas('stock_counts', ['id' => $countId, 'status' => 'posted', 'approved_by' => $approver->id]);
@@ -56,7 +56,7 @@ final class StockCountApprovalTest extends TestCase
         [$company, $warehouse, $product, $creator, $approver] = $this->fixture();
         InventoryLedger::record($company->id, $warehouse->id, $product->id, 'opening', 10, 5, $creator->id);
 
-        $this->actingAs($creator)->withSession($this->session($company, $creator))
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
             ->post(route('inventory.counts.store'), [
                 'warehouse_id' => $warehouse->id,
                 'count_date' => '2026-11-28',
@@ -64,11 +64,11 @@ final class StockCountApprovalTest extends TestCase
             ])->assertRedirect();
         $countId = (int) \DB::table('stock_counts')->value('id');
 
-        $this->actingAs($creator)->withSession($this->session($company, $creator))
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
             ->post(route('inventory.counts.submit', $countId))->assertRedirect();
         InventoryLedger::record($company->id, $warehouse->id, $product->id, 'issue', 1, 5, $creator->id);
 
-        $this->actingAs($approver)->withSession($this->session($company, $approver))
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->post(route('inventory.counts.approve', $countId))
             ->assertSessionHasErrors('count');
 
