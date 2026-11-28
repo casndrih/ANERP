@@ -76,6 +76,9 @@ class CustomerRefundController extends Controller
             if ($bank->branch_id !== $refundBranch || $receipt->branch_id !== $refundBranch) {
                 throw ValidationException::withMessages(['bank_account_id' => 'Refund, receipt and bank account must belong to the same branch.']);
             }
+            if ($data['refund_date'] < $receipt->receipt_date->toDateString()) {
+                throw ValidationException::withMessages(['refund_date' => 'Refund date cannot be earlier than the original receipt date.']);
+            }
             if ($bank->currency !== 'PGK' || $receipt->currency !== 'PGK') {
                 throw ValidationException::withMessages(['amount' => 'Customer refunds currently support PGK receipts and bank accounts only.']);
             }
@@ -125,6 +128,7 @@ class CustomerRefundController extends Controller
             abort_if((int) $document->created_by === (int) $request->user()->id, 403, 'The refund creator cannot post their own refund.');
             $receipt = CustomerReceipt::where('company_id', $companyId)->lockForUpdate()->findOrFail($document->customer_receipt_id);
             abort_unless($receipt->status === 'posted' && (int) $receipt->customer_id === (int) $document->customer_id, 409, 'Refund must reference a posted receipt for the same customer.');
+            abort_unless($document->refund_date->toDateString() >= $receipt->receipt_date->toDateString(), 422, 'Refund date cannot be earlier than the original receipt date.');
             abort_unless((int) ($receipt->branch_id ?? 0) === (int) ($document->branch_id ?? 0), 409, 'Refund and receipt branch attribution must match.');
             $bank = BankAccount::where('company_id', $companyId)->where('is_active', true)->where('branch_id', $document->branch_id)
                 ->lockForUpdate()->findOrFail($document->bank_account_id);
