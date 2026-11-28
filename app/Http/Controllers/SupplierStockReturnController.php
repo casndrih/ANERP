@@ -33,10 +33,10 @@ class SupplierStockReturnController extends Controller
             ->latest('bill_date')->limit(40)->get();
         $returns = DB::table('supplier_stock_returns')
             ->join('supplier_bills', 'supplier_bills.id', '=', 'supplier_stock_returns.supplier_bill_id')
-            ->join('suppliers', 'suppliers.id', '=', 'supplier_stock_returns.supplier_bill_id') // replaced below by safe supplier join
+            ->join('suppliers', 'suppliers.id', '=', 'supplier_bills.supplier_id')
             ->where('supplier_stock_returns.company_id', $companyId)
             ->when($branchId, fn ($q) => $q->where('supplier_stock_returns.branch_id', $branchId))
-            ->select('supplier_stock_returns.*', 'supplier_bills.bill_number')
+            ->select('supplier_stock_returns.*', 'supplier_bills.bill_number', 'suppliers.name as supplier_name')
             ->orderByDesc('supplier_stock_returns.return_date')->limit(40)->get();
 
         return view('procurement.stock-returns.index', compact('bills', 'returns'));
