@@ -53,6 +53,7 @@ return new class extends Migration {
         Schema::table('supplier_payments', function (Blueprint $table) {
             $table->decimal('cash_amount', 14, 2)->default(0)->after('amount');
             $table->decimal('withheld_amount', 14, 2)->default(0)->after('cash_amount');
+            $table->string('supplier_province_snapshot', 100)->nullable()->after('withheld_amount');
         });
         DB::table('supplier_payments')->update(['cash_amount' => DB::raw('amount')]);
 
@@ -138,7 +139,7 @@ return new class extends Migration {
         Schema::dropIfExists('supplier_gst_remittances');
         Schema::table('supplier_payment_allocations', function (Blueprint $table) {
             $table->dropConstrainedForeignId('section65a_notice_id');
-            $table->dropColumn(['cash_amount', 'withheld_amount']);
+            $table->dropColumn(['cash_amount', 'withheld_amount', 'supplier_province_snapshot']);
         });
         Schema::table('supplier_payments', function (Blueprint $table) {
             $table->dropColumn(['cash_amount', 'withheld_amount']);
