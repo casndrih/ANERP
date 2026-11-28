@@ -178,14 +178,14 @@ final class BranchAccessIsolationTest extends TestCase
             });
     }
 
-    public function test_branch_restricted_finance_user_is_denied_company_wide_finance_workspace(): void
+    public function test_branch_restricted_finance_user_can_open_branch_scoped_finance_workspace(): void
     {
         [$user, $company] = $this->branchUser('finance_manager');
 
         $this->actingAs($user)
             ->withSession($this->companySession($user, $company))
             ->get(route('finance.index'))
-            ->assertForbidden();
+            ->assertOk();
     }
 
     private function branchUser(string $role): array
