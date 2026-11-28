@@ -12,7 +12,7 @@
 - FIFO remaining layers and weighted-average inventory balances are updated when landed costs are capitalised.
 - Invoice creator and invoice matcher cannot approve their own invoice. The approval action requires the dedicated procurement.invoice.approve permission, granted to procurement approvers, finance managers and accountants; owners/admins retain all permissions.
 - Direct posting of a supplier bill linked to a purchase order is blocked in the general finance bill workflow. It must pass through matching approval.
-- Domestic PNG GST is calculated on general supplier bills and customer invoices using the 10% standard rate, zero-rated, exempt and out-of-scope treatments. The company GST registration flag controls output GST and input-credit eligibility; supplier registration number plus tax invoice reference are required before input GST is posted to the GST input control account.
+- Domestic PNG GST is calculated on general supplier bills and customer invoices using the 10% standard rate, zero-rated, exempt and out-of-scope treatments. The company GST registration flag controls output GST and input-credit eligibility; supplier registration number plus tax invoice reference are required before domestic input GST is posted. Import GST is calculated from the actual customs duty, excise and freight/insurance values on the Customs assessment; HS code, import declaration, assessment reference, tariff source and verification date are retained. Eligible import GST is posted separately; otherwise it is capitalised into landed cost.
 - General supplier bill posting separates net expense and eligible input GST from gross AP; customer invoice posting separates net revenue and output GST from gross AR. A G1-style management summary reports domestic output GST, eligible domestic input credits and the net difference.
 
 ## Landed-cost safety guard
@@ -26,14 +26,14 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 
 ## Current limitations
 - Purchase orders now support multiple product lines in the authoring screen and the controller validates each submitted line.
-- Full statutory GST return automation and tax adjustment notes, import GST/customs assessment postings, withholding under section 65A, private-use and exempt-sale input-credit adjustments, invoice attachments/OCR and payment reversals remain outstanding. The GST summary is a management estimate, not a filing-ready G1 return. Supplier payment allocation and inventory credit notes are implemented; general expense credit notes remain separate from stock returns.
+- Full statutory GST return automation and tax adjustment notes, withholding under section 65A, private-use and exempt-sale input-credit adjustments, invoice attachments/OCR and payment reversals remain outstanding. The GST summary is a management estimate, not a filing-ready G1 return. Supplier payment allocation and inventory credit notes are implemented; general expense credit notes remain separate from stock returns.
 - Goods price variance beyond K0.01 is blocked for manual resolution; tolerance approval workflows are not yet available.
 - Landed costs are only capitalised when the product/warehouse cost pool is isolated and reconciled. Mixed stock pools and transferred stock require manual reconciliation before this feature can proceed.
-- Landed costs support received line value, received quantity, equal-share, product weight and product volume allocation. Charge-specific allocation rules and customs-specific landed cost allocation are not yet implemented.
+- Landed costs support received line value, received quantity, equal-share, product weight and product volume allocation. Import customs assessments are captured as landed-cost supplier bills and use the same allocation/approval workflow; charge-specific allocation rules are not yet implemented.
 - Supplier invoice matching is not an external tax or statutory compliance certification.
 
 ## Acceptance checks
-- Verify standard 10%, zero-rated, exempt and out-of-scope domestic GST treatments; verify company GST registration, supplier registration evidence and tax-invoice-reference gates for input credits. Import GST base calculation is available as a calculator only and is not yet integrated into accounting postings.
+- Verify standard 10%, zero-rated, exempt and out-of-scope domestic GST treatments; verify company GST registration, supplier registration evidence and tax-invoice-reference gates for domestic input credits. Verify import GST base uses the actual Customs-assessed duty, excise and freight/insurance values, requires import entry and assessment evidence, and posts eligible input GST separately through landed-cost matching.
 - Create and submit a purchase order with multiple distinct product lines; verify each line is independently received and matched.
 - Apply migrations against a clean PostgreSQL database and run the complete test suite.
 - Confirm a bill cannot be matched to another company's PO or another supplier's PO.
@@ -41,7 +41,7 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 - Confirm price and total variances block matching.
 - Confirm invoice creator/matcher cannot approve their own invoice.
 - Confirm goods invoice approval clears GRNI to AP.
-- Confirm landed cost is split between inventory and COGS based on remaining stock.
+- Confirm landed cost is split between inventory and COGS based on remaining stock, including import duty, excise and freight captured from customs assessments.
 - Confirm supplier stock return postings reduce on-hand quantities, FIFO/weighted-average valuation and AP; confirm the credit note journal reverses GST input tax and balances to the carrying-value variance.
 - Verify supplier payment drafts allocate only to posted bills for the same supplier and branch, prevent overpayment, enforce maker-checker, create a balanced AP/bank journal and outgoing bank transaction, and reduce AP ageing.
 - Verify general supplier credit notes remain limited to posted PGK expense bills. Verify inventory returns are limited to received quantities on posted, PO-matched goods bills, cannot exceed available stock or outstanding AP, enforce maker-checker, update valuation layers, reverse eligible input GST, post AP/inventory/variance journals and reduce AP ageing.
