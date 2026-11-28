@@ -40,7 +40,7 @@ final class CompanyPermissionMap
             'reports.view', 'reports.export',
         ],
         'accountant' => [
-            'finance.view', 'finance.create', 'finance.post', 'finance.reconcile',
+            'finance.view', 'finance.create', 'finance.post', 'finance.reconcile', 'procurement.invoice.approve',
             'reports.view', 'reports.export',
         ],
         'payroll_manager' => [
