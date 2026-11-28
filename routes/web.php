@@ -22,6 +22,7 @@ use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\StockCountController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\SupplierInvoiceMatchingController;
+use App\Http\Controllers\SupplierStockReturnController;
 use App\Http\Controllers\SupplierCreditNoteController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Middleware\AuditCompanyActivity;
@@ -74,6 +75,11 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::post('/procurement/orders/{order}/approve', [PurchaseOrderController::class, 'approve'])->name('procurement.orders.approve');
     Route::post('/procurement/orders/{order}/lines/{line}/receive', [PurchaseOrderController::class, 'receive'])->name('procurement.orders.receive');
     Route::get('/procurement/matching', [SupplierInvoiceMatchingController::class, 'index'])->name('procurement.matching.index');
+    Route::get('/procurement/stock-returns', [SupplierStockReturnController::class, 'index'])->name('procurement.stock-returns.index');
+    Route::post('/procurement/stock-returns', [SupplierStockReturnController::class, 'store'])->name('procurement.stock-returns.store');
+    Route::post('/procurement/stock-returns/{return}/post', [SupplierStockReturnController::class, 'post'])->name('procurement.stock-returns.post');
+    Route::post('/procurement/stock-returns/{return}/cancel', [SupplierStockReturnController::class, 'cancel'])->name('procurement.stock-returns.cancel');
+
     Route::post('/procurement/matching/{bill}', [SupplierInvoiceMatchingController::class, 'match'])->name('procurement.matching.match');
     Route::post('/procurement/matching/{bill}/approve', [SupplierInvoiceMatchingController::class, 'approve'])->name('procurement.matching.approve');
 
