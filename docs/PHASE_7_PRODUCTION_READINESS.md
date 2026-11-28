@@ -54,6 +54,7 @@ Establish repeatable security, operational and acceptance controls before ANERP 
 
 ## Automated accounting integrations
 - Payroll approval creates balanced accrual journals per employee branch: gross wages and employer super expense are debited; PAYE, employee super, employer super and net wages payable are credited. This is an accrual only; payment and remittance are not executed.
+- Supplier payments are now recorded as draft documents, allocated to posted supplier bills, independently posted, and atomically journaled as a debit to AP and credit to the selected bank GL account. The linked outgoing bank transaction is available for reconciliation; partial bill settlements are supported and AP ageing nets posted allocations.
 - Inventory movements create balanced journals using recorded unit cost: opening stock, purchase receipts, issues and positive/negative adjustments. Cross-branch transfers use branch-level clearing journals; same-branch transfers do not change total inventory value.
 - Payroll runs and stock movements have unique links to generated journals to prevent duplicate posting.
 - Historical payroll and stock movements are not backfilled. Inventory costing remains recorded-cost based, not FIFO or weighted average.
