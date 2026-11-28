@@ -1,5 +1,9 @@
 name: ANERP Phase 1 Foundation
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [feature/phase-1-erp-foundation]
