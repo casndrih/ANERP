@@ -349,6 +349,7 @@ class CustomerSalesReturnController extends Controller
                 'credit_note_date' => $document->return_date,
                 'description' => 'Sales return '.$document->return_number.' · '.$document->reason,
                 'amount' => $document->total_amount,
+                'deposit_amount' => $depositCredit,
                 'net_amount' => $document->net_amount,
                 'gst_amount' => $document->gst_amount,
                 'gst_rate' => $document->gst_rate,
