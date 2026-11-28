@@ -83,6 +83,21 @@ class CustomerCreditNoteController extends Controller
         return back()->with('status', 'Customer credit note saved as a draft. A different finance user must post it.');
     }
 
+    public function cancel(Request $request, int $creditNote)
+    {
+        CompanyAuthorizer::requirePermission($request, 'finance.create');
+        $companyId = CompanyAuthorizer::activeCompanyId($request);
+        $branchId = CompanyAuthorizer::activeBranchId($request);
+        DB::transaction(function () use ($creditNote, $companyId, $branchId) {
+            $note = CustomerCreditNote::where('company_id', $companyId)
+                ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+                ->lockForUpdate()->findOrFail($creditNote);
+            abort_unless($note->status === 'draft', 409, 'Only draft customer credit notes can be cancelled.');
+            $note->update(['status' => 'cancelled']);
+        });
+        return back()->with('status', 'Draft customer credit note cancelled; its invoice balance has been released.');
+    }
+
     public function post(Request $request, int $creditNote)
     {
         CompanyAuthorizer::requirePermission($request, 'finance.post');
