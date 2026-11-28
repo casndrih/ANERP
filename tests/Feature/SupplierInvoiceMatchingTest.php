@@ -73,6 +73,47 @@ final class SupplierInvoiceMatchingTest extends TestCase
         $this->assertDatabaseHas('supplier_bills', ['id' => $bill->id, 'status' => 'posted']);
     }
 
+    public function test_landed_cost_can_be_allocated_by_product_weight(): void
+    {
+        [$company, $branch, $supplier, $warehouse, $product, $creator, $approver, $po, $line, $expense] = $this->fixture();
+        $secondProduct = Product::create([
+            'company_id' => $company->id, 'sku' => 'SKU-SECOND-'.uniqid(), 'name' => 'Light Stock',
+            'unit' => 'each', 'standard_cost' => 5, 'selling_price' => 10, 'track_stock' => true, 'is_active' => true,
+            'weight_kg' => 1, 'volume_m3' => 0.25,
+        ]);
+        $secondLine = PurchaseOrderLine::create([
+            'purchase_order_id' => $po->id, 'product_id' => $secondProduct->id,
+            'quantity_ordered' => 10, 'quantity_received' => 10, 'unit_cost' => 5, 'line_total' => 50,
+        ]);
+        $line->update(['quantity_received' => 10]);
+        InventoryLedger::record($company->id, $warehouse->id, $product->id, 'purchase_receipt', 10, 5, $creator->id, 'purchase_order', $po->id);
+        InventoryLedger::record($company->id, $warehouse->id, $secondProduct->id, 'purchase_receipt', 10, 5, $creator->id, 'purchase_order', $po->id);
+        $bill = $this->bill($company, $supplier, $branch, $creator, $expense, 100);
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('procurement.matching.match', $bill->id), ['purchase_order_id' => $po->id, 'invoice_type' => 'landed_cost'])
+            ->assertRedirect();
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
+            ->post(route('procurement.matching.approve', $bill->id), ['allocation_basis' => 'weight'])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('landed_cost_allocations', ['supplier_bill_id' => $bill->id, 'product_id' => $product->id, 'allocation_basis' => 'weight', 'allocated_amount' => 66.67]);
+        $this->assertDatabaseHas('landed_cost_allocations', ['supplier_bill_id' => $bill->id, 'product_id' => $secondProduct->id, 'allocation_basis' => 'weight', 'allocated_amount' => 33.33]);
+    }
+
+    public function test_weight_allocation_requires_weight_for_every_received_product(): void
+    {
+        [$company, $branch, $supplier, $warehouse, $product, $creator, $approver, $po, $line, $expense] = $this->fixture();
+        $product->update(['weight_kg' => null]);
+        $line->update(['quantity_received' => 10]);
+        InventoryLedger::record($company->id, $warehouse->id, $product->id, 'purchase_receipt', 10, 5, $creator->id, 'purchase_order', $po->id);
+        $bill = $this->bill($company, $supplier, $branch, $creator, $expense, 100);
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('procurement.matching.match', $bill->id), ['purchase_order_id' => $po->id, 'invoice_type' => 'landed_cost'])
+            ->assertRedirect();
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
+            ->post(route('procurement.matching.approve', $bill->id), ['allocation_basis' => 'weight'])
+            ->assertRedirect()->assertSessionHasErrors('allocation_basis');
+    }
+
     private function fixture(): array
     {
         $company = Company::create(['name' => 'Invoice Match Co', 'is_active' => true]);
@@ -82,6 +123,7 @@ final class SupplierInvoiceMatchingTest extends TestCase
         $product = Product::create([
             'company_id' => $company->id, 'sku' => 'SKU-'.uniqid(), 'name' => 'Test Stock',
             'unit' => 'each', 'standard_cost' => 5, 'selling_price' => 10, 'track_stock' => true, 'is_active' => true,
+            'weight_kg' => 2, 'volume_m3' => 0.5,
         ]);
         $creator = $this->owner($company, 'creator');
         $approver = $this->owner($company, 'approver');
