@@ -16,9 +16,9 @@
 - Customer deposit refunds support receipt-linked unallocated-balance checks, maker-checker posting, balanced customer-deposit/bank journals, outgoing bank transactions and draft cancellation.
 - Sales orders support multi-product draft capture, GST treatment by order, stock availability checks, approved-order stock reservations, independent approval and fulfilment. Fulfilment issues inventory through the valuation ledger, posts cost of sales, and creates a draft customer invoice with product-level invoice lines for independent finance posting.
 - POS till sessions support cashier-scoped opening floats, branch/warehouse cash drawers, posted-invoice cash settlement, automatic change calculation, linked customer receipts and bank transactions, manager close/count and expected-versus-counted cash variance. POS cash receipts are an immediate till transaction exception to normal receipt maker-checker; invoice posting remains separately controlled.
-- Supplier credit notes support posted PGK general expense bills, outstanding AP controls, maker-checker posting, expense/AP reversal, cancellation and AP ageing. Matched inventory/GRNI bills are blocked until stock-return accounting is implemented.
+- Supplier credit notes support posted PGK general expense bills. Supplier inventory credit notes support matched goods bills, return-quantity and on-hand checks, independent posting, FIFO/weighted-average stock issue, GST input-credit reversal, AP reduction and purchase-price variance accounting.
 - Domestic PNG GST is posted on general supplier bills, customer invoices and eligible PO-matched goods/landed-cost invoices with company registration settings, supplier registration/tax-invoice evidence for input credits, GST input/output control accounts and a G1-style management summary. The summary reports sales bases net of output GST.
-- Accounts payable ageing nets posted supplier payment allocations; draft payments do not reduce reported AP.
+- Accounts payable ageing nets posted supplier payment allocations and posted supplier stock returns; draft payments and returns do not reduce reported AP.
 
 ## Accounting example
 For a K100 customer receipt allocated K80 to posted invoices:
@@ -39,7 +39,7 @@ The K20 remains a customer liability until allocated or refunded through a separ
 
 ## Not included in this increment
 - Picking/packing scans, dispatch manifests, proof of delivery, EFTPOS terminal integrations, POS refunds and automated end-of-day settlement remain outstanding.
-- Product-level customer invoice lines, price lists, discount controls and customer credit limits. GST calculation and invoice-level credit notes are available for supported general invoices; GST-bearing adjustment notes remain outstanding.
+- General manual invoice entry remains single-line; sales-order-generated invoices preserve product-level lines. Price lists, discount controls, customer credit limits and GST-bearing customer/supplier adjustment notes remain outstanding.
 - Customer statement PDF/email delivery and automated reminders.
 - Customer advance allocation changes, refunds and receipt reversals.
 - Multi-currency receipts and foreign exchange gains/losses.
