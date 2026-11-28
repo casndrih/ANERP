@@ -31,4 +31,4 @@ Do not expose the bootstrap system to the public internet. Add HTTPS, firewall/V
 - PostgreSQL schema foundations for stock movements, suppliers, employees and double-entry journal records
 - Docker Compose deployment and CI container-build workflow
 
-See docs/ROADMAP.md, docs/PNG_LOCALISATION.md, docs/ESXI_DEPLOYMENT.md, docs/SECURITY_BASELINE.md and docs/PHASE_2_AUTH_TENANCY.md.
+See docs/ROADMAP.md, docs/PNG_LOCALISATION.md, docs/ESXI_DEPLOYMENT.md, docs/SECURITY_BASELINE.md, docs/PHASE_2_AUTH_TENANCY.md and docs/PHASE_3_INVENTORY_PROCUREMENT.md.
