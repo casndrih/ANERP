@@ -35,7 +35,7 @@ final class SupplierInvoiceMatchingTest extends TestCase
             ])->assertRedirect();
 
         $this->assertDatabaseHas('supplier_bills', ['id' => $bill->id, 'match_status' => 'matched']);
-        $this->actingAs($approver)->withSession($this->session($company, $approver))
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->post(route('procurement.matching.approve', $bill->id))->assertRedirect();
 
         $this->assertDatabaseHas('supplier_bills', ['id' => $bill->id, 'status' => 'posted', 'match_status' => 'approved']);
@@ -55,12 +55,12 @@ final class SupplierInvoiceMatchingTest extends TestCase
         $line->update(['quantity_received' => 10]);
         $bill = $this->bill($company, $supplier, $branch, $creator, $expense, 100);
 
-        $this->actingAs($creator)->withSession($this->session($company, $creator))
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
             ->post(route('procurement.matching.match', $bill->id), [
                 'purchase_order_id' => $po->id,
                 'invoice_type' => 'landed_cost',
             ])->assertRedirect();
-        $this->actingAs($approver)->withSession($this->session($company, $approver))
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->post(route('procurement.matching.approve', $bill->id))->assertRedirect();
 
         $balance = DB::table('inventory_cost_balances')->where('company_id', $company->id)->first();
