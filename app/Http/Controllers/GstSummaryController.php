@@ -33,6 +33,16 @@ class GstSummaryController extends Controller
         $taxableSales = (float) (clone $sales)->where('gst_treatment', 'standard')->sum($netSalesExpression);
         $outputGst = (float) (clone $sales)->where('gst_treatment', 'standard')->sum('gst_amount');
 
+        $creditNotes = DB::table('customer_credit_notes')->where('company_id', $companyId)->where('status', 'posted')
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->whereBetween('credit_note_date', [$from->toDateString(), $to->toDateString()])
+            ->whereIn('gst_treatment', ['standard', 'zero_rated', 'exempt']);
+        $totalSales = round($totalSales - (float) (clone $creditNotes)->sum('net_amount'), 2);
+        $exemptSales = round($exemptSales - (float) (clone $creditNotes)->where('gst_treatment', 'exempt')->sum('net_amount'), 2);
+        $zeroRatedSales = round($zeroRatedSales - (float) (clone $creditNotes)->where('gst_treatment', 'zero_rated')->sum('net_amount'), 2);
+        $taxableSales = round($taxableSales - (float) (clone $creditNotes)->where('gst_treatment', 'standard')->sum('net_amount'), 2);
+        $outputGst = round($outputGst - (float) (clone $creditNotes)->where('gst_treatment', 'standard')->sum('gst_amount'), 2);
+
         $purchases = SupplierBill::where('company_id', $companyId)->where('status', 'posted')
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->whereBetween('bill_date', [$from->toDateString(), $to->toDateString()])
