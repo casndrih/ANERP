@@ -10,6 +10,7 @@ Establish repeatable security, operational and acceptance controls before ANERP 
 - PostgreSQL triggers reject UPDATE and DELETE against audit_events, protecting event history from ordinary application/database statements. Database superusers remain trusted administrators and can bypass/alter database protections.
 - Unit tests for role/permission separation, deny-by-default behavior and RFC-compatible TOTP generation.
 - PostgreSQL-backed feature tests for cross-company inventory visibility, tenant-bound product creation, unauthorized company selection and inactive-company selection.
+- Additional PostgreSQL-backed tests verify finance journals, payroll runs and procurement orders are isolated to the active company, and that finance users cannot post another company's journal or payroll users approve another company's run.
 - TOTP authenticator MFA with encrypted secrets, six-digit time-based codes, one-time hashed recovery codes, and password-plus-code disable flow for non-privileged users. Privileged company roles must enroll before workspace access and cannot disable MFA themselves.
 
 ## Scope
