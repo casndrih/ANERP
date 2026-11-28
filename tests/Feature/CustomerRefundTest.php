@@ -29,6 +29,7 @@ final class CustomerRefundTest extends TestCase
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->post(route('finance.refunds.post', $refund->id))->assertRedirect()->assertSessionHasNoErrors();
         $refund->refresh();
+        self::assertNotNull($refund->journal_entry_id, 'Posted customer refund must retain its journal entry reference.');
         $this->assertDatabaseHas('customer_refunds', ['id' => $refund->id, 'status' => 'posted']);
         $this->assertDatabaseHas('bank_transactions', ['bank_account_id' => $bank->id, 'journal_entry_id' => $refund->journal_entry_id, 'direction' => 'out', 'amount' => '40.00']);
         $this->assertDatabaseHas('journal_lines', ['account_id' => $depositAccount->id, 'debit' => 40, 'credit' => 0]);
