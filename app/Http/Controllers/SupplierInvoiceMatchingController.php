@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\Company;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\PurchaseOrder;
@@ -147,8 +148,23 @@ class SupplierInvoiceMatchingController extends Controller
             abort_if((int) $document->matched_by === (int) $request->user()->id, 403, 'The user who matched the invoice cannot approve it.');
 
             $order = PurchaseOrder::where('company_id', $companyId)->lockForUpdate()->findOrFail($document->purchase_order_id);
+            $netAmount = round((float) ($document->net_amount ?? ((float) $document->amount - (float) ($document->gst_amount ?? 0))), 2);
+            $gstAmount = round((float) ($document->gst_amount ?? 0), 2);
+            if (abs(round($netAmount + $gstAmount, 2) - (float) $document->amount) > 0.01) {
+                throw ValidationException::withMessages(['bill' => 'Supplier invoice net, GST and gross amounts do not reconcile. Correct the tax invoice before approval.']);
+            }
+            if ($gstAmount > 0) {
+                $company = Company::findOrFail($companyId);
+                $eligible = (bool) $company->gst_registered && (bool) $document->supplier_gst_registered
+                    && (bool) $document->input_tax_credit_eligible
+                    && filled(trim((string) $document->supplier_gst_registration_number))
+                    && filled(trim((string) $document->tax_invoice_reference));
+                if (!$eligible) {
+                    throw ValidationException::withMessages(['bill' => 'GST on a PO-matched inventory invoice can only be posted separately when the company and supplier are GST-registered and valid tax-invoice evidence is recorded. Otherwise obtain an accountant-approved inventory-cost adjustment before posting.']);
+                }
+            }
             $accounts = [];
-            foreach ([['2000', 'Accounts payable', 'liability', 'credit'], ['2600', 'Goods received not invoiced', 'liability', 'credit'], ['1200', 'Inventory', 'asset', 'debit'], ['5000', 'Cost of goods sold', 'expense', 'debit']] as [$code, $name, $type, $normal]) {
+            foreach ([['2000', 'Accounts payable', 'liability', 'credit'], ['2600', 'Goods received not invoiced', 'liability', 'credit'], ['1200', 'Inventory', 'asset', 'debit'], ['1300', 'GST input tax', 'asset', 'debit'], ['5000', 'Cost of goods sold', 'expense', 'debit']] as [$code, $name, $type, $normal]) {
                 $accounts[$code] = Account::firstOrCreate(
                     ['company_id' => $companyId, 'account_code' => $code],
                     ['name' => $name, 'account_type' => $type, 'normal_balance' => $normal, 'is_control_account' => true, 'is_active' => true]
@@ -166,7 +182,8 @@ class SupplierInvoiceMatchingController extends Controller
                 }
                 $lines[] = [$accounts['2600']->id, $document->amount, 0];
             } elseif ($document->invoice_type === 'landed_cost') {
-                $allocation = $allocator->allocate($companyId, (int) $document->id, $order, (float) $document->amount, $approvalData['allocation_basis'] ?? 'line_value');
+                $allocation = $allocator->allocate($companyId, (int) $document->id, $order, $netAmount, $approvalData['allocation_basis'] ?? 'line_value');
+                if ($gstAmount > 0) $lines[] = [$accounts['1300']->id, $gstAmount, 0];
                 if ($allocation['inventory'] > 0) $lines[] = [$accounts['1200']->id, $allocation['inventory'], 0];
                 if ($allocation['cogs'] > 0) $lines[] = [$accounts['5000']->id, $allocation['cogs'], 0];
             } else {
