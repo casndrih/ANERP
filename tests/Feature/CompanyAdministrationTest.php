@@ -47,7 +47,8 @@ final class CompanyAdministrationTest extends TestCase {
   $this->assertNotNull(DB::table('company_invitations')->where('id',$invitationId)->value('accepted_at'));
   $this->assertDatabaseHas('audit_events',['company_id'=>$company->id,'user_id'=>$user->id,'event'=>'INVITATION ACCEPTED']);
  }
-\n private function workspace(): array {
+
+ private function workspace(): array {
   $owner=User::create(['name'=>'Owner','email'=>'owner-'.uniqid().'@example.test','password'=>'test-password']);
   $owner->forceFill(['mfa_enabled_at'=>now(),'mfa_secret'=>'test-encrypted-secret'])->save();
   $company=Company::create(['name'=>'Admin test','is_active'=>true]);
