@@ -35,7 +35,7 @@ final class InventoryLedgerPostingTest extends TestCase
             'source' => 'inventory_movement', 'status' => 'posted',
             'journal_number' => 'INV-GL-'.$issue->id,
         ]);
-        $this->assertDatabaseCount('stock_movement_journals', 2);
+        $this->assertDatabaseCount('stock_movement_journals', 3);
         $this->assertSame(0.0, (float) \DB::table('journal_lines')
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
             ->where('journal_entries.company_id', $company->id)
@@ -50,6 +50,7 @@ final class InventoryLedgerPostingTest extends TestCase
         $product = $this->product($company);
         $source = $this->warehouse($company, $branchA, 'WH-SOURCE');
         $destination = $this->warehouse($company, $branchB, 'WH-DEST');
+        InventoryLedger::record($company->id, $source->id, $product->id, 'opening', 10, 5, $user->id);
         $transfer = StockTransfer::create([
             'company_id' => $company->id, 'transfer_number' => 'TRF-LEDGER-01',
             'from_warehouse_id' => $source->id, 'to_warehouse_id' => $destination->id,
