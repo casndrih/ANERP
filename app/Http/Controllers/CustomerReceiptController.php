@@ -111,12 +111,13 @@ class CustomerReceiptController extends Controller
 
             $allocationTotal = 0.0;
             foreach ($data['allocations'] ?? [] as $allocation) {
+                $amount = round((float) ($allocation['amount'] ?? 0), 2);
+                if ($amount <= 0) { continue; }
                 $invoice = CustomerInvoice::where('company_id', $companyId)
                     ->where('customer_id', $data['customer_id'])
                     ->where('status', 'posted')
                     ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
                     ->findOrFail($allocation['invoice_id']);
-                $amount = round((float) $allocation['amount'], 2);
                 $allocationTotal += $amount;
                 CustomerReceiptAllocation::create([
                     'customer_receipt_id' => $receipt->id,
