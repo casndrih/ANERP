@@ -6,6 +6,7 @@ use App\Http\Controllers\CompanyAdministrationController;
 use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\SalesOrderController;
+use App\Http\Controllers\CustomerSalesReturnController;
 use App\Http\Controllers\PosSessionController;
 use App\Http\Controllers\GstSummaryController;
 use App\Http\Controllers\SupplierPaymentController;
