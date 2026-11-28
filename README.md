@@ -6,7 +6,8 @@ Multi-company ERP foundation for Papua New Guinea businesses.
 
 > This is an actively developed foundation, not a finished production ERP. Payroll special cases, complete accounting workflows, granular authorization, integrations and production security controls must be completed and tested before live use.
 
-- Phase 7 payroll-to-ledger integration: payroll approval generates balanced, branch-attributed accrual journals for gross wages, PAYE, employee/employer superannuation and net wages payable; payment execution remains separate.\n- Phase 7 branch access: company membership branch assignments restrict HR, payroll employee lines/payslips, warehouse stock movements/balances and purchase orders; branch-restricted users are blocked from company-wide HR policy operations; finance records and reports now support branch attribution while company-wide users retain consolidated access.
+- Phase 7 payroll-to-ledger integration: payroll approval generates balanced, branch-attributed accrual journals for gross wages, PAYE, employee/employer superannuation and net wages payable; payment execution remains separate.
+- Phase 7 branch access: company membership branch assignments restrict HR, payroll employee lines/payslips, warehouse stock movements/balances and purchase orders; branch-restricted users are blocked from company-wide HR policy operations; finance records and reports now support branch attribution while company-wide users retain consolidated access.
 - Phase 7 company administration: single-use email invitations, tenant-scoped membership and branch assignment, role management, membership suspension/reactivation, invitation revocation, last-owner protection and company-scoped audit history.
 
 ## ESXi host sizing — 128 GB physical RAM
