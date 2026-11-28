@@ -36,7 +36,7 @@ final class SupplierInvoiceMatchingTest extends TestCase
 
         $this->assertDatabaseHas('supplier_bills', ['id' => $bill->id, 'match_status' => 'matched']);
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
-            ->post(route('procurement.matching.approve', $bill->id))->assertRedirect();
+            ->post(route('procurement.matching.approve', $bill->id), ['allocation_basis' => 'quantity'])->assertRedirect();
 
         $this->assertDatabaseHas('supplier_bills', ['id' => $bill->id, 'status' => 'posted', 'match_status' => 'approved']);
         $this->assertDatabaseHas('journal_lines', ['account_id' => Account::where('company_id', $company->id)->where('account_code', '2600')->value('id'), 'debit' => 50, 'credit' => 0]);
@@ -61,13 +61,13 @@ final class SupplierInvoiceMatchingTest extends TestCase
                 'invoice_type' => 'landed_cost',
             ])->assertRedirect();
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
-            ->post(route('procurement.matching.approve', $bill->id))->assertRedirect();
+            ->post(route('procurement.matching.approve', $bill->id), ['allocation_basis' => 'quantity'])->assertRedirect();
 
         $balance = DB::table('inventory_cost_balances')->where('company_id', $company->id)->first();
         $this->assertSame(6.0, (float) $balance->quantity_on_hand);
         $this->assertSame(90.0, (float) $balance->inventory_value);
         $this->assertDatabaseHas('landed_cost_allocations', [
-            'supplier_bill_id' => $bill->id, 'allocated_amount' => 100,
+            'supplier_bill_id' => $bill->id, 'allocation_basis' => 'quantity', 'allocated_amount' => 100,
             'inventory_amount' => 60, 'cogs_amount' => 40,
         ]);
         $this->assertDatabaseHas('supplier_bills', ['id' => $bill->id, 'status' => 'posted']);
