@@ -25,8 +25,8 @@ Route::middleware('guest')->group(function () {
 });
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
 Route::post('/company/select', [CompanySelectionController::class, 'store'])->middleware('auth')->name('company.select');
-Route::get('/invitations/{token}', [CompanyInvitationController::class, 'show'])->name('invitations.accept');
-Route::post('/invitations/{token}', [CompanyInvitationController::class, 'accept'])->name('invitations.accept.store');
+Route::get('/invitations/{token}', [CompanyInvitationController::class, 'show'])->middleware('throttle:10,1')->name('invitations.accept');
+Route::post('/invitations/{token}', [CompanyInvitationController::class, 'accept'])->middleware('throttle:10,1')->name('invitations.accept.store');
 
 Route::middleware(['auth', 'throttle:10,1'])->group(function () {
     Route::get('/mfa/challenge', [MfaController::class, 'challenge'])->name('mfa.challenge');
