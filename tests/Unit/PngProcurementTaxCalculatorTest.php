@@ -1,10 +1,10 @@
 <?php
 
-namespace Tests\\Unit;
+namespace Tests\Unit;
 
-use App\\Services\\PngProcurementTaxCalculator;
+use App\Services\PngProcurementTaxCalculator;
 use InvalidArgumentException;
-use PHPUnit\\Framework\\TestCase;
+use PHPUnit\Framework\TestCase;
 
 final class PngProcurementTaxCalculatorTest extends TestCase
 {
