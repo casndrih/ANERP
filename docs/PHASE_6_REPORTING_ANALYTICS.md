@@ -19,7 +19,7 @@
 - AP/AR ageing uses full posted bill/invoice amounts because receipts, payment allocation, settlements, credits and refunds are not yet available.
 - Payroll includes approved runs only.
 - Inventory reports quantities and recorded unit costs; no FIFO or weighted-average valuation is claimed.
-- Branch filtering is omitted because transactions do not yet consistently carry branch attribution.
+- Finance reports filter journal and source documents by branch attribution for branch-restricted users; payroll filters employee lines and inventory filters warehouse movements. Unassigned legacy finance records remain company-wide only.
 - CSV only; XLSX/PDF and scheduled distribution remain future work.
 - These are management reports, not audited financial statements or statutory filings.
 
@@ -29,6 +29,7 @@
 - [ ] Confirm cross-company data cannot appear in reports or exports.
 - [ ] Verify date boundaries and timezone behavior.
 - [ ] Verify AP/AR ageing buckets and payroll aggregates.
-- [x] Add pure unit coverage for debit/credit balances, ageing boundaries, signed stock movements/transfers and net income calculations.\n- [ ] Verify stock movement signs and paired transfers against database fixtures.
+- [x] Add pure unit coverage for debit/credit balances, ageing boundaries, signed stock movements/transfers and net income calculations.
+- [ ] Verify stock movement signs and paired transfers against database fixtures.
 - [ ] Accountant review of statement presentation and opening balances.
 - [ ] Add automated feature tests and security review before production.
