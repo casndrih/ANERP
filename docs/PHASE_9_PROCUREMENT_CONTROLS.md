@@ -23,7 +23,7 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 
 ## Current limitations
 - Purchase orders now support multiple product lines in the authoring screen and the controller validates each submitted line.
-- GST input/output posting and return integration, withholding tax, tariff-driven import-duty integration, supplier credit/debit notes, invoice attachments/OCR and payment reversals remain outstanding. Supplier payment allocation and execution through an approved bank journal are implemented in the finance workspace.
+- GST input/output posting and return integration, withholding tax, tariff-driven import-duty integration, inventory/GRNI supplier credit/debit notes, invoice attachments/OCR and payment reversals remain outstanding. Supplier payment allocation is implemented. Invoice-level supplier credit notes are supported for posted general expense bills only; matched inventory/GRNI bills are deliberately blocked until stock-return accounting exists.
 - Goods price variance beyond K0.01 is blocked for manual resolution; tolerance approval workflows are not yet available.
 - Landed costs are only capitalised when the product/warehouse cost pool is isolated and reconciled. Mixed stock pools and transferred stock require manual reconciliation before this feature can proceed.
 - Landed costs support received line value, received quantity and equal-share allocation. Weight-, volume- and charge-specific allocation bases are not configurable.
@@ -40,6 +40,7 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 - Confirm goods invoice approval clears GRNI to AP.
 - Confirm landed cost is split between inventory and COGS based on remaining stock.
 - Verify supplier payment drafts allocate only to posted bills for the same supplier and branch, prevent overpayment, enforce maker-checker, create a balanced AP/bank journal and outgoing bank transaction, and reduce AP ageing.
+- Verify supplier credit notes are limited to posted PGK general expense bills, cannot exceed outstanding AP after payments/other credits, enforce maker-checker, reverse the original expense and AP, and reduce AP ageing. Inventory/GRNI bills must be rejected.
 - Confirm mixed inbound sources and transfer history block unsafe landed-cost capitalisation.
 - Review all postings and stock valuation effects with an accountant before live use.
 
