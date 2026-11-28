@@ -35,7 +35,8 @@ final class ImportAssessmentTest extends TestCase
                 'tariff_source_url' => 'https://www.customs.gov.pg/tev/tariff', 'tariff_verified_on' => '2026-11-28',
             ])->assertRedirect(route('procurement.matching.index'))->assertSessionHasNoErrors();
 
-        $bill = DB::table('supplier_bills')->where('gst_source', 'import')->firstOrFail();
+        $bill = DB::table('supplier_bills')->where('gst_source', 'import')->first();
+        self::assertNotNull($bill);
         self::assertSame(15.0, (float) $bill->net_amount);
         self::assertSame(11.5, (float) $bill->gst_amount);
         self::assertSame(26.5, (float) $bill->amount);
@@ -78,7 +79,8 @@ final class ImportAssessmentTest extends TestCase
                 'tariff_source_url' => 'https://www.customs.gov.pg/tev/tariff', 'tariff_verified_on' => '2026-11-28',
             ])->assertRedirect(route('procurement.matching.index'))->assertSessionHasNoErrors();
 
-        $bill = DB::table('supplier_bills')->where('customs_assessment_reference', 'CUS-ENTRY-002')->firstOrFail();
+        $bill = DB::table('supplier_bills')->where('customs_assessment_reference', 'CUS-ENTRY-002')->first();
+        self::assertNotNull($bill);
         self::assertSame(26.5, (float) $bill->net_amount);
         self::assertSame(0.0, (float) $bill->gst_amount);
         self::assertSame(26.5, (float) $bill->amount);
