@@ -11,7 +11,7 @@ class WarehouseController extends Controller {
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $branchId=CompanyAuthorizer::activeBranchId($request);
         $warehouses=Warehouse::where('company_id',$companyId)->when($branchId,fn($q)=>$q->where('branch_id',$branchId))->with('branch')->orderBy('name')->get();
-        $branches=Branch::where('company_id',$companyId)->where('is_active',true)->when($branchId,fn($q)=>$q->whereKey($branchId))->orderBy('name')->get();
+        $branches=Branch::where('company_id',$companyId)->where('is_active',true)->when($branchId,fn($q)=>$q->where('id',$branchId))->orderBy('name')->get();
         return view('inventory.warehouses.index',compact('warehouses','branches'));
     }
     public function store(Request $request) {
