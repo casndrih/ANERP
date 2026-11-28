@@ -5,6 +5,7 @@ use App\Http\Controllers\CompanySelectionController;
 use App\Http\Controllers\CompanyAdministrationController;
 use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\GstSummaryController;
 use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\MfaController;
 use App\Http\Controllers\HumanResourcesController;
@@ -79,6 +80,9 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::post('/hr/leave/{leave}/decision', [HumanResourcesController::class, 'decideLeave'])->name('hr.leave.decision');
     Route::post('/hr/attendance', [HumanResourcesController::class, 'storeAttendance'])->name('hr.attendance.store');
     Route::get('/finance', [FinanceController::class, 'index'])->name('finance.index');
+    Route::post('/finance/tax-settings', [FinanceController::class, 'storeGstSettings'])->name('finance.tax-settings');
+    Route::get('/finance/gst-summary', [GstSummaryController::class, 'index'])->name('finance.gst-summary');
+
     Route::post('/finance/customers', [FinanceController::class, 'storeCustomer'])->name('finance.customers.store');
     Route::post('/finance/journals', [FinanceController::class, 'storeJournal'])->name('finance.journals.store');
     Route::post('/finance/journals/{journal}/post', [FinanceController::class, 'postJournal'])->name('finance.journals.post');
