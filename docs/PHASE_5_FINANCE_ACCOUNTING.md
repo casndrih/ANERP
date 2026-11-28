@@ -20,7 +20,7 @@
 ## Not included yet
 - GST calculations and GST return filing.
 - Customer receipts, supplier payment allocation, credit notes, refunds and ageing automation.
-- Inventory valuation journal automation and payroll-to-ledger posting.
+- FIFO/weighted-average inventory valuation, purchase invoice matching, payroll payment execution and statutory remittance workflows.
 - Fixed assets, depreciation, budgets, cost centres, multi-currency and foreign exchange revaluation.
 - Period locks, year-end closing, retained earnings roll-forward and full financial statements.
 - Bank feed/API integrations and statement import formats.
