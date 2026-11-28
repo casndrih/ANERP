@@ -16,7 +16,7 @@
 - Trial balance and balance sheet include posted entries through the selected end date; profit/loss uses the selected period.
 - Balance sheet earnings are calculated from posted income and expense entries; year-end close journals are not generated.
 - Bank cash movement is not a classified operating/investing/financing cash-flow statement.
-- AP/AR ageing uses full posted bill/invoice amounts because receipts, payment allocation, settlements, credits and refunds are not yet available.
+- AR ageing nets posted customer receipt allocations; AP ageing nets posted supplier payment allocations. Credit notes, refunds, supplier advances and payment reversals remain outstanding.
 - Payroll includes approved runs only.
 - Inventory reports quantities and recorded unit costs; no FIFO or weighted-average valuation is claimed.
 - Branch filtering is omitted because transactions do not yet consistently carry branch attribution.
