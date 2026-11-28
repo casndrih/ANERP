@@ -13,6 +13,7 @@
 - Finance workspace links to dedicated customer receipt and supplier payment registers.
 - Supplier payments support drafts, multi-bill allocations, partial bill settlements, maker-checker posting, balanced AP/bank journals, outgoing bank transactions and draft cancellation.
 - Customer credit notes support invoice-linked drafts, outstanding-balance controls, independent posting, balanced revenue/AR reversals, cancellation and AR ageing integration. Draft receipts and draft credit notes reserve the same invoice balance so they cannot collectively exceed the invoice.
+- Customer deposit refunds support receipt-linked unallocated-balance checks, maker-checker posting, balanced customer-deposit/bank journals, outgoing bank transactions and draft cancellation.
 - Accounts payable ageing nets posted supplier payment allocations; draft payments do not reduce reported AP.
 
 ## Accounting example
