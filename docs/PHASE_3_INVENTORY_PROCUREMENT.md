@@ -15,8 +15,8 @@
 ## Known limitations
 - The purchase order entry screen currently creates one product line per order. Multi-line PO editing, tax codes, discounts and freight allocation are planned.
 - Phase 8 adds company-configurable FIFO and moving weighted-average costing, per-warehouse/product cost balances, FIFO layers and exact movement total values. Historical GL journals are not rewritten when a method is selected.
-- Purchase receipts do not yet create supplier invoices or accounting journals.
-- Formal stock-count sessions, adjustment maker-checker approval, supplier invoice matching, supplier payments, reorder rules, barcode scanning and batch/serial tracking remain future work.
+- Purchase receipts create GRNI journals. Phase 9 adds supplier invoice matching and GRNI-to-AP posting; supplier payment allocation remains future work.
+- Formal stock-count sessions, adjustment maker-checker approval, supplier payments, reorder rules, barcode scanning and batch/serial tracking remain future work.
 - Role codes are checked in controller actions, but a complete permissions administration interface and policy test suite are still required.
 - Opening balance is currently an operational stock-in movement; production cutover needs a controlled opening-stock import and reconciliation.
 - Manual adjustment reasons are stored as notes; a formal stock-adjustment approval process remains outstanding.
