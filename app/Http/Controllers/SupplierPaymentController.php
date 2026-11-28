@@ -285,7 +285,7 @@ class SupplierPaymentController extends Controller
             $ap = Account::where('company_id', $companyId)->where('account_code', '2000')->firstOrFail();
             $bankLedger = Account::where('company_id', $companyId)->whereKey($bank->account_id)->firstOrFail();
             abort_unless($ap->account_type === 'liability' && $ap->normal_balance === 'credit', 422, 'AP control account 2000 must be a credit-normal liability.');
-            abort_unless($bankLedger->account_type === 'asset' && $bankLedger->normal_balance === 'debit', 422, 'Bank ledger must be a debit-normal asset.');
+            abort_unless($bankLedger->account_type === 'asset' && $bankLedger->normal_balance === 'debit' && $bankLedger->is_active, 422, 'Bank ledger must be a debit-normal asset.');
 
             $journal = JournalEntry::create([
                 'company_id' => $companyId, 'branch_id' => $document->branch_id,
@@ -303,7 +303,7 @@ class SupplierPaymentController extends Controller
                     ['company_id' => $companyId, 'account_code' => '2110'],
                     ['name' => 'GST Section 65A withholding payable', 'account_type' => 'liability', 'normal_balance' => 'credit', 'is_control_account' => true, 'is_active' => true]
                 );
-                abort_unless($withholdingLedger->account_type === 'liability' && $withholdingLedger->normal_balance === 'credit', 422, 'Section 65A withholding account 2110 must be a credit-normal liability.');
+                abort_unless($withholdingLedger->account_type === 'liability' && $withholdingLedger->normal_balance === 'credit' && $withholdingLedger->is_active, 422, 'Section 65A withholding account 2110 must be a credit-normal liability.');
                 JournalLine::create(['journal_entry_id' => $journal->id, 'account_id' => $withholdingLedger->id, 'description' => 'GST withheld under Section 65A', 'debit' => 0, 'credit' => $document->withheld_amount]);
             }
 
