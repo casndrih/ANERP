@@ -77,7 +77,7 @@ class ReportingController extends Controller
             $dateCol=$receivable?'invoice_date':'bill_date'; $relation=$receivable?'customer':'supplier';
             $docs=$model::with($relation)->where('company_id',$companyId)->when($branchId,fn($q)=>$q->where('branch_id',$branchId))->where('status','posted')->whereDate($dateCol,'<=',$to->toDateString())->get();
             $paidByInvoice = $receivable
-                ? DB::table('customer_receipt_allocations')->join('customer_receipts','customer_receipts.id','=','customer_receipt_allocations.customer_receipt_id')->whereIn('customer_receipt_allocations.customer_invoice_id',$docs->pluck('id'))->where('customer_receipts.status','posted')->groupBy('customer_receipt_allocations.customer_invoice_id')->pluck(DB::raw('SUM(customer_receipt_allocations.amount)'),'customer_receipt_allocations.customer_invoice_id')
+                ? DB::table('customer_receipt_allocations')->join('customer_receipts','customer_receipts.id','=','customer_receipt_allocations.customer_receipt_id')->whereIn('customer_receipt_allocations.customer_invoice_id',$docs->pluck('id'))->where('customer_receipts.status','posted')->where('customer_receipts.company_id',$companyId)->groupBy('customer_receipt_allocations.customer_invoice_id')->pluck(DB::raw('SUM(customer_receipt_allocations.amount)'),'customer_receipt_allocations.customer_invoice_id')
                 : collect();
             $rows=$docs->map(function($d) use($receivable,$relation,$dateCol,$to,$paidByInvoice) {
                 $due=Carbon::parse($d->due_date??$d->{$dateCol}); $days=ReportingCalculator::ageingDays($due,$to); $amount=round((float)$d->amount - ($receivable ? (float)$paidByInvoice->get($d->id,0) : 0),2);
