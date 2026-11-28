@@ -4,7 +4,7 @@ use App\Models\Employee;
 use App\Models\Company;
 use App\Models\PayrollLine;
 use App\Models\PayrollRun;
-use App\Services\PngPayrollCalculator;
+use App\Services\PngPayrollCalculator;\nuse App\Services\PayrollLedgerPoster;
 use App\Support\CompanyAuthorizer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -83,7 +83,7 @@ class PayrollController extends Controller {
         });
         return back()->with('status','Draft payroll run calculated with PNG statutory PAYE and superannuation rules. Review declarations, eligibility and each payslip before approval.');
     }
-    public function approve(Request $request, PayrollRun $run) {
+    public function approve(Request $request, PayrollRun $run, PayrollLedgerPoster $ledgerPoster) {
         CompanyAuthorizer::requirePermission($request,'payroll.approve');
         CompanyAuthorizer::requireCompanyWideAccess($request);
         $companyId=CompanyAuthorizer::activeCompanyId($request);
