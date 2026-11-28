@@ -134,8 +134,9 @@ class SupplierInvoiceMatchingController extends Controller
         CompanyAuthorizer::requirePermission($request, 'procurement.invoice.approve');
         $companyId = CompanyAuthorizer::activeCompanyId($request);
         $branchId = CompanyAuthorizer::activeBranchId($request);
+        $approvalData = $request->validate(['allocation_basis' => ['nullable', 'in:line_value,quantity,equal']]);
 
-        DB::transaction(function () use ($bill, $allocator, $companyId, $branchId, $request) {
+        DB::transaction(function () use ($bill, $allocator, $companyId, $branchId, $request, $approvalData) {
             $document = SupplierBill::where('company_id', $companyId)
                 ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
                 ->lockForUpdate()->findOrFail($bill);
@@ -163,7 +164,7 @@ class SupplierInvoiceMatchingController extends Controller
                 }
                 $lines[] = [$accounts['2600']->id, $document->amount, 0];
             } elseif ($document->invoice_type === 'landed_cost') {
-                $allocation = $allocator->allocate($companyId, (int) $document->id, $order, (float) $document->amount);
+                $allocation = $allocator->allocate($companyId, (int) $document->id, $order, (float) $document->amount, $approvalData['allocation_basis'] ?? 'line_value');
                 if ($allocation['inventory'] > 0) $lines[] = [$accounts['1200']->id, $allocation['inventory'], 0];
                 if ($allocation['cogs'] > 0) $lines[] = [$accounts['5000']->id, $allocation['cogs'], 0];
             } else {
