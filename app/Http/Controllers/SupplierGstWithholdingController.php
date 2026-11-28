@@ -256,8 +256,8 @@ class SupplierGstWithholdingController extends Controller
                 ['company_id' => $companyId, 'account_code' => '2110'],
                 ['name' => 'GST Section 65A withholding payable', 'account_type' => 'liability', 'normal_balance' => 'credit', 'is_control_account' => true, 'is_active' => true]
             );
-            abort_unless($bankLedger->account_type === 'asset' && $bankLedger->normal_balance === 'debit', 422, 'Bank ledger must be a debit-normal asset.');
-            abort_unless($withholdingLedger->account_type === 'liability' && $withholdingLedger->normal_balance === 'credit', 422, 'Section 65A withholding account 2110 must be a credit-normal liability.');
+            abort_unless($bankLedger->account_type === 'asset' && $bankLedger->normal_balance === 'debit' && $bankLedger->is_active, 422, 'Bank ledger must be a debit-normal asset.');
+            abort_unless($withholdingLedger->account_type === 'liability' && $withholdingLedger->normal_balance === 'credit' && $withholdingLedger->is_active, 422, 'Section 65A withholding account 2110 must be a credit-normal liability.');
 
             $journal = JournalEntry::create([
                 'company_id' => $companyId, 'branch_id' => $document->branch_id,
