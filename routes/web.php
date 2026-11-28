@@ -5,6 +5,7 @@ use App\Http\Controllers\CompanySelectionController;
 use App\Http\Controllers\CompanyAdministrationController;
 use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\MfaController;
 use App\Http\Controllers\HumanResourcesController;
 use App\Http\Controllers\PayrollController;
@@ -84,6 +85,9 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::post('/finance/bills/{bill}/post', [FinanceController::class, 'postSupplierBill'])->name('finance.bills.post');
     Route::post('/finance/invoices', [FinanceController::class, 'storeInvoice'])->name('finance.invoices.store');
     Route::post('/finance/invoices/{invoice}/post', [FinanceController::class, 'postInvoice'])->name('finance.invoices.post');
+    Route::get('/finance/payments', [SupplierPaymentController::class, 'index'])->name('finance.payments.index');
+    Route::post('/finance/payments', [SupplierPaymentController::class, 'store'])->name('finance.payments.store');
+    Route::post('/finance/payments/{payment}/post', [SupplierPaymentController::class, 'post'])->name('finance.payments.post');
     Route::post('/finance/bank-accounts', [FinanceController::class, 'storeBankAccount'])->name('finance.bank-accounts.store');
     Route::post('/finance/bank-transactions', [FinanceController::class, 'storeBankTransaction'])->name('finance.bank-transactions.store');
     Route::post('/finance/bank-accounts/{bankAccount}/reconcile', [FinanceController::class, 'reconcile'])->name('finance.bank-accounts.reconcile');
