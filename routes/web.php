@@ -12,6 +12,7 @@ use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\StockMovementController;
+use App\Http\Controllers\StockCountController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Middleware\AuditCompanyActivity;
@@ -49,6 +50,10 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::get('/inventory/warehouses', [WarehouseController::class, 'index'])->name('inventory.warehouses.index');
     Route::post('/inventory/warehouses', [WarehouseController::class, 'store'])->name('inventory.warehouses.store');
     Route::get('/inventory/movements', [StockMovementController::class, 'index'])->name('inventory.movements.index');
+    Route::get('/inventory/counts', [StockCountController::class, 'index'])->name('inventory.counts.index');
+    Route::post('/inventory/counts', [StockCountController::class, 'store'])->name('inventory.counts.store');
+    Route::post('/inventory/counts/{count}/submit', [StockCountController::class, 'submit'])->name('inventory.counts.submit');
+    Route::post('/inventory/counts/{count}/approve', [StockCountController::class, 'approve'])->name('inventory.counts.approve');
     Route::post('/inventory/movements', [StockMovementController::class, 'store'])->name('inventory.movements.store');
     Route::post('/inventory/costing', [StockMovementController::class, 'updateValuationMethod'])->name('inventory.costing.update');
     Route::post('/inventory/transfers', [StockMovementController::class, 'transfer'])->name('inventory.movements.transfer');
