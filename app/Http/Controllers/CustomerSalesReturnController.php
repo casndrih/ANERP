@@ -201,7 +201,7 @@ class CustomerSalesReturnController extends Controller
             abort_if((int) $document->created_by === (int) $request->user()->id, 403, 'The sales return creator cannot post their own return.');
 
             $invoice = CustomerInvoice::where('company_id', $companyId)->lockForUpdate()->findOrFail($document->customer_invoice_id);
-            abort_unless($invoice->status === 'posted' && (int) $invoice->customer_id === (int) $document->customer_id, 409, 'Sales return must reference the same customer's posted invoice.');
+            abort_unless($invoice->status === 'posted' && (int) $invoice->customer_id === (int) $document->customer_id, 409, "Sales return must reference the same customer's posted invoice.");
             abort_unless($invoice->currency === 'PGK' && $document->currency === 'PGK', 422, 'Sales returns currently support PGK only.');
             abort_unless((int) ($invoice->branch_id ?? 0) === (int) ($document->branch_id ?? 0), 409, 'Sales return and original invoice branch attribution must match.');
 
