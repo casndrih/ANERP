@@ -94,6 +94,8 @@ final class PngGstAccountingTest extends TestCase
         $company = Company::create(['name' => 'GST Co', 'is_active' => true]);
         $branch = Branch::create(['company_id' => $company->id, 'code' => 'LAE', 'name' => 'Lae', 'is_active' => true]);
         $creator = $this->owner($company, 'gst-creator'); $approver = $this->owner($company, 'gst-approver');
+        Account::create(['company_id' => $company->id, 'account_code' => '6400', 'name' => 'General operating expense', 'account_type' => 'expense', 'normal_balance' => 'debit', 'is_control_account' => false, 'is_active' => true]);
+        Account::create(['company_id' => $company->id, 'account_code' => '4000', 'name' => 'Sales revenue', 'account_type' => 'income', 'normal_balance' => 'credit', 'is_control_account' => false, 'is_active' => true]);
         $supplier = Supplier::create(['company_id' => $company->id, 'code' => 'SUP-GST', 'name' => 'GST Supplier', 'is_active' => true]);
         $customer = Customer::create(['company_id' => $company->id, 'code' => 'CUST-GST', 'name' => 'GST Customer', 'is_active' => true]);
         return [$company, $branch, $creator, $approver, $supplier, $customer];
