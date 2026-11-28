@@ -12,14 +12,14 @@
 - Purchase receipts post to the stock ledger and update received quantities.
 - PGK defaults and company-scoped data access throughout the module.
 
-## Known limitations
-- The purchase order entry screen currently creates one product line per order. Multi-line PO editing, tax codes, discounts and freight allocation are planned.
-- Phase 8 adds company-configurable FIFO and moving weighted-average costing, per-warehouse/product cost balances, FIFO layers and exact movement total values. Historical GL journals are not rewritten when a method is selected.
-- Purchase receipts create GRNI journals. Phase 9 adds supplier invoice matching and GRNI-to-AP posting; supplier payment allocation remains future work.
-- Formal stock-count sessions, adjustment maker-checker approval, supplier payments, reorder rules, barcode scanning and batch/serial tracking remain future work.
-- Role codes are checked in controller actions, but a complete permissions administration interface and policy test suite are still required.
-- Opening balance is currently an operational stock-in movement; production cutover needs a controlled opening-stock import and reconciliation.
-- Manual adjustment reasons are stored as notes; a formal stock-adjustment approval process remains outstanding.
+## Current limitations after later phase work
+- Multi-line purchase orders, tax treatment, supplier invoice matching, GRNI-to-AP, supplier payments, supplier credit notes, stock returns, FIFO/weighted-average valuation, stock-count sessions and independent adjustment approvals are implemented in later phases.
+- Reorder points/replenishment suggestions and purchase planning remain outstanding.
+- Barcode scanning, batch/lot, serial-number and expiry tracking remain outstanding.
+- Controlled opening-stock import and opening valuation conversion with a reconciliation report are not yet available; an opening movement is not a substitute for a controlled production cutover.
+- Purchase-price and quantity tolerance approval workflows are not yet available; mismatches currently require manual resolution.
+- Landed-cost capitalisation is deliberately blocked for mixed/unreconciled stock pools and transfers; an operational reconciliation workflow is still needed.
+- Complete warehouse/stocktake UAT, concurrency stress tests and stock-to-GL reconciliation evidence are required before production.
 
 ## Migration and smoke-test plan
 1. Apply migrations against a clean PostgreSQL database.
