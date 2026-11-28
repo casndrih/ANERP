@@ -85,8 +85,8 @@ final class PayrollLedgerPostingTest extends TestCase
     {
         $company = Company::create(['name' => 'Payroll Ledger Co', 'is_active' => true]);
         $user = User::create(['name' => 'Payroll Approver', 'email' => uniqid().'@example.test', 'password' => 'password']);
-        $branchA = Branch::create(['company_id' => $company->id, 'name' => 'Lae']);
-        $branchB = Branch::create(['company_id' => $company->id, 'name' => 'Hagen']);
+        $branchA = Branch::create(['company_id' => $company->id, 'code' => 'LAE', 'name' => 'Lae', 'is_active' => true]);
+        $branchB = Branch::create(['company_id' => $company->id, 'code' => 'HGN', 'name' => 'Hagen', 'is_active' => true]);
         return [$company, $user, $branchA, $branchB];
     }
 
@@ -96,7 +96,7 @@ final class PayrollLedgerPostingTest extends TestCase
             'company_id' => $company->id, 'branch_id' => $branch?->id,
             'employee_number' => 'EMP-'.$suffix, 'first_name' => 'Test',
             'last_name' => $suffix, 'base_salary' => 1000,
-            'pay_frequency' => 'fortnightly', 'status' => 'active',
+            'pay_frequency' => 'fortnightly', 'tax_residency' => 'resident', 'status' => 'active',
         ]);
     }
 
