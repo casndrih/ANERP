@@ -26,7 +26,7 @@ class CustomerCreditNoteController extends Controller
             ->select('customer_invoices.*')
             ->selectSub(function ($q) {
                 $q->from('customer_receipt_allocations')->join('customer_receipts', 'customer_receipts.id', '=', 'customer_receipt_allocations.customer_receipt_id')
-                    ->whereColumn('customer_receipt_allocations.customer_invoice_id', 'customer_invoices.id')->where('customer_receipts.status', 'posted')
+                    ->whereColumn('customer_receipt_allocations.customer_invoice_id', 'customer_invoices.id')->whereIn('customer_receipts.status', ['draft', 'posted'])
                     ->whereColumn('customer_receipts.company_id', 'customer_invoices.company_id')->selectRaw('COALESCE(SUM(customer_receipt_allocations.amount), 0)');
             }, 'amount_paid')
             ->selectSub(function ($q) {
@@ -65,7 +65,7 @@ class CustomerCreditNoteController extends Controller
                 throw ValidationException::withMessages(['credit_note_date' => 'Credit note date cannot be earlier than the original invoice date.']);
             }
             $paid = (float) DB::table('customer_receipt_allocations')->join('customer_receipts', 'customer_receipts.id', '=', 'customer_receipt_allocations.customer_receipt_id')
-                ->where('customer_receipt_allocations.customer_invoice_id', $invoice->id)->where('customer_receipts.status', 'posted')
+                ->where('customer_receipt_allocations.customer_invoice_id', $invoice->id)->whereIn('customer_receipts.status', ['draft', 'posted'])
                 ->where('customer_receipts.company_id', $companyId)->sum('customer_receipt_allocations.amount');
             $reservedCredits = (float) CustomerCreditNote::where('company_id', $companyId)->where('customer_invoice_id', $invoice->id)
                 ->whereIn('status', ['draft', 'posted'])->sum('amount');
@@ -119,7 +119,7 @@ class CustomerCreditNoteController extends Controller
             abort_unless((int) ($invoice->branch_id ?? 0) === (int) ($note->branch_id ?? 0), 409, 'Credit note and invoice branch attribution must match.');
 
             $paid = (float) DB::table('customer_receipt_allocations')->join('customer_receipts', 'customer_receipts.id', '=', 'customer_receipt_allocations.customer_receipt_id')
-                ->where('customer_receipt_allocations.customer_invoice_id', $invoice->id)->where('customer_receipts.status', 'posted')
+                ->where('customer_receipt_allocations.customer_invoice_id', $invoice->id)->whereIn('customer_receipts.status', ['draft', 'posted'])
                 ->where('customer_receipts.company_id', $companyId)->sum('customer_receipt_allocations.amount');
             $otherCredits = (float) CustomerCreditNote::where('company_id', $companyId)->where('customer_invoice_id', $invoice->id)
                 ->whereIn('status', ['draft', 'posted'])->where('id', '!=', $note->id)->sum('amount');
