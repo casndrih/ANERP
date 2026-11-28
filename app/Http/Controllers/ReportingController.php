@@ -107,7 +107,7 @@ class ReportingController extends Controller
             $branchId=CompanyAuthorizer::activeBranchId($request);
             $moves=StockMovement::with(['product','warehouse'])->where('company_id',$companyId)->when($branchId,fn($q)=>$q->whereHas('warehouse',fn($w)=>$w->where('branch_id',$branchId)))->whereBetween('occurred_at',[$from,$to])->orderBy('occurred_at')->get();
             $rows=$moves->groupBy(fn($m)=>($m->product?->sku??'—').' · '.($m->product?->name??'Unknown').' / '.($m->warehouse?->name??'Unknown'))->map(function($items,$label) {
-                $in=$items->whereIn('movement_type',['opening','purchase_receipt','transfer_in','adjustment_in'])->sum('quantity');
+                $in=$items->whereIn('movement_type',['opening','purchase_receipt','transfer_in','adjustment_in','customer_return'])->sum('quantity');
                 $out=$items->whereIn('movement_type',['issue','transfer_out','adjustment_out','supplier_return'])->sum('quantity');
                 return (object)['product_warehouse'=>$label,'movements'=>$items->count(),'quantity_in'=>round((float)$in,3),'quantity_out'=>round((float)$out,3),'net_quantity'=>round((float)$in-(float)$out,3),'movement_cost_value'=>ReportingCalculator::movementCostValue($items)];
             })->values();
