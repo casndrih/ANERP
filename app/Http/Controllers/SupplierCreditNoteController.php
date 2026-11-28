@@ -120,7 +120,7 @@ class SupplierCreditNoteController extends Controller
             abort_if((int) $note->created_by === (int) $request->user()->id, 403, 'The credit note creator cannot post their own credit note.');
             $bill = SupplierBill::where('company_id', $companyId)->lockForUpdate()->findOrFail($note->supplier_bill_id);
             abort_unless($bill->status === 'posted' && $bill->invoice_type === 'general' && $bill->match_status === 'not_required', 409, 'Credit note must reference a posted non-inventory general bill.');
-            abort_unless($bill->currency === 'PGK' && (int) $bill->supplier_id === (int) $note->supplier_id, 409, 'Credit note supplier and currency must match the original bill.');
+            abort_unless($bill->currency === 'PGK' && $bill->invoice_type === 'general' && $bill->match_status === 'not_required' && (int) $bill->supplier_id === (int) $note->supplier_id, 409, 'Credit note must match an original PGK general expense bill and supplier.');
             abort_unless((int) ($bill->branch_id ?? 0) === (int) ($note->branch_id ?? 0), 409, 'Credit note and bill branch attribution must match.');
             $paid = (float) SupplierPaymentAllocation::query()->join('supplier_payments', 'supplier_payments.id', '=', 'supplier_payment_allocations.supplier_payment_id')
                 ->where('supplier_payment_allocations.supplier_bill_id', $bill->id)->where('supplier_payments.company_id', $companyId)
