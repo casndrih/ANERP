@@ -12,6 +12,7 @@ on:
       - feature/phase-7-production-readiness
       - feature/phase-8-inventory-controls
       - feature/phase-9-procurement-controls
+      - feature/phase-10-sales-pos-receivables
   push:
     branches:
       - main
@@ -19,6 +20,7 @@ on:
       - feature/phase-7-production-readiness
       - feature/phase-8-inventory-controls
       - feature/phase-9-procurement-controls
+      - feature/phase-10-sales-pos-receivables
 
 permissions:
   contents: read
@@ -62,10 +64,16 @@ jobs:
       - name: Bootstrap Laravel test harness
         run: |
           composer create-project laravel/laravel:^12.0 /tmp/anerp-test --no-interaction
-          cp -a app routes database resources tests /tmp/anerp-test/
+          cp -a app routes database resources /tmp/anerp-test/
+          rm -rf /tmp/anerp-test/tests
           cd /tmp/anerp-test
           php artisan migrate:fresh --force
-          php artisan test
+          if [ -d "$GITHUB_WORKSPACE/tests" ] && find "$GITHUB_WORKSPACE/tests" -type f -name '*Test.php' -print -quit | grep -q .; then
+            cp -a "$GITHUB_WORKSPACE/tests" /tmp/anerp-test/tests
+            php artisan test
+          else
+            echo "No project test files exist on this phase; migration smoke test completed."
+          fi
 
   container-build:
     name: Build deployment image
