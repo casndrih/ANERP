@@ -25,9 +25,14 @@ class PosSessionController extends Controller
         $companyId = CompanyAuthorizer::activeCompanyId($request);
         $branchId = CompanyAuthorizer::activeBranchId($request);
         $sessions = DB::table('pos_sessions')
-            ->where('company_id', $companyId)
-            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
-            ->orderByDesc('opened_at')->limit(40)->get();
+            ->join('users as cashiers', 'cashiers.id', '=', 'pos_sessions.opened_by')
+            ->join('branches', 'branches.id', '=', 'pos_sessions.branch_id')
+            ->join('warehouses', 'warehouses.id', '=', 'pos_sessions.warehouse_id')
+            ->join('bank_accounts', 'bank_accounts.id', '=', 'pos_sessions.cash_bank_account_id')
+            ->where('pos_sessions.company_id', $companyId)
+            ->when($branchId, fn ($q) => $q->where('pos_sessions.branch_id', $branchId))
+            ->select('pos_sessions.*', 'cashiers.name as cashier_name', 'branches.name as branch_name', 'warehouses.name as warehouse_name', 'bank_accounts.name as cash_account_name')
+            ->orderByDesc('pos_sessions.opened_at')->limit(40)->get();
         $openSessions = $sessions->where('status', 'open')->count();
 
         return view('sales.pos.index', [
