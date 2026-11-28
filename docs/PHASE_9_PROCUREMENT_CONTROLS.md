@@ -4,7 +4,7 @@
 - Supplier bills can be linked to an approved purchase order and classified as goods invoices or landed-cost invoices.
 - Goods invoices require invoice lines to identify the purchase-order line, billed quantity and unit price.
 - A goods invoice cannot exceed received, not-yet-invoiced quantity for a PO line.
-- Goods invoice unit prices must match the approved PO price within K0.01; total invoice value must reconcile to matched line totals. Tax, freight and other charges must be entered separately until tax handling is implemented.
+- Goods invoice unit prices must match the approved PO price within K0.01; matched line totals reconcile to the invoice net amount. Eligible GST is posted separately to GST input tax, while gross AP includes the GST amount.
 - Pending and approved invoice matches are counted when preventing duplicate billing, including invoices that have been matched but not yet posted.
 - Goods invoice approval clears goods-received-not-invoiced (GRNI) into accounts payable through a balanced posted journal.
 - Landed-cost invoices can be allocated across received stock by received line value, received quantity, equal share, product weight or product volume per received product line; the selected basis is persisted for audit.
@@ -25,10 +25,10 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 
 ## Current limitations
 - Purchase orders now support multiple product lines in the authoring screen and the controller validates each submitted line.
-- Full statutory GST return automation and tax adjustment notes, GST on PO-matched goods/landed-cost invoices, import GST/customs assessments, withholding under section 65A, private-use and exempt-sale input-credit adjustments, inventory/GRNI supplier debit/credit notes, invoice attachments/OCR and payment reversals remain outstanding. The GST summary is a management estimate, not a filing-ready G1 return. Supplier payment allocation is implemented. Invoice-level supplier credit notes are supported for posted general expense bills only; matched inventory/GRNI bills are deliberately blocked until stock-return accounting exists.
+- Full statutory GST return automation and tax adjustment notes, import GST/customs assessment postings, withholding under section 65A, private-use and exempt-sale input-credit adjustments, inventory/GRNI supplier debit/credit notes, invoice attachments/OCR and payment reversals remain outstanding. The GST summary is a management estimate, not a filing-ready G1 return. Supplier payment allocation is implemented. Invoice-level supplier credit notes are supported for posted general expense bills only; matched inventory/GRNI bills are deliberately blocked until stock-return accounting exists.
 - Goods price variance beyond K0.01 is blocked for manual resolution; tolerance approval workflows are not yet available.
 - Landed costs are only capitalised when the product/warehouse cost pool is isolated and reconciled. Mixed stock pools and transferred stock require manual reconciliation before this feature can proceed.
-- Landed costs support received line value, received quantity and equal-share allocation. Weight-, volume- and charge-specific allocation bases are not configurable.
+- Landed costs support received line value, received quantity, equal-share, product weight and product volume allocation. Charge-specific allocation rules and customs-specific landed cost allocation are not yet implemented.
 - Supplier invoice matching is not an external tax or statutory compliance certification.
 
 ## Acceptance checks
