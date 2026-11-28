@@ -21,7 +21,7 @@ class CustomerCreditNoteController extends Controller
         CompanyAuthorizer::requirePermission($request, 'finance.view');
         $companyId = CompanyAuthorizer::activeCompanyId($request);
         $branchId = CompanyAuthorizer::activeBranchId($request);
-        $invoices = CustomerInvoice::with('customer')->where('company_id', $companyId)->where('status', 'posted')
+        $invoices = CustomerInvoice::with('customer')->where('company_id', $companyId)->where('status', 'posted')->where('gst_amount', 0)
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->select('customer_invoices.*')
             ->selectSub(function ($q) {
@@ -49,7 +49,7 @@ class CustomerCreditNoteController extends Controller
         $companyId = CompanyAuthorizer::activeCompanyId($request);
         $branchId = CompanyAuthorizer::activeBranchId($request);
         $data = $request->validate([
-            'invoice_id' => ['required', 'integer', Rule::exists('customer_invoices', 'id')->where(fn ($q) => $q->where('company_id', $companyId)->where('status', 'posted'))],
+            'invoice_id' => ['required', 'integer', Rule::exists('customer_invoices', 'id')->where(fn ($q) => $q->where('company_id', $companyId)->where('status', 'posted')->where('gst_amount', 0))],
             'credit_note_number' => ['required', 'string', 'max:80', Rule::unique('customer_credit_notes')->where(fn ($q) => $q->where('company_id', $companyId))],
             'credit_note_date' => ['required', 'date'],
             'description' => ['required', 'string', 'max:255'],
@@ -62,6 +62,7 @@ class CustomerCreditNoteController extends Controller
                 ->lockForUpdate()->findOrFail($data['invoice_id']);
             if ($invoice->currency !== 'PGK') throw ValidationException::withMessages(['invoice_id' => 'Customer invoices must be in PGK until multi-currency settlement is implemented.']);
             abort_unless($invoice->status === 'posted', 409, 'Credit notes can only reference posted invoices.');
+            if ((float)$invoice->gst_amount > 0) throw ValidationException::withMessages(['invoice_id' => 'GST-bearing invoices require a GST adjustment-note workflow before they can be credited.']);
             if ($data['credit_note_date'] < $invoice->invoice_date->toDateString()) {
                 throw ValidationException::withMessages(['credit_note_date' => 'Credit note date cannot be earlier than the original invoice date.']);
             }
@@ -117,7 +118,7 @@ class CustomerCreditNoteController extends Controller
 
             $invoice = CustomerInvoice::where('company_id', $companyId)->lockForUpdate()->findOrFail($note->customer_invoice_id);
             abort_unless($invoice->currency === 'PGK', 422, 'Customer invoices must be in PGK until multi-currency settlement is implemented.');
-            abort_unless($invoice->status === 'posted' && (int) $invoice->customer_id === (int) $note->customer_id, 409, 'Credit note must reference a posted invoice for the same customer.');
+            abort_unless($invoice->status === 'posted' && (int) $invoice->customer_id === (int) $note->customer_id && (float)$invoice->gst_amount === 0.0, 409, 'Credit note must reference an eligible posted non-GST invoice for the same customer.');
             abort_unless((int) ($invoice->branch_id ?? 0) === (int) ($note->branch_id ?? 0), 409, 'Credit note and invoice branch attribution must match.');
 
             $paid = (float) DB::table('customer_receipt_allocations')->join('customer_receipts', 'customer_receipts.id', '=', 'customer_receipt_allocations.customer_receipt_id')
