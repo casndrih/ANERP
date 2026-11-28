@@ -50,6 +50,77 @@ final class CustomerCreditPolicyTest extends TestCase
         $this->assertDatabaseHas('sales_orders', ['id' => $order->id, 'status' => 'draft']);
     }
 
+    public function test_invoice_posting_is_blocked_by_credit_hold_and_limit(): void
+    {
+        [$company, $branch, $warehouse, $customer, $user] = $this->fixture(100, true);
+        $revenue = Account::create([
+            'company_id' => $company->id, 'account_code' => '4000', 'name' => 'Sales',
+            'account_type' => 'income', 'normal_balance' => 'credit',
+            'is_control_account' => false, 'is_active' => true,
+        ]);
+        $invoice = CustomerInvoice::create([
+            'company_id' => $company->id, 'customer_id' => $customer->id,
+            'revenue_account_id' => $revenue->id, 'invoice_number' => 'CR-HOLD-INV',
+            'invoice_date' => '2026-11-28', 'amount' => 50, 'currency' => 'PGK',
+            'description' => 'Credit hold test', 'status' => 'draft', 'created_by' => $user->id,
+        ]);
+
+        try {
+            $invoice->update(['status' => 'posted']);
+            self::fail('Expected a credit hold to reject invoice posting.');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('customer_id', $exception->errors());
+        }
+
+        $this->assertDatabaseHas('customer_invoices', ['id' => $invoice->id, 'status' => 'draft']);
+    }
+
+    public function test_posted_receipts_and_credit_notes_release_customer_credit(): void
+    {
+        [$company, $branch, $warehouse, $customer, $user] = $this->fixture(500);
+        $ar = Account::create([
+            'company_id' => $company->id, 'account_code' => '1100', 'name' => 'Accounts receivable',
+            'account_type' => 'asset', 'normal_balance' => 'debit',
+            'is_control_account' => true, 'is_active' => true,
+        ]);
+        $revenue = Account::create([
+            'company_id' => $company->id, 'account_code' => '4000', 'name' => 'Sales',
+            'account_type' => 'income', 'normal_balance' => 'credit',
+            'is_control_account' => false, 'is_active' => true,
+        ]);
+        $bank = BankAccount::create([
+            'company_id' => $company->id, 'account_id' => $ar->id, 'code' => 'CR-BANK',
+            'name' => 'Credit Test Bank', 'currency' => 'PGK', 'is_active' => true,
+        ]);
+        $invoice = CustomerInvoice::create([
+            'company_id' => $company->id, 'customer_id' => $customer->id,
+            'revenue_account_id' => $revenue->id, 'invoice_number' => 'CR-OFFSET-INV',
+            'invoice_date' => '2026-11-01', 'amount' => 450, 'currency' => 'PGK',
+            'description' => 'Credit exposure test', 'status' => 'posted', 'created_by' => $user->id,
+        ]);
+        $receipt = CustomerReceipt::create([
+            'company_id' => $company->id, 'customer_id' => $customer->id,
+            'bank_account_id' => $bank->id, 'receipt_number' => 'CR-OFFSET-RCPT',
+            'receipt_date' => '2026-11-20', 'description' => 'Credit offset receipt',
+            'amount' => 100, 'currency' => 'PGK', 'status' => 'posted', 'created_by' => $user->id,
+        ]);
+        DB::table('customer_receipt_allocations')->insert([
+            'customer_receipt_id' => $receipt->id, 'customer_invoice_id' => $invoice->id,
+            'amount' => 100, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        CustomerCreditNote::create([
+            'company_id' => $company->id, 'customer_id' => $customer->id,
+            'customer_invoice_id' => $invoice->id, 'credit_note_number' => 'CR-OFFSET-CN',
+            'credit_note_date' => '2026-11-21', 'description' => 'Credit exposure offset',
+            'amount' => 50, 'currency' => 'PGK', 'status' => 'posted', 'created_by' => $user->id,
+        ]);
+
+        $order = $this->order($company, $branch, $warehouse, $customer, $user, 'CR-OFFSET-SO', 200);
+        $order->update(['status' => 'approved']);
+
+        $this->assertDatabaseHas('sales_orders', ['id' => $order->id, 'status' => 'approved']);
+    }
+
     private function fixture(?float $limit, bool $hold = false): array
     {
         $company = Company::create(['name' => 'Credit Policy Co', 'is_active' => true]);
