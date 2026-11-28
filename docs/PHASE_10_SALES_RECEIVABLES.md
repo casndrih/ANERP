@@ -28,6 +28,13 @@
 - Posting creates a GST-adjusted customer credit note, reverses revenue and output GST, reduces open AR, and credits customer deposits for any amount exceeding the invoice's remaining receivable. Maker-checker prevents the return creator from posting.
 - Current valuation limitation: where a FIFO issue consumed multiple cost layers, a partial return uses the original issue movement's weighted unit cost; exact per-layer consumption restoration is still outstanding and requires layer-allocation provenance.
 
+## POS cash refunds and transaction voids
+- Cash refunds are linked to a posted item-level sales-return credit note and the original POS cash transaction. The amount is capped by both the unrefunded customer-deposit balance and the remaining value of the original POS cash sale.
+- Refund drafts reserve deposit and sale value; the cashier who created the refund cannot post it. Posting debits customer deposits (2500), credits the till cash asset, creates an outgoing bank transaction and reduces expected till cash.
+- POS void requests are maker-checker controlled. Posting reverses the original cash receipt settlement (debit AR, credit till cash), marks the receipt reversed and POS transaction voided, reopens the invoice receivable and records an outgoing bank transaction.
+- Voids are blocked after subsequent customer receipts, credit notes, sales returns or refunds. A new POS cash transaction can be recorded against the reopened invoice after the void posts.
+- A POS void reverses the cash settlement, not the underlying posted invoice; the invoice remains open in AR for later settlement.
+
 ## Accounting example
 For a K100 customer receipt allocated K80 to posted invoices:
 - Debit bank K100.
@@ -47,7 +54,6 @@ The K20 remains a customer liability until allocated or refunded through a separ
 - Posted receipts are not edited in place; corrections require controlled refund/reversal workflows.
 
 ## Remaining work before Phase 10 acceptance
-- POS refund and void workflows, including safe till cash movements and end-of-day settlement reconciliation.
 - Picking/packing scans, dispatch manifests, delivery runs and proof of delivery.
 - EFTPOS terminal integration and automated settlement matching.
 - Customer statement generation (PDF/CSV), email delivery, statement history and automated overdue reminders.
@@ -68,6 +74,9 @@ The K20 remains a customer liability until allocated or refunded through a separ
 - Verify branch and tenant isolation for receipt creation, posting, invoice allocation and reports.
 - Verify supplier payments cannot allocate to another supplier/company/branch, cannot over-settle bills, require an independent poster, create a balanced AP/bank journal and reduce AP ageing only after posting.
 - Verify item-level sales returns cannot exceed invoice-line quantities or previously uncredited invoice value, including competing drafts.
+- Verify POS refunds are limited by both the source credit note's unrefunded deposit and the original POS sale amount, use maker-checker, post a balanced deposit/cash journal and reduce expected till cash.
+- Verify POS voids reopen AR, reverse the customer receipt, post a balanced cash/AR journal and outgoing bank transaction, and are blocked by later receipts, credits, returns or refunds.
+- Verify till closing expected cash includes cash sales less posted refunds and void cash-outs.
 - Verify resellable returns restore stock and inventory value at the original issue movement's weighted unit cost, and credit cost of goods sold.
 - Verify damaged/defective returns are recorded but do not increase sellable on-hand stock.
 - Verify sales-return posting reverses revenue and output GST, creates a posted credit note, reduces AR and credits customer deposits for any overpayment.
