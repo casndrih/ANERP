@@ -21,12 +21,14 @@ return new class extends Migration {
             $table->decimal('import_gst_amount', 14, 2)->nullable();
             $table->string('tariff_source_url', 500)->nullable();
             $table->date('tariff_verified_on')->nullable();
+            $table->unique(['company_id', 'customs_assessment_reference'], 'supplier_bills_company_customs_ref_unique');
         });
     }
 
     public function down(): void
     {
         Schema::table('supplier_bills', function (Blueprint $table) {
+            $table->dropUnique('supplier_bills_company_customs_ref_unique');
             $table->dropColumn([
                 'gst_source', 'customs_assessment_reference', 'import_declaration_number', 'hs_code',
                 'verified_duty_rate', 'customs_value', 'gst_base', 'customs_duty_amount', 'excise_amount',
