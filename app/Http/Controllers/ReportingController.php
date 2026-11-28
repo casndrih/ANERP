@@ -64,8 +64,11 @@ class ReportingController extends Controller
             $receivable=$report==='receivables'; $model=$receivable?CustomerInvoice::class:SupplierBill::class;
             $dateCol=$receivable?'invoice_date':'bill_date'; $relation=$receivable?'customer':'supplier';
             $docs=$model::with($relation)->where('company_id',$companyId)->where('status','posted')->whereDate($dateCol,'<=',$to->toDateString())->get();
-            $rows=$docs->map(function($d) use($receivable,$relation,$dateCol,$to) {
-                $due=Carbon::parse($d->due_date??$d->{$dateCol}); $days=ReportingCalculator::ageingDays($due,$to); $amount=round((float)$d->amount,2);
+            $paidByDocument = $receivable
+                ? collect()
+                : DB::table('supplier_payment_allocations')->join('supplier_payments','supplier_payments.id','=','supplier_payment_allocations.supplier_payment_id')->whereIn('supplier_payment_allocations.supplier_bill_id',$docs->pluck('id'))->where('supplier_payments.status','posted')->where('supplier_payments.company_id',$companyId)->whereDate('supplier_payments.payment_date','<=',$to->toDateString())->select('supplier_payment_allocations.supplier_bill_id')->selectRaw('SUM(supplier_payment_allocations.amount) as paid_amount')->groupBy('supplier_payment_allocations.supplier_bill_id')->get()->pluck('paid_amount','supplier_bill_id');
+            $rows=$docs->map(function($d) use($receivable,$relation,$dateCol,$to,$paidByDocument) {
+                $due=Carbon::parse($d->due_date??$d->{$dateCol}); $days=ReportingCalculator::ageingDays($due,$to); $amount=round((float)$d->amount - (float)$paidByDocument->get($d->id,0),2);
                 return (object)['document'=>$receivable?$d->invoice_number:$d->bill_number,'counterparty'=>$d->{$relation}?->name??'','document_date'=>$d->{$dateCol}?->format('Y-m-d'),'due_date'=>$due->toDateString(),'days_overdue'=>$days,'current'=>ReportingCalculator::ageingBucket($days)==='current'?$amount:0,'1_30'=>ReportingCalculator::ageingBucket($days)==='1_30'?$amount:0,'31_60'=>ReportingCalculator::ageingBucket($days)==='31_60'?$amount:0,'61_90'=>ReportingCalculator::ageingBucket($days)==='61_90'?$amount:0,'over_90'=>ReportingCalculator::ageingBucket($days)==='over_90'?$amount:0,'amount'=>$amount];
             });
             $totals=['amount'=>round((float)$rows->sum('amount'),2)];
