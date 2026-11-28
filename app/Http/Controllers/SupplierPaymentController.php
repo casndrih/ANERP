@@ -87,6 +87,7 @@ class SupplierPaymentController extends Controller
             'allocations' => ['required', 'array', 'min:1'],
             'allocations.*.bill_id' => ['required', 'integer', 'distinct'],
             'allocations.*.amount' => ['required', 'numeric', 'gt:0'],
+            'allocations.*.supply_province' => ['nullable', 'string', 'max:100'],
         ]);
 
         $assignedBranch = CompanyAuthorizer::activeBranchId($request);
@@ -145,7 +146,7 @@ class SupplierPaymentController extends Controller
                     if ((float) $bill->gst_amount > 0 && (!(bool) $bill->supplier_gst_registered
                         || !filled(trim((string) $bill->supplier_gst_registration_number))
                         || !filled(trim((string) $supplier->tin))
-                        || !filled(trim((string) $bill->supply_province)))) {
+                        || !filled(trim((string) ($bill->supply_province ?: ($row['supply_province'] ?? '')))))) {
                         throw ValidationException::withMessages(['allocations' => 'A Section 65A-covered GST bill requires the supplier TIN, GST registration number and province where the supply was made before payment.']);
                     }
                     $alreadyWithheld = (float) DB::table('supplier_payment_allocations')
@@ -164,6 +165,8 @@ class SupplierPaymentController extends Controller
                     'supplier_payment_id' => $payment->id, 'supplier_bill_id' => $bill->id,
                     'section65a_notice_id' => $notice?->id, 'amount' => $amount,
                     'cash_amount' => $cash, 'withheld_amount' => $withheld,
+                    'supplier_province_snapshot' => filled(trim((string) ($bill->supply_province ?: ($row['supply_province'] ?? ''))))
+                        ? trim((string) ($bill->supply_province ?: ($row['supply_province'] ?? ''))) : null,
                 ]);
             }
             if (abs(round($total, 2) - (float) $payment->amount) > 0.009) {
@@ -255,7 +258,7 @@ class SupplierPaymentController extends Controller
                     abort_unless((bool) $bill->supplier_gst_registered
                         && filled(trim((string) $bill->supplier_gst_registration_number))
                         && filled(trim((string) $supplier->tin))
-                        && filled(trim((string) $bill->supply_province)), 422,
+                        && filled(trim((string) ($allocation->supplier_province_snapshot ?: $bill->supply_province))), 422,
                         'A Section 65A withholding requires supplier TIN, GST registration number and supply province.');
                     SupplierGstWithholding::create([
                         'company_id' => $companyId, 'branch_id' => $document->branch_id,
@@ -263,7 +266,7 @@ class SupplierPaymentController extends Controller
                         'supplier_payment_allocation_id' => $allocation->id, 'supplier_bill_id' => $bill->id,
                         'supplier_id' => $supplier->id, 'supplier_name_snapshot' => $supplier->name,
                         'supplier_tin_snapshot' => $supplier->tin, 'supplier_gst_registration_snapshot' => $bill->supplier_gst_registration_number,
-                        'supply_description' => $bill->description, 'supplier_province' => $bill->supply_province,
+                        'supply_description' => $bill->description, 'supplier_province' => $allocation->supplier_province_snapshot ?: $bill->supply_province,
                         'bill_number_snapshot' => $bill->bill_number, 'bill_date' => $bill->bill_date,
                         'payment_date' => $document->payment_date, 'gross_settlement' => $allocation->amount,
                         'gst_withheld' => $allocation->withheld_amount, 'cash_paid' => $allocation->cash_amount,
