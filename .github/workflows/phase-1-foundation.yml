@@ -22,6 +22,30 @@ jobs:
           bash -n deploy/upgrade.sh
           bash -n deploy/export-esxi-ova.sh
 
+      - name: Smoke-test OVF to OVA packaging with a mock ESXi export
+        run: |
+          mkdir -p "$RUNNER_TEMP/mock-bin"
+          cat > "$RUNNER_TEMP/mock-bin/govc" <<'MOCK'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          if [[ "$1" == "vm.info" ]]; then exit 0; fi
+          if [[ "$1" == "export.ovf" ]]; then
+            shift
+            while [[ $# -gt 0 ]]; do
+              if [[ "$1" == "-o" ]]; then out="$2"; shift 2; else shift; fi
+            done
+            mkdir -p "$out"
+            printf '<Envelope></Envelope>\n' > "$out/ANERP-CI.ovf"
+            printf 'mock disk bytes\n' > "$out/ANERP-CI-disk1.vmdk"
+            exit 0
+          fi
+          exit 2
+          MOCK
+          chmod +x "$RUNNER_TEMP/mock-bin/govc"
+          PATH="$RUNNER_TEMP/mock-bin:$PATH" GOVC_URL='https://esxi-ci.invalid/sdk' GOVC_USERNAME=ci GOVC_PASSWORD=ci ANERP_ESXI_VM=ANERP-CI ./deploy/export-esxi-ova.sh "$RUNNER_TEMP/ova"
+          test -s "$RUNNER_TEMP/ova/ANERP-CI.ova"
+          (cd "$RUNNER_TEMP/ova" && sha256sum -c ANERP-CI.ova.sha256)
+
       - name: Validate Docker Compose configuration
         run: |
           cp .env.example .env
