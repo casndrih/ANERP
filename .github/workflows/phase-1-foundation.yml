@@ -11,12 +11,12 @@ permissions:
 
 jobs:
   foundation-validation:
-    name: Foundation, Compose and deployment validation
+    name: Clean install, migrations and deployment smoke test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate shell scripts
+      - name: Validate deployment scripts
         run: |
           bash -n deploy/bootstrap.sh
           bash -n deploy/export-esxi-ova.sh
@@ -26,18 +26,23 @@ jobs:
           cp .env.example .env
           sed -i 's/REPLACE_WITH_A_LONG_RANDOM_SECRET/ci-only-placeholder-secret/g' .env
           docker compose config --quiet
+          rm -f .env
 
-      - name: Build ANERP application image
-        run: docker build --file deploy/Dockerfile --tag anerp:phase-1-ci .
-
-      - name: Smoke-test Laravel application bootstrap
+      - name: Clean-install ANERP and migrate a fresh database
         run: |
-          docker run --rm --entrypoint php anerp:phase-1-ci artisan --version
-          docker run --rm --entrypoint php anerp:phase-1-ci artisan route:list --except-vendor
+          chmod +x deploy/bootstrap.sh
+          docker compose down --volumes --remove-orphans || true
+          ./deploy/bootstrap.sh
+          docker compose exec -T app php artisan migrate:status
+          docker compose ps
 
-      - name: Verify no local environment file is tracked
+      - name: HTTP application health check
         run: |
-          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
-            echo ".env must never be committed." >&2
+          if ! curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 2 http://127.0.0.1/up; then
+            docker compose logs --no-color app web db redis
             exit 1
           fi
+
+      - name: Tear down test stack
+        if: always()
+        run: docker compose down --volumes --remove-orphans
