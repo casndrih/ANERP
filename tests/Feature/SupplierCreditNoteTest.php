@@ -64,7 +64,10 @@ final class SupplierCreditNoteTest extends TestCase
 
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->get(route('finance.gst-summary', ['from' => '2026-11-01', 'to' => '2026-11-30']))
-            ->assertOk()->assertSee('K 50.00')->assertSee('K 5.00');
+            ->assertOk()
+            ->assertSee('GST summary')
+            ->assertViewHas('eligiblePurchases', 50.0)
+            ->assertViewHas('inputCredits', 5.0);
     }
 
     public function test_supplier_credit_note_cannot_exceed_bill_and_rejects_inventory_linked_bills(): void
