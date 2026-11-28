@@ -59,6 +59,7 @@ class SupplierPaymentController extends Controller
         ]);
         DB::transaction(function () use ($data, $companyId, $request) {
             $bank = BankAccount::where('company_id', $companyId)->where('is_active', true)->lockForUpdate()->findOrFail($data['bank_account_id']);
+            if ($bank->currency !== 'PGK') throw ValidationException::withMessages(['bank_account_id' => 'Supplier payments currently support PGK bank accounts only.']);
             $payment = SupplierPayment::create([
                 'company_id' => $companyId, 'supplier_id' => $data['supplier_id'], 'bank_account_id' => $bank->id,
                 'payment_number' => $data['payment_number'], 'payment_date' => $data['payment_date'],
@@ -70,6 +71,7 @@ class SupplierPaymentController extends Controller
             foreach ($data['allocations'] as $row) {
                 $bill = SupplierBill::where('company_id', $companyId)->where('supplier_id', $data['supplier_id'])
                     ->where('status', 'posted')->lockForUpdate()->findOrFail($row['bill_id']);
+                if ($bill->currency !== 'PGK') throw ValidationException::withMessages(['allocations' => 'Supplier bills must be in PGK until multi-currency settlement is implemented.']);
                 $amount = round((float) $row['amount'], 2);
                 $paid = (float) DB::table('supplier_payment_allocations')->join('supplier_payments', 'supplier_payments.id', '=', 'supplier_payment_allocations.supplier_payment_id')
                     ->where('supplier_payment_allocations.supplier_bill_id', $bill->id)->where('supplier_payments.company_id', $companyId)
@@ -108,11 +110,13 @@ class SupplierPaymentController extends Controller
             abort_unless($document->status === 'draft', 409, 'Only draft supplier payments can be posted.');
             abort_if((int) $document->created_by === (int) $request->user()->id, 403, 'The payment creator cannot post their own payment.');
             $bank = BankAccount::where('company_id', $companyId)->where('is_active', true)->lockForUpdate()->findOrFail($document->bank_account_id);
+            if ($bank->currency !== 'PGK') throw ValidationException::withMessages(['bank_account_id' => 'Supplier payments currently support PGK bank accounts only.']);
             $allocations = SupplierPaymentAllocation::where('supplier_payment_id', $document->id)->lockForUpdate()->get();
             $allocated = round((float) $allocations->sum('amount'), 2);
             if (abs($allocated - (float) $document->amount) > 0.009) throw ValidationException::withMessages(['payment' => 'Supplier payment allocations must equal the payment total.']);
             foreach ($allocations as $allocation) {
                 $bill = SupplierBill::where('company_id', $companyId)->lockForUpdate()->findOrFail($allocation->supplier_bill_id);
+                abort_unless($bill->currency === 'PGK', 422, 'Supplier bills must be in PGK until multi-currency settlement is implemented.');
                 abort_unless($bill->status === 'posted' && (int) $bill->supplier_id === (int) $document->supplier_id, 409, 'Payment allocations must reference posted bills for this supplier.');
                 $paid = (float) DB::table('supplier_payment_allocations')->join('supplier_payments', 'supplier_payments.id', '=', 'supplier_payment_allocations.supplier_payment_id')
                     ->where('supplier_payment_allocations.supplier_bill_id', $bill->id)->where('supplier_payments.status', 'posted')
