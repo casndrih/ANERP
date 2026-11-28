@@ -10,7 +10,9 @@
 - Posting creates a balanced journal: debit the selected bank GL account, credit accounts receivable for allocations, and credit customer deposits for the unallocated balance.
 - Posting also creates an incoming bank transaction linked to the journal so the receipt is available to bank reconciliation.
 - Receivables ageing reports now show net outstanding invoice balances after posted receipts, rather than original gross invoice values.
-- Finance workspace links to a dedicated customer receipt register and allocation workspace.
+- Finance workspace links to dedicated customer receipt and supplier payment registers.
+- Supplier payments support drafts, multi-bill allocations, partial bill settlements, maker-checker posting, balanced AP/bank journals and linked outgoing bank transactions.
+- Accounts payable ageing nets posted supplier payment allocations; draft payments do not reduce reported AP.
 
 ## Accounting example
 For a K100 customer receipt allocated K80 to posted invoices:
@@ -47,6 +49,7 @@ The K20 remains a customer liability until allocated or refunded through a separ
 - Verify unallocated receipt value credits customer deposits (2500).
 - Verify receipt posting creates a bank transaction and a balanced journal.
 - Verify branch and tenant isolation for receipt creation, posting, invoice allocation and reports.
+- Verify supplier payments cannot allocate to another supplier/company/branch, cannot over-settle bills, require an independent poster, create a balanced AP/bank journal and reduce AP ageing only after posting.
 - Accountant review is required before production use, especially for customer advance/refund accounting and reconciliation.
 
 This is a draft implementation candidate. It is not merged or deployed and must pass CI, migration tests, tenant-isolation tests and accountant review before production use.
