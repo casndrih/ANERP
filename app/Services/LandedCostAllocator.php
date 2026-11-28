@@ -41,6 +41,20 @@ class LandedCostAllocator
                 : round($amount * ($basis / $basisTotal), 2);
             $remainingAmount = round($remainingAmount - $allocated, 2);
 
+            $ledgerReceived = (float) DB::table('stock_movements')
+                ->where('company_id', $companyId)
+                ->where('warehouse_id', $order->warehouse_id)
+                ->where('product_id', $line->product_id)
+                ->where('movement_type', 'purchase_receipt')
+                ->where('reference_type', 'purchase_order')
+                ->where('reference_id', $order->id)
+                ->sum('quantity');
+            if (abs($ledgerReceived - (float) $line->quantity_received) > 0.0005) {
+                throw ValidationException::withMessages([
+                    'purchase_order_id' => 'Received PO quantities do not reconcile to the stock movement ledger. Reconcile goods receipts before allocating landed costs.',
+                ]);
+            }
+
             $otherInbound = DB::table('stock_movements')
                 ->where('company_id', $companyId)
                 ->where('warehouse_id', $order->warehouse_id)
