@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - feature/phase-7-production-readiness
 
 permissions:
   contents: read
