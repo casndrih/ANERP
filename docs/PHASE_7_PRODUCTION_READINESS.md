@@ -48,7 +48,7 @@ Establish repeatable security, operational and acceptance controls before ANERP 
 ## Branch-level access boundaries
 - Company membership `branch_id` is now enforced for HR employee/leave/attendance data, payroll employee lines and payslips, warehouse inventory balances and movements, and purchase orders/receiving.
 - Branch-restricted payroll users can calculate branch-only draft runs but cannot approve a company-wide payroll run; an unscoped payroll approver is required.
-- Finance ledgers and company-wide HR policy settings are deliberately unavailable to branch-restricted memberships until branch attribution is supported by those records.
+- Finance records now carry nullable branch attribution on journals, supplier bills, customer invoices, bank accounts, bank transactions and reconciliations. Branch-restricted finance users can work only with records attributed to their assigned branch; legacy records with no branch remain visible only to company-wide memberships. Company-wide users may create either company-wide or branch-attributed entries.
 - Company-wide memberships (`branch_id` is null) retain company-level access.
 
 ## Go-live gates

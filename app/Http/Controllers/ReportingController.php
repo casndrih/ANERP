@@ -40,17 +40,18 @@ class ReportingController extends Controller
         $report=$v['report']??'trial_balance';
         if (in_array($report,['trial_balance','profit_loss','balance_sheet','cash_flow','receivables','payables'],true)) {
             CompanyAuthorizer::requirePermission($request,'finance.view');
-            CompanyAuthorizer::requireCompanyWideAccess($request);
         } elseif ($report==='payroll') {
             CompanyAuthorizer::requirePermission($request,'payroll.view');
         } elseif ($report==='inventory') {
             CompanyAuthorizer::requirePermission($request,'inventory.view');
         }
+        $branchId=CompanyAuthorizer::activeBranchId($request);
         $rows=collect(); $totals=[];
         if(in_array($report,['trial_balance','profit_loss','balance_sheet','cash_flow'],true)) {
             $q=JournalLine::query()->join('journal_entries','journal_entries.id','=','journal_lines.journal_entry_id')
                 ->join('accounts','accounts.id','=','journal_lines.account_id')
-                ->where('journal_entries.company_id',$companyId)->where('journal_entries.status','posted');
+                ->where('journal_entries.company_id',$companyId)->where('journal_entries.status','posted')
+                ->when($branchId,fn($query)=>$query->where('journal_entries.branch_id',$branchId));
             if(in_array($report,['profit_loss','cash_flow'],true)) $q->whereBetween('journal_entries.journal_date',[$from->toDateString(),$to->toDateString()]);
             else $q->whereDate('journal_entries.journal_date','<=',$to->toDateString());
             $balances=$q->select('accounts.id','accounts.account_code','accounts.name','accounts.account_type','accounts.normal_balance')
@@ -67,14 +68,14 @@ class ReportingController extends Controller
                 $rows->push((object)['code'=>'CURRENT-EARNINGS','account'=>'Accumulated earnings (calculated)','type'=>'equity','debit'=>0,'credit'=>0,'balance'=>round($earnings,2)]);
             }
             if($report==='cash_flow') {
-                $bankIds=DB::table('bank_accounts')->where('company_id',$companyId)->pluck('account_id')->all();
+                $bankIds=DB::table('bank_accounts')->where('company_id',$companyId)->when($branchId,fn($q)=>$q->where('branch_id',$branchId))->pluck('account_id')->all();
                 $rows=$balances->whereIn('id',$bankIds)->map(fn($a)=>(object)['code'=>$a->account_code,'account'=>$a->name,'type'=>'bank movement','debit'=>round((float)$a->debit_total,2),'credit'=>round((float)$a->credit_total,2),'balance'=>round((float)$a->debit_total-(float)$a->credit_total,2)])->values();
             }
             $totals=['debit'=>round((float)$rows->sum('debit'),2),'credit'=>round((float)$rows->sum('credit'),2),'balance'=>round((float)$rows->sum('balance'),2)];
         } elseif(in_array($report,['receivables','payables'],true)) {
             $receivable=$report==='receivables'; $model=$receivable?CustomerInvoice::class:SupplierBill::class;
             $dateCol=$receivable?'invoice_date':'bill_date'; $relation=$receivable?'customer':'supplier';
-            $docs=$model::with($relation)->where('company_id',$companyId)->where('status','posted')->whereDate($dateCol,'<=',$to->toDateString())->get();
+            $docs=$model::with($relation)->where('company_id',$companyId)->when($branchId,fn($q)=>$q->where('branch_id',$branchId))->where('status','posted')->whereDate($dateCol,'<=',$to->toDateString())->get();
             $rows=$docs->map(function($d) use($receivable,$relation,$dateCol,$to) {
                 $due=Carbon::parse($d->due_date??$d->{$dateCol}); $days=ReportingCalculator::ageingDays($due,$to); $amount=round((float)$d->amount,2);
                 return (object)['document'=>$receivable?$d->invoice_number:$d->bill_number,'counterparty'=>$d->{$relation}?->name??'','document_date'=>$d->{$dateCol}?->format('Y-m-d'),'due_date'=>$due->toDateString(),'days_overdue'=>$days,'current'=>ReportingCalculator::ageingBucket($days)==='current'?$amount:0,'1_30'=>ReportingCalculator::ageingBucket($days)==='1_30'?$amount:0,'31_60'=>ReportingCalculator::ageingBucket($days)==='31_60'?$amount:0,'61_90'=>ReportingCalculator::ageingBucket($days)==='61_90'?$amount:0,'over_90'=>ReportingCalculator::ageingBucket($days)==='over_90'?$amount:0,'amount'=>$amount];
