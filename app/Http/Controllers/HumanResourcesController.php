@@ -30,7 +30,7 @@ class HumanResourcesController extends Controller {
             'employee_number'=>['required','string','max:50',Rule::unique('employees')->where(fn($q)=>$q->where('company_id',$companyId))],
             'first_name'=>'required|string|max:100','last_name'=>'required|string|max:100',
             'email'=>'nullable|email|max:255','phone'=>'nullable|string|max:50',
-            'branch_id'=>['nullable','integer',Rule::exists('branches','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true)->when($branchId,fn($b)=>$b->whereKey($branchId)))],
+            'branch_id'=>['nullable','integer',Rule::exists('branches','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true)->when($branchId,fn($b)=>$b->where('id',$branchId)))],
             'department'=>'nullable|string|max:120','job_title'=>'nullable|string|max:120',
             'employment_type'=>'nullable|string|max:40','hire_date'=>'nullable|date',
             'base_salary'=>'required|numeric|min:0','pay_frequency'=>'required|in:weekly,fortnightly,monthly',
