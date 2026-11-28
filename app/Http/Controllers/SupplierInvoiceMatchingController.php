@@ -156,10 +156,19 @@ class SupplierInvoiceMatchingController extends Controller
             }
             if ($gstAmount > 0) {
                 $company = Company::findOrFail($companyId);
-                $eligible = (bool) $company->gst_registered && (bool) $document->supplier_gst_registered
-                    && (bool) $document->input_tax_credit_eligible
-                    && filled(trim((string) $document->supplier_gst_registration_number))
-                    && filled(trim((string) $document->tax_invoice_reference));
+                $eligible = (bool) $company->gst_registered && (bool) $document->input_tax_credit_eligible;
+                if (($document->gst_source ?? 'domestic') === 'import') {
+                    $eligible = $eligible
+                        && filled(trim((string) $document->customs_assessment_reference))
+                        && filled(trim((string) $document->import_declaration_number))
+                        && filled(trim((string) $document->hs_code))
+                        && filled(trim((string) $document->tariff_source_url))
+                        && !empty($document->tariff_verified_on);
+                } else {
+                    $eligible = $eligible && (bool) $document->supplier_gst_registered
+                        && filled(trim((string) $document->supplier_gst_registration_number))
+                        && filled(trim((string) $document->tax_invoice_reference));
+                }
                 if (!$eligible) {
                     throw ValidationException::withMessages(['bill' => 'GST on a PO-matched inventory invoice can only be posted separately when the company and supplier are GST-registered and valid tax-invoice evidence is recorded. Otherwise obtain an accountant-approved inventory-cost adjustment before posting.']);
                 }
