@@ -68,6 +68,25 @@ final class SupplierCreditNoteTest extends TestCase
             ])->assertRedirect()->assertSessionHasNoErrors();
     }
 
+    public function test_draft_supplier_credit_note_reserves_bill_balance_against_payment(): void
+    {
+        [$company, $branch, $supplier, $bill, $creator, $approver] = $this->fixture();
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('finance.supplier-credit-notes.store'), [
+                'bill_id' => $bill->id, 'credit_note_number' => 'SCN-RESERVE',
+                'credit_note_date' => '2026-11-28', 'description' => 'Reserved supplier credit', 'amount' => 60,
+            ])->assertRedirect()->assertSessionHasNoErrors();
+        $bankLedger = Account::create(['company_id' => $company->id, 'account_code' => '1000', 'name' => 'Cash at bank', 'account_type' => 'asset', 'normal_balance' => 'debit', 'is_control_account' => true, 'is_active' => true]);
+        $bank = \App\Models\BankAccount::create(['company_id' => $company->id, 'branch_id' => $branch->id, 'account_id' => $bankLedger->id, 'code' => 'BANK-1', 'name' => 'Main Bank', 'currency' => 'PGK', 'is_active' => true]);
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('finance.payments.store'), [
+                'branch_id' => $branch->id, 'supplier_id' => $supplier->id, 'bank_account_id' => $bank->id,
+                'payment_number' => 'PAY-RESERVE', 'payment_date' => '2026-11-28',
+                'description' => 'Payment against credited bill', 'amount' => 50,
+                'allocations' => [['bill_id' => $bill->id, 'amount' => 50]],
+            ])->assertSessionHasErrors('allocations');
+    }
+
     private function fixture(): array
     {
         $company = Company::create(['name' => 'Supplier Credits Co', 'is_active' => true]);
