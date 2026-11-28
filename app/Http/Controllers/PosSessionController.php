@@ -206,9 +206,51 @@ class PosSessionController extends Controller
             abort_unless($till && $till->status === 'open', 409, 'Only open till sessions can be closed.');
             $expected = round((float) $till->opening_float + (float) DB::table('pos_transactions')->where('pos_session_id', $till->id)->sum('amount'), 2);
             $counted = round((float) $data['counted_cash'], 2);
+            $variance = round($counted - $expected, 2);
+            $varianceJournalId = null;
+            if (abs($variance) > 0.009) {
+                $bank = BankAccount::where('company_id', $companyId)->where('is_active', true)
+                    ->where('branch_id', $till->branch_id)->lockForUpdate()->findOrFail($till->cash_bank_account_id);
+                $bankLedger = Account::where('company_id', $companyId)->whereKey($bank->account_id)->firstOrFail();
+                abort_unless($bankLedger->account_type === 'asset' && $bankLedger->normal_balance === 'debit', 422, 'Till ledger must be a debit-normal asset.');
+                $surplus = $variance > 0;
+                $varianceAccount = Account::firstOrCreate(
+                    ['company_id' => $companyId, 'account_code' => $surplus ? '4290' : '6590'],
+                    ['name' => $surplus ? 'Cash over and short income' : 'Cash over and short expense',
+                     'account_type' => $surplus ? 'income' : 'expense',
+                     'normal_balance' => $surplus ? 'credit' : 'debit',
+                     'is_control_account' => false, 'is_active' => true]
+                );
+                $expectedType = $surplus ? 'income' : 'expense';
+                $expectedNormal = $surplus ? 'credit' : 'debit';
+                abort_unless($varianceAccount->account_type === $expectedType && $varianceAccount->normal_balance === $expectedNormal, 422, 'Cash over/short account has an incompatible account type.');
+                $amount = abs($variance);
+                $journal = JournalEntry::create([
+                    'company_id' => $companyId, 'branch_id' => $till->branch_id,
+                    'journal_number' => 'POS-CLOSE-'.now()->format('YmdHis').'-'.Str::upper(Str::random(4)),
+                    'journal_date' => now()->toDateString(), 'source' => 'pos_cash_variance', 'status' => 'posted',
+                    'description' => 'POS till cash variance · '.$till->session_number,
+                    'created_by' => $request->user()->id, 'posted_by' => $request->user()->id, 'posted_at' => now(),
+                ]);
+                if ($surplus) {
+                    JournalLine::create(['journal_entry_id' => $journal->id, 'account_id' => $bankLedger->id, 'description' => 'Till cash surplus', 'debit' => $amount, 'credit' => 0]);
+                    JournalLine::create(['journal_entry_id' => $journal->id, 'account_id' => $varianceAccount->id, 'description' => 'Till cash surplus', 'debit' => 0, 'credit' => $amount]);
+                } else {
+                    JournalLine::create(['journal_entry_id' => $journal->id, 'account_id' => $varianceAccount->id, 'description' => 'Till cash shortage', 'debit' => $amount, 'credit' => 0]);
+                    JournalLine::create(['journal_entry_id' => $journal->id, 'account_id' => $bankLedger->id, 'description' => 'Till cash shortage', 'debit' => 0, 'credit' => $amount]);
+                }
+                BankTransaction::create([
+                    'company_id' => $companyId, 'branch_id' => $till->branch_id, 'bank_account_id' => $bank->id,
+                    'journal_entry_id' => $journal->id, 'transaction_date' => now()->toDateString(),
+                    'reference' => $till->session_number, 'description' => 'POS till cash variance',
+                    'direction' => $surplus ? 'in' : 'out', 'amount' => $amount,
+                    'is_reconciled' => false, 'created_by' => $request->user()->id,
+                ]);
+                $varianceJournalId = $journal->id;
+            }
             DB::table('pos_sessions')->where('id', $till->id)->update([
                 'status' => 'closed', 'expected_cash' => $expected, 'counted_cash' => $counted,
-                'cash_variance' => round($counted - $expected, 2),
+                'cash_variance' => $variance, 'variance_journal_entry_id' => $varianceJournalId,
                 'closed_by' => $request->user()->id, 'closed_at' => now(),
                 'notes' => $data['notes'] ?? $till->notes, 'updated_at' => now(),
             ]);
