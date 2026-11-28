@@ -72,6 +72,5 @@ fi
 docker compose config --quiet
 docker compose up -d --build
 docker compose exec -T app php artisan migrate --force
-docker compose exec -T app php artisan storage:link || true
 
 echo "ANERP containers are running. Confirm the VM firewall, HTTPS/VPN, SMTP, monitoring and off-host backups before production use."
