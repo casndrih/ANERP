@@ -47,10 +47,6 @@ class SupplierInvoiceMatchingController extends Controller
         $data = $request->validate([
             'purchase_order_id' => ['required', 'integer', Rule::exists('purchase_orders', 'id')->where(fn ($query) => $query->where('company_id', $companyId))],
             'invoice_type' => ['required', 'in:goods,landed_cost'],
-            'lines' => ['required_if:invoice_type,goods', 'array', 'min:1'],
-            'lines.*.purchase_order_line_id' => ['required_with:lines', 'integer'],
-            'lines.*.quantity_billed' => ['required_with:lines', 'numeric', 'gt:0'],
-            'lines.*.unit_price' => ['required_with:lines', 'numeric', 'min:0'],
         ]);
 
         DB::transaction(function () use ($data, $bill, $companyId, $branchId, $request) {
@@ -67,7 +63,13 @@ class SupplierInvoiceMatchingController extends Controller
                 ->lockForUpdate()->findOrFail($data['purchase_order_id']);
 
             if ($data['invoice_type'] === 'goods') {
-                $lines = collect($data['lines']);
+                $lineData = $request->validate([
+                    'lines' => ['required', 'array', 'min:1'],
+                    'lines.*.purchase_order_line_id' => ['required', 'integer'],
+                    'lines.*.quantity_billed' => ['required', 'numeric', 'gt:0'],
+                    'lines.*.unit_price' => ['required', 'numeric', 'min:0'],
+                ]);
+                $lines = collect($lineData['lines']);
                 $total = 0.0;
                 foreach ($lines as $lineData) {
                     $line = PurchaseOrderLine::where('purchase_order_id', $order->id)
