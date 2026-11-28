@@ -30,6 +30,19 @@ final class CompanyPermissionMapTest extends TestCase
         self::assertFalse(CompanyPermissionMap::allows('procurement_manager', 'procurement.approve'));
     }
 
+    public function test_supplier_invoice_match_and_approval_permissions_are_separated_by_role(): void
+    {
+        self::assertTrue(CompanyPermissionMap::allows('procurement_manager', 'procurement.invoice.match'));
+        self::assertFalse(CompanyPermissionMap::allows('procurement_manager', 'procurement.invoice.approve'));
+        self::assertTrue(CompanyPermissionMap::allows('procurement_approver', 'procurement.invoice.approve'));
+        self::assertFalse(CompanyPermissionMap::allows('procurement_approver', 'procurement.invoice.match'));
+        self::assertTrue(CompanyPermissionMap::allows('finance_manager', 'procurement.view'));
+        self::assertTrue(CompanyPermissionMap::allows('finance_manager', 'procurement.invoice.match'));
+        self::assertTrue(CompanyPermissionMap::allows('finance_manager', 'procurement.invoice.approve'));
+        self::assertTrue(CompanyPermissionMap::allows('accountant', 'procurement.invoice.match'));
+        self::assertTrue(CompanyPermissionMap::allows('accountant', 'procurement.invoice.approve'));
+    }
+
     public function test_viewer_is_read_only_and_unknown_roles_deny_by_default(): void
     {
         self::assertTrue(CompanyPermissionMap::allows('viewer', 'inventory.view'));
