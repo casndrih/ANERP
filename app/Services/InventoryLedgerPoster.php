@@ -40,6 +40,7 @@ class InventoryLedgerPoster
                 'purchase_receipt' => [[$inventory, $value, 0], [$accounts['goods_received_not_invoiced']->id, 0, $value]],
                 'issue' => [[$accounts['cost_of_goods_sold']->id, $value, 0], [$inventory, 0, $value]],
                 'adjustment_in' => [[$inventory, $value, 0], [$accounts['inventory_adjustment_gain']->id, 0, $value]],
+                'customer_return' => [[$inventory, $value, 0], [$accounts['cost_of_goods_sold']->id, 0, $value]],
                 'adjustment_out' => [[$accounts['inventory_shrinkage']->id, $value, 0], [$inventory, 0, $value]],
                 default => null,
             };

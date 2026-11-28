@@ -12,7 +12,7 @@
 
 ## Valuation and accounting boundaries
 - This phase posts each movement's recorded unit cost; it does not calculate FIFO, weighted-average or landed cost. Users must enter and review the cost basis.
-- Purchase receipts credit a goods-received-not-invoiced liability. Supplier invoice matching and settlement are not yet implemented.
+- Purchase receipts credit goods-received-not-invoiced. Later phases implement three-way supplier invoice matching, GRNI-to-AP posting, supplier payments and supplier stock-return credit notes; reconcile these workflows against the inventory and GL ledgers.
 - Opening stock credits opening equity; an accountant must confirm the opening-balance counterpart before production migration.
 - Cross-branch transfers use an inter-branch clearing account and must be reviewed in branch and consolidated reports.
 - Automatic inventory journals are system-generated operational postings. Stock adjustments still need a separate approval workflow and audit review before production use.

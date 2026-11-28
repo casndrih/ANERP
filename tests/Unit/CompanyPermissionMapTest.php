@@ -43,6 +43,18 @@ final class CompanyPermissionMapTest extends TestCase
         self::assertTrue(CompanyPermissionMap::allows('accountant', 'procurement.invoice.approve'));
     }
 
+    public function test_sales_manager_and_approver_permissions_are_separated(): void
+    {
+        self::assertTrue(CompanyPermissionMap::allows('sales_manager', 'sales.create'));
+        self::assertTrue(CompanyPermissionMap::allows('sales_manager', 'sales.fulfill'));
+        self::assertTrue(CompanyPermissionMap::allows('sales_cashier', 'sales.create'));
+        self::assertTrue(CompanyPermissionMap::allows('sales_cashier', 'sales.fulfill'));
+        self::assertFalse(CompanyPermissionMap::allows('sales_cashier', 'sales.approve'));
+        self::assertFalse(CompanyPermissionMap::allows('sales_manager', 'sales.approve'));
+        self::assertTrue(CompanyPermissionMap::allows('sales_approver', 'sales.approve'));
+        self::assertFalse(CompanyPermissionMap::allows('sales_approver', 'sales.create'));
+    }
+
     public function test_viewer_is_read_only_and_unknown_roles_deny_by_default(): void
     {
         self::assertTrue(CompanyPermissionMap::allows('viewer', 'inventory.view'));

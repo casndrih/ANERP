@@ -227,7 +227,7 @@ class InventoryCostingService
 
     private function isInbound(string $type): bool
     {
-        return in_array($type, ['opening', 'purchase_receipt', 'transfer_in', 'adjustment_in'], true);
+        return in_array($type, ['opening', 'purchase_receipt', 'transfer_in', 'adjustment_in', 'customer_return'], true);
     }
 
     private function isOutbound(string $type): bool
