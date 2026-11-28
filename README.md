@@ -22,7 +22,7 @@ The target host has 128 GB physical RAM. Start with one ANERP VM at 16 vCPU, 48 
    ```
 
 4. The bootstrap script creates a private `.env` if absent, generates a strong PostgreSQL password if the example placeholder is present, builds the app image, generates the Laravel `APP_KEY` only if missing, starts services and applies migrations.
-5. Create the initial company and owner account using `docker compose exec app php artisan aner p:install-admin` (command name: `anerp:install-admin`). Supply the company, administrator and strong password when prompted.
+5. Create the initial company and owner account using `docker compose exec app php artisan anerp:install-admin` (command name: `anerp:install-admin`). Supply the company, administrator and strong password when prompted.
 6. Browse to the VM on the trusted LAN and sign in at `/login`.
 
 The bootstrap script preserves an existing `.env` and non-placeholder database password. Back up `.env` and the APP_KEY securely; losing the key can make encrypted application data unreadable. Never commit or email `.env`.
