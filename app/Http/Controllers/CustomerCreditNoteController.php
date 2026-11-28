@@ -61,6 +61,9 @@ class CustomerCreditNoteController extends Controller
                 ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                 ->lockForUpdate()->findOrFail($data['invoice_id']);
             abort_unless($invoice->status === 'posted', 409, 'Credit notes can only reference posted invoices.');
+            if ($data['credit_note_date'] < $invoice->invoice_date->toDateString()) {
+                throw ValidationException::withMessages(['credit_note_date' => 'Credit note date cannot be earlier than the original invoice date.']);
+            }
             $paid = (float) DB::table('customer_receipt_allocations')->join('customer_receipts', 'customer_receipts.id', '=', 'customer_receipt_allocations.customer_receipt_id')
                 ->where('customer_receipt_allocations.customer_invoice_id', $invoice->id)->where('customer_receipts.status', 'posted')
                 ->where('customer_receipts.company_id', $companyId)->sum('customer_receipt_allocations.amount');
