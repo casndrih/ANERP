@@ -111,6 +111,7 @@ class FinanceController extends Controller {
             $doc=SupplierBill::where('company_id',$companyId)->when($branchId,fn($q)=>$q->where('branch_id',$branchId))->lockForUpdate()->findOrFail($bill);
             abort_unless($doc->status==='draft',409,'Only draft supplier bills can be posted.');
             abort_if((int)$doc->created_by===(int)$request->user()->id,403,'The bill creator cannot post their own bill.');
+            abort_if(!empty($doc->purchase_order_id), 409, 'Purchase-order supplier invoices must be approved through the three-way matching workspace.');
             $ap=Account::where('company_id',$companyId)->where('account_code','2000')->firstOrFail();
             $j=$this->makePostedJournal($companyId,$doc->branch_id,$doc->bill_date,'supplier_bill',$doc->description,$doc->created_by,$request->user()->id,[
                 [$doc->expense_account_id,$doc->amount,0],[$ap->id,0,$doc->amount]
