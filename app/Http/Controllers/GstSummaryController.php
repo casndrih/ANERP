@@ -68,12 +68,22 @@ class GstSummaryController extends Controller
             - (float) (clone $supplierCreditNotes)->sum('supplier_credit_notes.gst_amount')
             - (float) (clone $supplierStockReturns)->sum('supplier_stock_returns.gst_amount'), 2);
 
+        $netGstBeforeSection65A = round($outputGst - $inputCredits, 2);
+        $section65aRemittances = (float) DB::table('supplier_gst_remittances')
+            ->where('company_id', $companyId)->where('status', 'posted')
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->whereBetween('remittance_date', [$from->toDateString(), $to->toDateString()])
+            ->sum('amount');
+        $netGstAfterSection65A = round($netGstBeforeSection65A - $section65aRemittances, 2);
+
         return view('finance.gst-summary.index', [
             'company' => $company, 'from' => $from->toDateString(), 'to' => $to->toDateString(),
             'totalSales' => $totalSales, 'exemptSales' => $exemptSales, 'zeroRatedSales' => $zeroRatedSales,
             'taxableSales' => $taxableSales, 'outputGst' => $outputGst,
             'eligiblePurchases' => $eligiblePurchases, 'inputCredits' => $inputCredits,
-            'netGst' => round($outputGst - $inputCredits, 2), 'assignedBranchId' => $branchId,
+            'netGstBeforeSection65A' => $netGstBeforeSection65A,
+            'section65aRemittances' => $section65aRemittances,
+            'netGst' => $netGstAfterSection65A, 'assignedBranchId' => $branchId,
         ]);
     }
 }
