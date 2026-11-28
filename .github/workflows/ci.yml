@@ -65,6 +65,7 @@ jobs:
         run: |
           composer create-project laravel/laravel:^12.0 /tmp/anerp-test --no-interaction
           cp -a app routes database resources /tmp/anerp-test/
+          rm -f /tmp/anerp-test/tests/Feature/ExampleTest.php /tmp/anerp-test/tests/Unit/ExampleTest.php
           cd /tmp/anerp-test
           php artisan migrate:fresh --force
           if [ -d "$GITHUB_WORKSPACE/tests" ] && find "$GITHUB_WORKSPACE/tests" -type f -name '*Test.php' -print -quit | grep -q .; then
