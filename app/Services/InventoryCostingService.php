@@ -63,8 +63,9 @@ class InventoryCostingService
 
         if ($this->isInbound($movement->movement_type)) {
             $unitCost = (float) $movement->unit_cost;
+            $costValue = round($quantity * $unitCost, 2);
             $newQty = round($currentQty + $quantity, 3);
-            $newValue = round($currentValue + ($quantity * $unitCost), 2);
+            $newValue = round($currentValue + $costValue, 2);
             if ($method === 'fifo') {
                 DB::table('inventory_cost_layers')->insert([
                     'company_id' => $movement->company_id,
@@ -87,18 +88,21 @@ class InventoryCostingService
             }
 
             if ($method === 'fifo') {
-                $unitCost = $this->consumeFifo($movement, $quantity);
+                $costValue = $this->consumeFifo($movement, $quantity);
+                $unitCost = round($costValue / $quantity, 2);
             } else {
                 if ($currentQty <= 0) {
                     throw ValidationException::withMessages(['quantity' => 'No valued stock is available for this issue.']);
                 }
                 $unitCost = round($currentValue / $currentQty, 2);
+                $costValue = round($quantity * $unitCost, 2);
             }
 
             $movement->unit_cost = $unitCost;
+            $movement->cost_value = $costValue;
             $movement->save();
             $newQty = round(max(0, $currentQty - $quantity), 3);
-            $newValue = round(max(0, $currentValue - ($quantity * $unitCost)), 2);
+            $newValue = round(max(0, $currentValue - $costValue), 2);
         } else {
             return;
         }
@@ -158,8 +162,7 @@ class InventoryCostingService
                     ]);
                 }
                 if ($method === 'fifo') {
-                    $this->consumeFifo($old, $movementQty);
-                    $value = max(0, $value - ($movementQty * $unitCost));
+                    $value = max(0, $value - $this->consumeFifo($old, $movementQty));
                 } else {
                     $average = $qty > 0 ? $value / $qty : 0;
                     $value = max(0, $value - ($movementQty * $average));
@@ -214,7 +217,7 @@ class InventoryCostingService
             ]);
         }
 
-        return round($cost / $quantity, 2);
+        return round($cost, 2);
     }
 
     private function isInbound(string $type): bool
