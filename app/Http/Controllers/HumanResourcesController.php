@@ -13,11 +13,12 @@ class HumanResourcesController extends Controller {
     public function index(Request $request) {
         CompanyAuthorizer::requirePermission($request,'hr.view');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
+        $branchId=CompanyAuthorizer::activeBranchId($request);
         return view('hr.index',[
-            'employees'=>Employee::where('company_id',$companyId)->orderBy('last_name')->paginate(20),
+            'employees'=>Employee::where('company_id',$companyId)->when($branchId,fn($q)=>$q->where('branch_id',$branchId))->orderBy('last_name')->paginate(20),
             'leaveTypes'=>LeaveType::where('company_id',$companyId)->where('is_active',true)->orderBy('name')->get(),
-            'leaveApplications'=>LeaveApplication::with(['employee','leaveType'])->where('company_id',$companyId)->latest()->limit(30)->get(),
-            'attendance'=>AttendanceEntry::with('employee')->where('company_id',$companyId)->whereDate('work_date',today())->latest()->get(),
+            'leaveApplications'=>LeaveApplication::with(['employee','leaveType'])->where('company_id',$companyId)->when($branchId,fn($q)=>$q->whereHas('employee',fn($e)=>$e->where('branch_id',$branchId)))->latest()->limit(30)->get(),
+            'attendance'=>AttendanceEntry::with('employee')->where('company_id',$companyId)->when($branchId,fn($q)=>$q->whereHas('employee',fn($e)=>$e->where('branch_id',$branchId)))->whereDate('work_date',today())->latest()->get(),
             'company'=>Company::findOrFail($companyId),
         ]);
     }
@@ -37,6 +38,8 @@ class HumanResourcesController extends Controller {
             'superannuation_exempt'=>'sometimes|boolean','superannuation_exempt_reason'=>'nullable|string|max:255',
             'superannuation_fund'=>'nullable|string|max:120','superannuation_member_number'=>'nullable|string|max:100',
         ]);
+        $branchId=CompanyAuthorizer::activeBranchId($request);
+        if($branchId!==null) $data['branch_id']=$branchId;
         $data['company_id']=$companyId; $data['currency']='PGK'; $data['status']='active';
         $data['employment_declaration_received']=$request->boolean('employment_declaration_received');
         $data['annual_dependant_tax_credit']=$data['annual_dependant_tax_credit']??0;
@@ -66,8 +69,9 @@ class HumanResourcesController extends Controller {
     public function storeLeave(Request $request) {
         CompanyAuthorizer::requirePermission($request,'hr.manage');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
+        $branchId=CompanyAuthorizer::activeBranchId($request);
         $data=$request->validate([
-            'employee_id'=>['required','integer',Rule::exists('employees','id')->where('company_id',$companyId)],
+            'employee_id'=>['required','integer',Rule::exists('employees','id')->where(fn($q)=>$q->where('company_id',$companyId)->when($branchId,fn($b)=>$b->where('branch_id',$branchId)))],
             'leave_type_id'=>['required','integer',Rule::exists('leave_types','id')->where('company_id',$companyId)],
             'start_date'=>'required|date','end_date'=>'required|date|after_or_equal:start_date',
             'days'=>'required|numeric|min:0.5|max:366','reason'=>'nullable|string|max:2000',
@@ -80,6 +84,8 @@ class HumanResourcesController extends Controller {
         CompanyAuthorizer::requirePermission($request,'hr.manage');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         abort_unless($leave->company_id===$companyId,404);
+        $branchId=CompanyAuthorizer::activeBranchId($request);
+        if($branchId!==null) abort_unless($leave->employee()->where('branch_id',$branchId)->exists(),404);
         abort_unless($leave->status==='pending',422,'Only pending leave applications can be decided.');
         abort_if($leave->created_by===$request->user()->id,403,'The applicant cannot approve their own leave.');
         $data=$request->validate(['decision'=>'required|in:approved,rejected','decision_note'=>'nullable|string|max:1000']);
@@ -89,8 +95,9 @@ class HumanResourcesController extends Controller {
     public function storeAttendance(Request $request) {
         CompanyAuthorizer::requirePermission($request,'hr.manage');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
+        $branchId=CompanyAuthorizer::activeBranchId($request);
         $data=$request->validate([
-            'employee_id'=>['required','integer',Rule::exists('employees','id')->where('company_id',$companyId)],
+            'employee_id'=>['required','integer',Rule::exists('employees','id')->where(fn($q)=>$q->where('company_id',$companyId)->when($branchId,fn($b)=>$b->where('branch_id',$branchId)))],
             'work_date'=>'required|date','clock_in'=>'nullable|date_format:H:i','clock_out'=>'nullable|date_format:H:i',
             'hours'=>'required|numeric|min:0|max:24','notes'=>'nullable|string|max:1000',
         ]);
