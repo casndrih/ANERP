@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\CompanySelectionController;
+use App\Http\Controllers\CompanyAdministrationController;
+use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\SupplierPaymentController;
+use App\Http\Controllers\MfaController;
 use App\Http\Controllers\HumanResourcesController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\ReportingController;
@@ -12,6 +15,8 @@ use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\WarehouseController;
+use App\Http\Middleware\AuditCompanyActivity;
+use App\Http\Middleware\EnsureMfaVerified;
 use App\Http\Middleware\EnsureCompanyAccess;
 use Illuminate\Support\Facades\Route;
 
@@ -21,9 +26,25 @@ Route::middleware('guest')->group(function () {
 });
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
 Route::post('/company/select', [CompanySelectionController::class, 'store'])->middleware('auth')->name('company.select');
+Route::get('/invitations/{token}', [CompanyInvitationController::class, 'show'])->middleware('throttle:10,1')->name('invitations.accept');
+Route::post('/invitations/{token}', [CompanyInvitationController::class, 'accept'])->middleware('throttle:10,1')->name('invitations.accept.store');
 
-Route::middleware(['auth', EnsureCompanyAccess::class])->group(function () {
+Route::middleware(['auth', 'throttle:10,1'])->group(function () {
+    Route::get('/mfa/challenge', [MfaController::class, 'challenge'])->name('mfa.challenge');
+    Route::post('/mfa/challenge', [MfaController::class, 'verifyChallenge'])->name('mfa.challenge.verify');
+});
+
+Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class, AuditCompanyActivity::class])->group(function () {
+    Route::get('/security/mfa', [MfaController::class, 'settings'])->name('mfa.settings');
+    Route::post('/security/mfa/setup', [MfaController::class, 'setup'])->name('mfa.setup');
+    Route::post('/security/mfa/confirm', [MfaController::class, 'confirm'])->name('mfa.confirm');
+    Route::post('/security/mfa/disable', [MfaController::class, 'disable'])->name('mfa.disable');
     Route::get('/', fn () => view('dashboard'))->name('dashboard');
+    Route::get('/company/users', [CompanyAdministrationController::class, 'index'])->name('company.users.index');
+    Route::post('/company/users/invitations', [CompanyAdministrationController::class, 'invite'])->name('company.users.invite');
+    Route::patch('/company/users/{user}', [CompanyAdministrationController::class, 'updateMembership'])->name('company.users.update');
+    Route::delete('/company/invitations/{invitation}', [CompanyAdministrationController::class, 'revokeInvitation'])->name('company.invitations.revoke');
+    Route::get('/company/audit', [CompanyAdministrationController::class, 'audit'])->name('company.audit');
     Route::get('/inventory/products', [ProductController::class, 'index'])->name('inventory.products.index');
     Route::post('/inventory/products', [ProductController::class, 'store'])->name('inventory.products.store');
     Route::get('/inventory/warehouses', [WarehouseController::class, 'index'])->name('inventory.warehouses.index');

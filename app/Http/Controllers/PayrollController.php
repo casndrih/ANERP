@@ -5,6 +5,7 @@ use App\Models\Company;
 use App\Models\PayrollLine;
 use App\Models\PayrollRun;
 use App\Services\PngPayrollCalculator;
+use App\Services\PayrollLedgerPoster;
 use App\Support\CompanyAuthorizer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -12,11 +13,22 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 class PayrollController extends Controller {
     public function index(Request $request) {
+        CompanyAuthorizer::requirePermission($request,'payroll.view');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
-        return view('payroll.index',['runs'=>PayrollRun::with('lines.employee')->where('company_id',$companyId)->latest()->paginate(15),'employees'=>Employee::where('company_id',$companyId)->where('status','active')->orderBy('last_name')->get()]);
+        $branchId=CompanyAuthorizer::activeBranchId($request);
+        $runs=PayrollRun::with(['lines'=>function($query) use($branchId) {
+            if($branchId!==null) $query->whereHas('employee',fn($employee)=>$employee->where('branch_id',$branchId));
+            $query->with('employee');
+        }])->where('company_id',$companyId)
+            ->when($branchId,fn($q)=>$q->whereHas('lines.employee',fn($employee)=>$employee->where('branch_id',$branchId)))
+            ->latest()->paginate(15);
+        $employees=Employee::where('company_id',$companyId)->where('status','active')
+            ->when($branchId,fn($q)=>$q->where('branch_id',$branchId))
+            ->orderBy('last_name')->get();
+        return view('payroll.index',compact('runs','employees'));
     }
     public function store(Request $request, PngPayrollCalculator $calculator) {
-        CompanyAuthorizer::requireRole($request,['owner','admin','payroll_manager']);
+        CompanyAuthorizer::requirePermission($request,'payroll.create');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $data=$request->validate([
             'period_start'=>'required|date','period_end'=>'required|date|after_or_equal:period_start',
@@ -30,7 +42,8 @@ class PayrollController extends Controller {
             || ($data['pay_frequency']==='monthly' && ($days<28 || $days>31))) {
             throw ValidationException::withMessages(['period_end'=>'The selected dates do not match the chosen weekly, fortnightly or monthly pay period.']);
         }
-        $employees=Employee::where('company_id',$companyId)->where('status','active')->where('pay_frequency',$data['pay_frequency'])->get();
+        $branchId=CompanyAuthorizer::activeBranchId($request);
+        $employees=Employee::where('company_id',$companyId)->where('status','active')->where('pay_frequency',$data['pay_frequency'])->when($branchId,fn($q)=>$q->where('branch_id',$branchId))->get();
         abort_if($employees->isEmpty(),422,'No active employees use this pay frequency.');
         $employerVoluntary=(bool)Company::whereKey($companyId)->value('superannuation_voluntary_participant');
         $companyHeadcount=Employee::where('company_id',$companyId)->where('status','active')
@@ -71,20 +84,27 @@ class PayrollController extends Controller {
         });
         return back()->with('status','Draft payroll run calculated with PNG statutory PAYE and superannuation rules. Review declarations, eligibility and each payslip before approval.');
     }
-    public function approve(Request $request, PayrollRun $run) {
-        CompanyAuthorizer::requireRole($request,['owner','admin','payroll_manager']);
+    public function approve(Request $request, PayrollRun $run, PayrollLedgerPoster $ledgerPoster) {
+        CompanyAuthorizer::requirePermission($request,'payroll.approve');
+        CompanyAuthorizer::requireCompanyWideAccess($request);
         $companyId=CompanyAuthorizer::activeCompanyId($request);
-        abort_unless($run->company_id===$companyId,404);
-        abort_unless($run->status==='draft',422,'Only draft payroll runs can be approved.');
-        abort_if($run->created_by===$request->user()->id,403,'The payroll creator cannot approve their own run.');
-        abort_if($run->lines()->count()===0,422,'Payroll run has no employee lines.');
-        $run->update(['status'=>'approved','approved_by'=>$request->user()->id,'approved_at'=>now()]);
-        return back()->with('status','Payroll run approved. Payment execution and statutory return filing are not enabled.');
+        DB::transaction(function () use ($run, $request, $ledgerPoster, $companyId) {
+            $lockedRun=PayrollRun::where('company_id',$companyId)->lockForUpdate()->findOrFail($run->id);
+            abort_unless($lockedRun->status==='draft',422,'Only draft payroll runs can be approved.');
+            abort_if((int)$lockedRun->created_by===(int)$request->user()->id,403,'The payroll creator cannot approve their own run.');
+            abort_if($lockedRun->lines()->count()===0,422,'Payroll run has no employee lines.');
+            $lockedRun->update(['status'=>'approved','approved_by'=>$request->user()->id,'approved_at'=>now()]);
+            $ledgerPoster->post($lockedRun,(int)$request->user()->id);
+        });
+        return back()->with('status','Payroll run approved and branch-attributed accrual journals posted to the general ledger. Payment execution and statutory return filing are not enabled.');
     }
     public function payslip(Request $request, PayrollLine $line) {
+        CompanyAuthorizer::requirePermission($request,'payroll.view');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
+        $branchId=CompanyAuthorizer::activeBranchId($request);
         $line->load(['employee','run']);
         abort_unless($line->run->company_id===$companyId,404);
+        if($branchId!==null) abort_unless((int)$line->employee->branch_id===$branchId,404);
         abort_unless($line->run->status==='approved',403,'Payslips are available after payroll approval.');
         return view('payroll.payslip',['line'=>$line]);
     }

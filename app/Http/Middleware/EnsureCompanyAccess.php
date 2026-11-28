@@ -1,13 +1,14 @@
 <?php
 namespace App\Http\Middleware;
 use Closure;
+use App\Models\Branch;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 class EnsureCompanyAccess {
     public function handle(Request $request, Closure $next): Response {
         $user = $request->user();
         if (!$user) return redirect()->route('login');
-        $memberships = $user->companies()->wherePivot('is_active', true)->get();
+        $memberships = $user->companies()->wherePivot('is_active', true)->where('companies.is_active', true)->get();
         if ($memberships->isEmpty()) abort(403, 'Your account is not assigned to an active company.');
         $selected = (int) $request->session()->get('active_company_id', 0);
         $company = $memberships->firstWhere('id', $selected);
@@ -16,6 +17,10 @@ class EnsureCompanyAccess {
             $request->session()->put('active_company_id', $company->id);
         }
         if (!$company) return response()->view('companies.select', ['companies'=>$memberships], 200);
+        $branchId = $company->pivot->branch_id;
+        if ($branchId !== null) {
+            abort_unless(Branch::where('company_id', $company->id)->whereKey($branchId)->where('is_active', true)->exists(), 403, 'Your assigned branch is inactive or unavailable.');
+        }
         $request->attributes->set('activeCompany', $company);
         view()->share('activeCompany', $company);
         return $next($request);

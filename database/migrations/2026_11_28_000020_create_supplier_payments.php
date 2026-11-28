@@ -10,6 +10,7 @@ return new class extends Migration {
         Schema::create('supplier_payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('supplier_id')->constrained()->restrictOnDelete();
             $table->foreignId('bank_account_id')->constrained()->restrictOnDelete();
             $table->foreignId('journal_entry_id')->nullable()->constrained()->nullOnDelete();

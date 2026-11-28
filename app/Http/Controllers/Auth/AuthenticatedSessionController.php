@@ -12,6 +12,10 @@ class AuthenticatedSessionController extends Controller {
             throw ValidationException::withMessages(['email'=>'The supplied credentials are incorrect.']);
         }
         $request->session()->regenerate();
+        $request->session()->forget('mfa_verified_user_id');
+        if ($request->user()->mfa_enabled_at) {
+            return redirect()->route('mfa.challenge');
+        }
         return redirect()->intended(route('dashboard'));
     }
     public function destroy(Request $request) {

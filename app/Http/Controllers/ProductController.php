@@ -6,12 +6,13 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 class ProductController extends Controller {
     public function index(Request $request) {
+        CompanyAuthorizer::requirePermission($request,'inventory.view');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $products=Product::where('company_id',$companyId)->orderBy('name')->paginate(25);
         return view('inventory.products.index',['products'=>$products,'company'=>$request->attributes->get('activeCompany')]);
     }
     public function store(Request $request) {
-        CompanyAuthorizer::requireRole($request,['owner','admin','inventory_manager']);
+        CompanyAuthorizer::requirePermission($request,'inventory.manage');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $data=$request->validate([
             'sku'=>['required','string','max:80',Rule::unique('products')->where(fn($q)=>$q->where('company_id',$companyId))],
