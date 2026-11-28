@@ -6,6 +6,7 @@ use App\Http\Controllers\CompanyAdministrationController;
 use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\SalesOrderController;
+use App\Http\Controllers\PosSessionController;
 use App\Http\Controllers\GstSummaryController;
 use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\CustomerReceiptController;
@@ -112,6 +113,10 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::post('/finance/refunds/{refund}/post', [CustomerRefundController::class, 'post'])->name('finance.refunds.post');
     Route::post('/finance/refunds/{refund}/cancel', [CustomerRefundController::class, 'cancel'])->name('finance.refunds.cancel');
 
+    Route::get('/sales/pos', [PosSessionController::class, 'index'])->name('sales.pos.index');
+    Route::post('/sales/pos/sessions', [PosSessionController::class, 'open'])->name('sales.pos.open');
+    Route::post('/sales/pos/sessions/{session}/sales', [PosSessionController::class, 'sale'])->name('sales.pos.sale');
+    Route::post('/sales/pos/sessions/{session}/close', [PosSessionController::class, 'close'])->name('sales.pos.close');
     Route::get('/sales/orders', [SalesOrderController::class, 'index'])->name('sales.orders.index');
     Route::post('/sales/orders', [SalesOrderController::class, 'store'])->name('sales.orders.store');
     Route::post('/sales/orders/{order}/approve', [SalesOrderController::class, 'approve'])->name('sales.orders.approve');
