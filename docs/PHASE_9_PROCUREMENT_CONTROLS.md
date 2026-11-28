@@ -24,6 +24,12 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 - Supplier stock-return credit note: debit AP for gross credit, credit eligible GST input tax, credit inventory at FIFO/weighted-average carrying value, and post any difference to purchase-price variance. Stock issue and journal links are atomic and branch-attributed.
 - All journals are posted in the supplier bill's branch and retain the bill's creator and the independent approver.
 
+## Section 65A notice handling
+
+Section 65A is not a blanket withholding percentage. The Commissioner General issues a written notice directing a registered buyer to pay all GST payable to all suppliers or a specified supplier; the notice remains effective until revoked. The IRC fact sheet states that notified buyers file G1 plus the applicable G2/G4/G5/G6 remittance form and provide supplier-level remittance details. ANERP does not apply automatic withholding without a recorded notice, its supplier scope, effective/revocation dates and remittance instructions.
+
+Official reference: https://static.irc.gov.pg/2021/December/5ExWcL-media-GST-Section-65A-Fact-Sheet.pdf
+
 ## Current limitations
 - Purchase orders now support multiple product lines in the authoring screen and the controller validates each submitted line.
 - Full statutory GST return automation and tax adjustment notes, withholding under section 65A, private-use and exempt-sale input-credit adjustments, invoice attachments/OCR and payment reversals remain outstanding. The GST summary is a management estimate, not a filing-ready G1 return. Supplier payment allocation and inventory credit notes are implemented; general expense credit notes remain separate from stock returns.
