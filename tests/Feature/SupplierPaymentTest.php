@@ -32,6 +32,7 @@ final class SupplierPaymentTest extends TestCase
         $payment = SupplierPayment::where('company_id', $company->id)->firstOrFail();
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->post(route('finance.payments.post', $payment->id))->assertRedirect()->assertSessionHasNoErrors();
+        $payment->refresh();
 
         $this->assertDatabaseHas('supplier_payments', ['id' => $payment->id, 'status' => 'posted']);
         $this->assertDatabaseHas('bank_transactions', ['bank_account_id' => $bank->id, 'journal_entry_id' => $payment->journal_entry_id, 'direction' => 'out', 'amount' => '75.00']);
