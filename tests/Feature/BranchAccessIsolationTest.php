@@ -7,6 +7,8 @@ use App\Models\Company;
 use App\Models\Employee;
 use App\Models\PayrollLine;
 use App\Models\PayrollRun;
+use App\Models\Product;
+use App\Models\StockMovement;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Models\User;
@@ -107,6 +109,38 @@ final class BranchAccessIsolationTest extends TestCase
             ->assertOk()
             ->assertViewHas('warehouses', fn($warehouses) => $warehouses->contains('id', $warehouseA->id)
                 && !$warehouses->contains('id', $warehouseB->id));
+    }
+
+    public function test_stock_movement_workspace_only_shows_assigned_branch_movements(): void
+    {
+        [$user, $company, $branchA, $branchB] = $this->branchUser('inventory_manager');
+        $warehouseA = Warehouse::create(['company_id' => $company->id, 'branch_id' => $branchA->id, 'code' => 'ST-A', 'name' => 'Stock A']);
+        $warehouseB = Warehouse::create(['company_id' => $company->id, 'branch_id' => $branchB->id, 'code' => 'ST-B', 'name' => 'Stock B']);
+        $product = Product::create([
+            'company_id' => $company->id, 'sku' => 'BR-STOCK', 'name' => 'Shared Product',
+            'unit' => 'each', 'standard_cost' => 5, 'selling_price' => 8, 'track_stock' => true,
+        ]);
+        $movementA = StockMovement::create([
+            'company_id' => $company->id, 'warehouse_id' => $warehouseA->id,
+            'product_id' => $product->id, 'movement_type' => 'opening',
+            'quantity' => 10, 'unit_cost' => 5, 'occurred_at' => now(),
+            'created_by' => $user->id,
+        ]);
+        $movementB = StockMovement::create([
+            'company_id' => $company->id, 'warehouse_id' => $warehouseB->id,
+            'product_id' => $product->id, 'movement_type' => 'opening',
+            'quantity' => 20, 'unit_cost' => 5, 'occurred_at' => now(),
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession($this->session($user, $company))
+            ->get(route('inventory.movements.index'))
+            ->assertOk()
+            ->assertViewHas('movements', fn($movements) => $movements->contains('id', $movementA->id)
+                && !$movements->contains('id', $movementB->id))
+            ->assertViewHas('balances', fn($balances) => $balances->contains('warehouse_name', 'Stock A')
+                && !$balances->contains('warehouse_name', 'Stock B'));
     }
 
     public function test_branch_payroll_report_only_aggregates_branch_employee_lines(): void
