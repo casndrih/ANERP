@@ -43,7 +43,8 @@ class StockMovementController extends Controller {
                 ['company_id'=>$companyId],
                 ['valuation_method'=>$data['valuation_method'],'updated_by'=>$request->user()->id,'updated_at'=>now(),'created_at'=>now()]
             );
-            if($current!==null && $current!==$data['valuation_method']) {
+            $effectiveCurrent=$current ?? 'weighted_average';
+            if($effectiveCurrent!==$data['valuation_method']) {
                 DB::table('inventory_cost_layers')->where('company_id',$companyId)->delete();
                 DB::table('inventory_cost_balances')->where('company_id',$companyId)->update(['is_initialized'=>false,'updated_at'=>now()]);
             }
