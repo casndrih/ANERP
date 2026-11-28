@@ -56,6 +56,7 @@ Route::middleware(['auth', EnsureCompanyAccess::class])->group(function () {
     Route::get('/finance/payments', [SupplierPaymentController::class, 'index'])->name('finance.payments.index');
     Route::post('/finance/payments', [SupplierPaymentController::class, 'store'])->name('finance.payments.store');
     Route::post('/finance/payments/{payment}/post', [SupplierPaymentController::class, 'post'])->name('finance.payments.post');
+    Route::post('/finance/payments/{payment}/cancel', [SupplierPaymentController::class, 'cancel'])->name('finance.payments.cancel');
     Route::post('/finance/bank-accounts', [FinanceController::class, 'storeBankAccount'])->name('finance.bank-accounts.store');
     Route::post('/finance/bank-transactions', [FinanceController::class, 'storeBankTransaction'])->name('finance.bank-transactions.store');
     Route::post('/finance/bank-accounts/{bankAccount}/reconcile', [FinanceController::class, 'reconcile'])->name('finance.bank-accounts.reconcile');
