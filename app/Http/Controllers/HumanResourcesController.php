@@ -50,12 +50,14 @@ class HumanResourcesController extends Controller {
     }
     public function setVoluntarySuperParticipation(Request $request) {
         CompanyAuthorizer::requirePermission($request,'company.settings.manage');
+        CompanyAuthorizer::requireCompanyWideAccess($request);
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         Company::whereKey($companyId)->update(['superannuation_voluntary_participant'=>$request->boolean('superannuation_voluntary_participant')]);
         return back()->with('status','Company voluntary superannuation participation setting updated.');
     }
     public function storeLeaveType(Request $request) {
         CompanyAuthorizer::requirePermission($request,'hr.manage');
+        CompanyAuthorizer::requireCompanyWideAccess($request);
         $companyId=CompanyAuthorizer::activeCompanyId($request);
         $data=$request->validate([
             'code'=>['required','string','max:30',Rule::unique('leave_types')->where(fn($q)=>$q->where('company_id',$companyId))],
