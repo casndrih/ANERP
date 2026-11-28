@@ -83,6 +83,7 @@ class SupplierPaymentController extends Controller
                 ->when($assignedBranch, fn ($q) => $q->where('branch_id', $assignedBranch))
                 ->lockForUpdate()->findOrFail($data['bank_account_id']);
             $branchId = $assignedBranch ?? $requestedBranch ?? $bank->branch_id;
+            if ($bank->currency !== 'PGK') throw ValidationException::withMessages(['bank_account_id' => 'Supplier payments currently support PGK bank accounts only.']);
             if ($bank->branch_id !== $branchId) {
                 throw ValidationException::withMessages(['bank_account_id' => 'The bank account must belong to the payment branch.']);
             }
