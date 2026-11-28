@@ -14,8 +14,8 @@ This is the working completion register for Phases 1–10. A green workflow prov
 - Phase 7 branch head `c3657f8`: CI, container build and security checks passed.
 - Phase 8 branch head `8854f38`: CI, container build and security checks passed.
 - Phase 9 latest tested commit `7c62480`: CI 79 tests / 353 assertions passed, security checks passed, container build passed.
-- Phase 10 customer-credit code commit `7180fc2`: CI 97 tests / 514 assertions passed; container build passed. The current docs-only branch head `1255811` has its CI test job passed (97 tests / 514 assertions); its deployment-image/container build jobs were still running at the time of this update.
-- Phase 1 branch head `8f6bcfe` has no Actions runs and no pull request in the current PR chain; its integration and verification remain unresolved.
+- Phase 10 customer-credit and item-level sales-return implementation commit `41ae178`: CI 100 tests / 555 assertions passed, including three new sales-return feature tests. The matching container build was still running at the time of this update.
+- Phase 1 now has PR #10 targeting `main`; PR #1 (Phase 2) has been retargeted to Phase 1 to restore the sequential chain. Phase 1 adds clean-install/upgrade CI, Docker Compose health checks, backup-first upgrade scripts and ESXi OVA export tooling. The new clean-install/upgrade workflow is still running; real ESXi OVA import evidence remains unavailable without access to the target host.
 - Older failed runs on earlier Phase 9/10 commits are historical and are not the latest branch results.
 
 ## Phase-by-phase outstanding register
@@ -66,7 +66,7 @@ This is the working completion register for Phases 1–10. A green workflow prov
 **Still required:** statutory G1 filing automation and validation; Section 65A notice lifecycle, supplier scope, effective/revocation dates and remittance forms; private-use and exempt-sale input-tax apportionment; GST adjustment/debit notes; invoice document attachments and OCR; verified tariff/HS classification; charge-specific landed-cost allocation; purchase price/quantity tolerance approvals; payment reversals; robust mixed-stock and transfer reconciliation; tax/accountant review. Current GST summary remains a management tool, not a filing-ready return.
 
 ### Phase 10 — Sales, POS and customer receivables
-**Delivered:** sales orders, stock reservation/fulfilment, POS till sessions, customer receipts and allocations, advances, credit notes, refunds and AR ageing. Customer credit limits/holds are implemented; the latest CI test job passed 97 tests / 514 assertions. Final container/deployment-image build verification is pending on the current branch head.
+**Delivered:** sales orders, stock reservation/fulfilment, POS till sessions, customer receipts and allocations, advances, credit notes, refunds, AR ageing, customer credit limits/holds and item-level sales returns. Sales returns capture invoice-line quantities, item condition and receiving warehouse; draft reservations prevent over-return; maker-checker posting creates GST-adjusted credit notes, reduces AR or credits customer deposits, and restores resellable inventory at the original issue movement's weighted unit cost. CI passed 100 tests / 555 assertions on `41ae178`; the matching container build was still running.
 
 **Still required:** item-level sales returns with stock/valuation/GST reversal; POS refunds and voids; picking/packing, dispatch manifests and proof of delivery; EFTPOS integration and end-of-day settlement; customer statements and automated reminders; price lists and discount approval; multi-currency AR; receipt reversals and advance reallocation; complete GST debit/adjustment-note workflow; feature tests for credit exposure and offset behavior.
 
