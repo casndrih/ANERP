@@ -87,12 +87,15 @@ class PayrollController extends Controller {
         CompanyAuthorizer::requirePermission($request,'payroll.approve');
         CompanyAuthorizer::requireCompanyWideAccess($request);
         $companyId=CompanyAuthorizer::activeCompanyId($request);
-        abort_unless($run->company_id===$companyId,404);
-        abort_unless($run->status==='draft',422,'Only draft payroll runs can be approved.');
-        abort_if($run->created_by===$request->user()->id,403,'The payroll creator cannot approve their own run.');
-        abort_if($run->lines()->count()===0,422,'Payroll run has no employee lines.');
-        $run->update(['status'=>'approved','approved_by'=>$request->user()->id,'approved_at'=>now()]);
-        return back()->with('status','Payroll run approved. Payment execution and statutory return filing are not enabled.');
+        DB::transaction(function () use ($run, $request, $ledgerPoster, $companyId) {
+            $lockedRun=PayrollRun::where('company_id',$companyId)->lockForUpdate()->findOrFail($run->id);
+            abort_unless($lockedRun->status==='draft',422,'Only draft payroll runs can be approved.');
+            abort_if((int)$lockedRun->created_by===(int)$request->user()->id,403,'The payroll creator cannot approve their own run.');
+            abort_if($lockedRun->lines()->count()===0,422,'Payroll run has no employee lines.');
+            $lockedRun->update(['status'=>'approved','approved_by'=>$request->user()->id,'approved_at'=>now()]);
+            $ledgerPoster->post($lockedRun,(int)$request->user()->id);
+        });
+        return back()->with('status','Payroll run approved and branch-attributed accrual journals posted to the general ledger. Payment execution and statutory return filing are not enabled.');
     }
     public function payslip(Request $request, PayrollLine $line) {
         CompanyAuthorizer::requirePermission($request,'payroll.view');
