@@ -7,7 +7,7 @@
 - Goods invoice unit prices must match the approved PO price within K0.01; total invoice value must reconcile to matched line totals. Tax, freight and other charges must be entered separately until tax handling is implemented.
 - Pending and approved invoice matches are counted when preventing duplicate billing, including invoices that have been matched but not yet posted.
 - Goods invoice approval clears goods-received-not-invoiced (GRNI) into accounts payable through a balanced posted journal.
-- Landed-cost invoices can be allocated across received stock by received line value, received quantity or equal share per received product line; the selected basis is persisted for audit.
+- Landed-cost invoices can be allocated across received stock by received line value, received quantity, equal share, product weight or product volume per received product line; the selected basis is persisted for audit.
 - The allocation capitalises the share represented by on-hand inventory and expenses the consumed share to cost of goods sold. The allocation basis is selected by the independent approver and stored on each allocation record.
 - FIFO remaining layers and weighted-average inventory balances are updated when landed costs are capitalised.
 - Invoice creator and invoice matcher cannot approve their own invoice. The approval action requires the dedicated procurement.invoice.approve permission, granted to procurement approvers, finance managers and accountants; owners/admins retain all permissions.
