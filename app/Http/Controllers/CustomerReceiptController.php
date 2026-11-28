@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
 use App\Models\Customer;
+use App\Models\CustomerCreditNote;
 use App\Models\CustomerInvoice;
 use App\Models\CustomerReceipt;
 use App\Models\CustomerReceiptAllocation;
@@ -40,9 +41,16 @@ class CustomerReceiptController extends Controller
                     ->whereColumn('customer_receipts.company_id', 'customer_invoices.company_id')
                     ->selectRaw('COALESCE(SUM(customer_receipt_allocations.amount), 0)');
             }, 'amount_paid')
+            ->selectSub(function ($query) use ($companyId) {
+                $query->from('customer_credit_notes')
+                    ->whereColumn('customer_credit_notes.customer_invoice_id', 'customer_invoices.id')
+                    ->whereIn('customer_credit_notes.status', ['draft', 'posted'])
+                    ->where('customer_credit_notes.company_id', $companyId)
+                    ->selectRaw('COALESCE(SUM(customer_credit_notes.amount), 0)');
+            }, 'amount_credited')
             ->orderBy('due_date')
             ->get()
-            ->filter(fn ($invoice) => round((float) $invoice->amount - (float) $invoice->amount_paid, 2) > 0);
+            ->filter(fn ($invoice) => round((float) $invoice->amount - (float) $invoice->amount_paid - (float) $invoice->amount_credited, 2) > 0);
 
         $receipts = CustomerReceipt::with(['customer', 'bankAccount', 'allocations.invoice'])
             ->where('company_id', $companyId)
@@ -171,7 +179,9 @@ class CustomerReceiptController extends Controller
                     ->where('customer_receipts.id', '!=', $document->id)
                     ->where('customer_receipts.company_id', $companyId)
                     ->sum('customer_receipt_allocations.amount');
-                $outstanding = round((float) $invoice->amount - $alreadyPaid, 2);
+                $alreadyCredited = (float) CustomerCreditNote::where('company_id', $companyId)
+                    ->where('customer_invoice_id', $invoice->id)->where('status', 'posted')->sum('amount');
+                $outstanding = round((float) $invoice->amount - $alreadyPaid - $alreadyCredited, 2);
                 if ((float) $allocation->amount > $outstanding + 0.009) {
                     throw ValidationException::withMessages(['allocations' => "Allocation exceeds the outstanding balance of invoice {$invoice->invoice_number} (K".number_format(max(0, $outstanding), 2).")."]);
                 }
