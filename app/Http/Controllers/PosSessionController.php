@@ -35,9 +35,57 @@ class PosSessionController extends Controller
             ->orderByDesc('pos_sessions.opened_at')->limit(40)->get();
         $openSessions = $sessions->where('status', 'open')->count();
 
+        $transactions = DB::table('pos_transactions')
+            ->join('pos_sessions', 'pos_sessions.id', '=', 'pos_transactions.pos_session_id')
+            ->join('customer_invoices', 'customer_invoices.id', '=', 'pos_transactions.customer_invoice_id')
+            ->join('customers', 'customers.id', '=', 'pos_transactions.customer_id')
+            ->where('pos_transactions.company_id', $companyId)
+            ->when($branchId, fn ($q) => $q->where('pos_transactions.branch_id', $branchId))
+            ->select('pos_transactions.*', 'pos_sessions.session_number', 'pos_sessions.status as session_status',
+                'customer_invoices.invoice_number', 'customers.name as customer_name')
+            ->orderByDesc('pos_transactions.created_at')->limit(60)->get();
+
+        $refundNotes = DB::table('customer_credit_notes as notes')
+            ->join('customer_invoices as invoices', 'invoices.id', '=', 'notes.customer_invoice_id')
+            ->join('customers', 'customers.id', '=', 'notes.customer_id')
+            ->where('notes.company_id', $companyId)->where('notes.status', 'posted')
+            ->whereNotNull('notes.source_sales_return_id')->where('notes.deposit_amount', '>', 0)
+            ->when($branchId, fn ($q) => $q->where('notes.branch_id', $branchId))
+            ->select('notes.id', 'notes.credit_note_number', 'notes.deposit_amount', 'invoices.invoice_number', 'customers.name as customer_name')
+            ->selectSub(function ($q) {
+                $q->from('pos_refunds')->whereColumn('pos_refunds.customer_credit_note_id', 'notes.id')
+                    ->whereIn('pos_refunds.status', ['draft', 'posted'])->selectRaw('COALESCE(SUM(pos_refunds.amount),0)');
+            }, 'reserved_amount')->orderByDesc('notes.credit_note_date')->limit(100)->get()
+            ->filter(fn ($note) => round((float) $note->deposit_amount - (float) $note->reserved_amount, 2) > 0)->values();
+
+        $refunds = DB::table('pos_refunds')
+            ->join('pos_sessions', 'pos_sessions.id', '=', 'pos_refunds.pos_session_id')
+            ->join('customer_credit_notes', 'customer_credit_notes.id', '=', 'pos_refunds.customer_credit_note_id')
+            ->join('users as creators', 'creators.id', '=', 'pos_refunds.created_by')
+            ->where('pos_refunds.company_id', $companyId)
+            ->when($branchId, fn ($q) => $q->where('pos_refunds.branch_id', $branchId))
+            ->select('pos_refunds.*', 'pos_sessions.session_number', 'customer_credit_notes.credit_note_number', 'creators.name as creator_name')
+            ->orderByDesc('pos_refunds.created_at')->limit(50)->get();
+
+        $voids = DB::table('pos_voids')
+            ->join('pos_sessions', 'pos_sessions.id', '=', 'pos_voids.pos_session_id')
+            ->join('pos_transactions', 'pos_transactions.id', '=', 'pos_voids.pos_transaction_id')
+            ->join('customer_invoices', 'customer_invoices.id', '=', 'pos_voids.customer_invoice_id')
+            ->join('users as creators', 'creators.id', '=', 'pos_voids.created_by')
+            ->where('pos_voids.company_id', $companyId)
+            ->when($branchId, fn ($q) => $q->where('pos_voids.branch_id', $branchId))
+            ->select('pos_voids.*', 'pos_sessions.session_number', 'pos_transactions.transaction_number',
+                'customer_invoices.invoice_number', 'creators.name as creator_name')
+            ->orderByDesc('pos_voids.created_at')->limit(50)->get();
+
         return view('sales.pos.index', [
             'sessions' => $sessions,
             'openSessions' => $openSessions,
+            'openSessionsList' => $sessions->where('status', 'open')->values(),
+            'transactions' => $transactions,
+            'refundNotes' => $refundNotes,
+            'refunds' => $refunds,
+            'voids' => $voids,
             'warehouses' => Warehouse::where('company_id', $companyId)->where('is_active', true)
                 ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))->orderBy('name')->get(),
             'bankAccounts' => BankAccount::where('company_id', $companyId)->where('is_active', true)
@@ -117,6 +165,9 @@ class PosSessionController extends Controller
                 ->where('currency', 'PGK')->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                 ->lockForUpdate()->findOrFail($data['invoice_id']);
             abort_unless((int) ($invoice->branch_id ?? 0) === (int) $till->branch_id, 409, 'Invoice and till must belong to the same branch.');
+            if (DB::table('pos_transactions')->where('company_id', $companyId)->where('customer_invoice_id', $invoice->id)->where('status', 'posted')->lockForUpdate()->exists()) {
+                throw ValidationException::withMessages(['invoice_id' => 'This invoice already has an active POS cash transaction.']);
+            }
             $allocated = (float) DB::table('customer_receipt_allocations')
                 ->join('customer_receipts', 'customer_receipts.id', '=', 'customer_receipt_allocations.customer_receipt_id')
                 ->where('customer_receipt_allocations.customer_invoice_id', $invoice->id)
@@ -183,8 +234,11 @@ class PosSessionController extends Controller
                 'payment_method' => 'cash', 'reference' => $data['reference'] ?? null,
                 'created_by' => $request->user()->id, 'created_at' => now(), 'updated_at' => now(),
             ]);
+            $cashSales = (float) DB::table('pos_transactions')->where('pos_session_id', $till->id)->sum('amount');
+            $cashRefunds = (float) DB::table('pos_refunds')->where('pos_session_id', $till->id)->where('status', 'posted')->sum('amount');
+            $cashVoids = (float) DB::table('pos_voids')->where('pos_session_id', $till->id)->where('status', 'posted')->sum('amount');
             DB::table('pos_sessions')->where('id', $till->id)->update([
-                'expected_cash' => round((float) $till->opening_float + (float) DB::table('pos_transactions')->where('pos_session_id', $till->id)->sum('amount'), 2),
+                'expected_cash' => round((float) $till->opening_float + $cashSales - $cashRefunds - $cashVoids, 2),
                 'updated_at' => now(),
             ]);
         });
@@ -204,7 +258,10 @@ class PosSessionController extends Controller
                 ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                 ->lockForUpdate()->find($session);
             abort_unless($till && $till->status === 'open', 409, 'Only open till sessions can be closed.');
-            $expected = round((float) $till->opening_float + (float) DB::table('pos_transactions')->where('pos_session_id', $till->id)->sum('amount'), 2);
+            $cashSales = (float) DB::table('pos_transactions')->where('pos_session_id', $till->id)->sum('amount');
+            $cashRefunds = (float) DB::table('pos_refunds')->where('pos_session_id', $till->id)->where('status', 'posted')->sum('amount');
+            $cashVoids = (float) DB::table('pos_voids')->where('pos_session_id', $till->id)->where('status', 'posted')->sum('amount');
+            $expected = round((float) $till->opening_float + $cashSales - $cashRefunds - $cashVoids, 2);
             $counted = round((float) $data['counted_cash'], 2);
             $variance = round($counted - $expected, 2);
             $varianceJournalId = null;
