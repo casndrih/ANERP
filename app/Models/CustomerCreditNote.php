@@ -15,4 +15,5 @@ class CustomerCreditNote extends Model
     public function customer(): BelongsTo { return $this->belongsTo(Customer::class); }
     public function invoice(): BelongsTo { return $this->belongsTo(CustomerInvoice::class, 'customer_invoice_id'); }
     public function journalEntry(): BelongsTo { return $this->belongsTo(JournalEntry::class); }
+    public function sourceSalesReturn(): BelongsTo { return $this->belongsTo(CustomerSalesReturn::class, 'source_sales_return_id'); }
 }
