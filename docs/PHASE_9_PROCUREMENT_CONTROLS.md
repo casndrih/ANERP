@@ -12,6 +12,8 @@
 - FIFO remaining layers and weighted-average inventory balances are updated when landed costs are capitalised.
 - Invoice creator and invoice matcher cannot approve their own invoice. The approval action requires the dedicated procurement.invoice.approve permission, granted to procurement approvers, finance managers and accountants; owners/admins retain all permissions.
 - Direct posting of a supplier bill linked to a purchase order is blocked in the general finance bill workflow. It must pass through matching approval.
+- Domestic PNG GST is calculated on general supplier bills and customer invoices using the 10% standard rate, zero-rated, exempt and out-of-scope treatments. The company GST registration flag controls output GST and input-credit eligibility; supplier registration number plus tax invoice reference are required before input GST is posted to the GST input control account.
+- General supplier bill posting separates net expense and eligible input GST from gross AP; customer invoice posting separates net revenue and output GST from gross AR. A G1-style management summary reports domestic output GST, eligible domestic input credits and the net difference.
 
 ## Landed-cost safety guard
 Landed-cost allocation is deliberately conservative. It blocks when the selected product/warehouse stock pool includes other inbound sources or inter-warehouse transfers, or when FIFO layers do not reconcile to on-hand stock. In those cases, the stock controller must reconcile the affected cost pool before allocating freight. This avoids silently applying the charge to unrelated stock layers.
@@ -23,14 +25,14 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 
 ## Current limitations
 - Purchase orders now support multiple product lines in the authoring screen and the controller validates each submitted line.
-- GST input/output posting and return integration, withholding tax, tariff-driven import-duty integration, inventory/GRNI supplier credit/debit notes, invoice attachments/OCR and payment reversals remain outstanding. Supplier payment allocation is implemented. Invoice-level supplier credit notes are supported for posted general expense bills only; matched inventory/GRNI bills are deliberately blocked until stock-return accounting exists.
+- Full statutory GST return automation and tax adjustment notes, GST on PO-matched goods/landed-cost invoices, import GST/customs assessments, withholding under section 65A, private-use and exempt-sale input-credit adjustments, inventory/GRNI supplier debit/credit notes, invoice attachments/OCR and payment reversals remain outstanding. The GST summary is a management estimate, not a filing-ready G1 return. Supplier payment allocation is implemented. Invoice-level supplier credit notes are supported for posted general expense bills only; matched inventory/GRNI bills are deliberately blocked until stock-return accounting exists.
 - Goods price variance beyond K0.01 is blocked for manual resolution; tolerance approval workflows are not yet available.
 - Landed costs are only capitalised when the product/warehouse cost pool is isolated and reconciled. Mixed stock pools and transferred stock require manual reconciliation before this feature can proceed.
 - Landed costs support received line value, received quantity and equal-share allocation. Weight-, volume- and charge-specific allocation bases are not configurable.
 - Supplier invoice matching is not an external tax or statutory compliance certification.
 
 ## Acceptance checks
-- Verify domestic standard, zero-rated and exempt GST treatments; verify import GST base includes customs value, customs duty, excise and freight/insurance not already included.
+- Verify standard 10%, zero-rated, exempt and out-of-scope domestic GST treatments; verify company GST registration, supplier registration evidence and tax-invoice-reference gates for input credits. Import GST base calculation is available as a calculator only and is not yet integrated into accounting postings.
 - Create and submit a purchase order with multiple distinct product lines; verify each line is independently received and matched.
 - Apply migrations against a clean PostgreSQL database and run the complete test suite.
 - Confirm a bill cannot be matched to another company's PO or another supplier's PO.
