@@ -61,8 +61,10 @@ class CompanyAdministrationController extends Controller {
   if((int)$target->id===(int)$r->user()->id&&!$d['is_active']) abort(409,'You cannot suspend your own active company membership.');
   $before=['role_code'=>$target->pivot->role_code,'branch_id'=>$target->pivot->branch_id,'is_active'=>(bool)$target->pivot->is_active];
   $after=['role_code'=>$d['role_code'],'branch_id'=>$d['branch_id']??null,'is_active'=>(bool)$d['is_active']];
-  DB::table('company_user')->where('company_id',$company->id)->where('user_id',$target->id)->update($after+['updated_at'=>now()]);
-  DB::table('audit_events')->insert(['company_id'=>$company->id,'user_id'=>$r->user()->id,'event'=>'COMPANY MEMBERSHIP UPDATED','auditable_type'=>'users','auditable_id'=>$target->id,'before_data'=>json_encode($before),'after_data'=>json_encode($after),'ip_address'=>$r->ip(),'created_at'=>now()]);
+  DB::transaction(function() use($company,$target,$after,$before,$r) {
+   DB::table('company_user')->where('company_id',$company->id)->where('user_id',$target->id)->update($after+['updated_at'=>now()]);
+   DB::table('audit_events')->insert(['company_id'=>$company->id,'user_id'=>$r->user()->id,'event'=>'COMPANY MEMBERSHIP UPDATED','auditable_type'=>'users','auditable_id'=>$target->id,'before_data'=>json_encode($before),'after_data'=>json_encode($after),'ip_address'=>$r->ip(),'created_at'=>now()]);
+  });
   return back()->with('status','Company membership updated.');
  }
  public function revokeInvitation(Request $r,int $invitation) {
