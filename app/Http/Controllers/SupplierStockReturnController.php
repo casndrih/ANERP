@@ -157,6 +157,7 @@ class SupplierStockReturnController extends Controller
             abort_if((int) $document->created_by === (int) $request->user()->id, 403, 'The stock return creator cannot post their own return.');
             $bill = SupplierBill::where('company_id', $companyId)->lockForUpdate()->findOrFail($document->supplier_bill_id);
             abort_unless($bill->status === 'posted' && $bill->invoice_type === 'goods' && $bill->match_status === 'approved', 409, 'Original supplier invoice must remain posted and matched.');
+            abort_unless((int) ($document->branch_id ?? 0) === (int) ($bill->branch_id ?? 0), 409, 'Return branch must match the original supplier invoice branch.');
             if ($document->return_date < $bill->bill_date->toDateString()) throw ValidationException::withMessages(['return' => 'Return date cannot be earlier than the original invoice date.']);
             $company = Company::findOrFail($companyId);
             if ((float) $document->gst_amount > 0 && (!(bool) $company->gst_registered || !(bool) $bill->supplier_gst_registered || !(bool) $bill->input_tax_credit_eligible || !filled(trim((string) $bill->supplier_gst_registration_number)) || !filled(trim((string) $bill->tax_invoice_reference)))) {
@@ -165,6 +166,7 @@ class SupplierStockReturnController extends Controller
             $order = PurchaseOrder::where('company_id', $companyId)->lockForUpdate()->findOrFail($bill->purchase_order_id);
             $warehouse = $order->warehouse;
             abort_unless((int) $warehouse->id === (int) $document->warehouse_id, 409, 'Return warehouse must match the original purchase order.');
+            abort_unless((int) ($warehouse->branch_id ?? 0) === (int) ($document->branch_id ?? 0), 409, 'Return warehouse branch must match the supplier invoice branch.');
 
             $paid = (float) DB::table('supplier_payment_allocations')
                 ->join('supplier_payments', 'supplier_payments.id', '=', 'supplier_payment_allocations.supplier_payment_id')
@@ -191,6 +193,7 @@ class SupplierStockReturnController extends Controller
             $costTotal = 0.0;
             foreach ($lines as $line) {
                 $poLine = PurchaseOrderLine::where('purchase_order_id', $order->id)->whereKey($line->purchase_order_line_id)->firstOrFail();
+                abort_unless((int) $poLine->product_id === (int) $line->product_id, 409, 'Return product must match the original purchase order line.');
                 Product::where('company_id', $companyId)->whereKey($line->product_id)->lockForUpdate()->firstOrFail();
                 $matched = DB::table('supplier_bill_match_lines')->where('supplier_bill_id', $bill->id)->where('purchase_order_line_id', $poLine->id)->firstOrFail();
                 $returnedOther = (float) DB::table('supplier_stock_return_lines')
