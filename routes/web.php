@@ -6,6 +6,7 @@ use App\Http\Controllers\CompanyAdministrationController;
 use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\CustomerReceiptController;
+use App\Http\Controllers\CustomerCreditNoteController;
 use App\Http\Controllers\MfaController;
 use App\Http\Controllers\HumanResourcesController;
 use App\Http\Controllers\PayrollController;
@@ -89,6 +90,9 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::post('/finance/payments', [SupplierPaymentController::class, 'store'])->name('finance.payments.store');
     Route::post('/finance/payments/{payment}/post', [SupplierPaymentController::class, 'post'])->name('finance.payments.post');
     Route::post('/finance/payments/{payment}/cancel', [SupplierPaymentController::class, 'cancel'])->name('finance.payments.cancel');
+    Route::get('/finance/credit-notes', [CustomerCreditNoteController::class, 'index'])->name('finance.credit-notes.index');
+    Route::post('/finance/credit-notes', [CustomerCreditNoteController::class, 'store'])->name('finance.credit-notes.store');
+    Route::post('/finance/credit-notes/{creditNote}/post', [CustomerCreditNoteController::class, 'post'])->name('finance.credit-notes.post');
     Route::get('/finance/receipts', [CustomerReceiptController::class, 'index'])->name('finance.receipts.index');
     Route::post('/finance/receipts', [CustomerReceiptController::class, 'store'])->name('finance.receipts.store');
     Route::post('/finance/receipts/{receipt}/post', [CustomerReceiptController::class, 'post'])->name('finance.receipts.post');
