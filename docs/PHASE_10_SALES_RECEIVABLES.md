@@ -15,6 +15,7 @@
 - Customer credit notes support invoice-linked drafts, outstanding-balance controls, independent posting, balanced revenue/AR reversals, cancellation and AR ageing integration. Draft receipts and draft credit notes reserve the same invoice balance so they cannot collectively exceed the invoice.
 - Customer deposit refunds support receipt-linked unallocated-balance checks, maker-checker posting, balanced customer-deposit/bank journals, outgoing bank transactions and draft cancellation.
 - Supplier credit notes support posted PGK general expense bills, outstanding AP controls, maker-checker posting, expense/AP reversal, cancellation and AP ageing. Matched inventory/GRNI bills are blocked until stock-return accounting is implemented.
+- Domestic PNG GST is posted on general supplier bills and customer invoices with company registration settings, supplier registration/tax-invoice evidence for input credits, GST input/output control accounts and a G1-style management summary.
 - Accounts payable ageing nets posted supplier payment allocations; draft payments do not reduce reported AP.
 
 ## Accounting example
