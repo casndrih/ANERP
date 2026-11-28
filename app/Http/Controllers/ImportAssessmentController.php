@@ -48,7 +48,7 @@ class ImportAssessmentController extends Controller
         $data = $request->validate([
             'purchase_order_id' => ['required', 'integer', Rule::exists('purchase_orders', 'id')->where(fn ($q) => $q->where('company_id', $companyId)->whereIn('status', ['approved', 'partially_received', 'received']))],
             'supplier_id' => ['required', 'integer', Rule::exists('suppliers', 'id')->where(fn ($q) => $q->where('company_id', $companyId)->where('is_active', true))],
-            'customs_assessment_reference' => ['required', 'string', 'max:120'],
+            'customs_assessment_reference' => ['required', 'string', 'max:120', Rule::unique('supplier_bills', 'customs_assessment_reference')->where(fn ($q) => $q->where('company_id', $companyId))],
             'import_declaration_number' => ['required', 'string', 'max:120'],
             'hs_code' => ['required', 'string', 'max:30', 'regex:/^[A-Za-z0-9.\-]+$/'],
             'customs_value' => ['required', 'numeric', 'min:0'],
