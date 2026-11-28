@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Import assessments · ANERP</title><script src="https://cdn.tailwindcss.com"></script></head>
+<body class="min-h-screen bg-slate-100 p-4 text-slate-900 md:p-7"><main class="mx-auto max-w-7xl space-y-6">
+<header class="flex flex-wrap items-center justify-between gap-3"><div><p class="text-sm text-slate-500">Procurement · PNG Customs</p><h1 class="text-2xl font-bold">Import assessments</h1><p class="text-sm text-slate-500">Use actual Customs assessment amounts; tariff duty is never guessed.</p></div><div class="flex gap-2"><a href="{{ route('procurement.matching.index') }}" class="rounded-full bg-blue-600 px-4 py-2 text-white shadow-sm">Invoice matching</a><a href="{{ route('procurement.orders.index') }}" class="rounded-full bg-white px-4 py-2 shadow-sm">Purchase orders</a></div></header>
+@if(session('status'))<p class="rounded-xl bg-blue-50 p-3 text-sm text-blue-800">{{ session('status') }}</p>@endif
+@if($errors->any())<p class="rounded-xl bg-red-50 p-3 text-sm text-red-700">{{ $errors->first() }}</p>@endif
+<section class="rounded-2xl bg-white p-5 shadow-sm"><h2 class="font-semibold">Capture verified import assessment</h2><p class="mb-4 text-sm text-slate-500">Import GST base = customs value + actual customs duty + excise + freight/insurance not already included. Enter actual duty from the Customs entry. The HS code and tariff source are retained for audit.</p>
+<form method="POST" action="{{ route('procurement.import-assessments.store') }}" class="space-y-4">@csrf
+<div class="grid gap-3 md:grid-cols-3">
+<select name="purchase_order_id" required class="rounded-xl bg-slate-100 p-3"><option value="">Received purchase order</option>@foreach($orders as $order)<option value="{{ $order->id }}">{{ $order->order_number }} · {{ $order->supplier?->name }} · {{ $order->warehouse?->name }}</option>@endforeach</select>
+<select name="supplier_id" required class="rounded-xl bg-slate-100 p-3"><option value="">Customs / freight supplier</option>@foreach($suppliers as $supplier)<option value="{{ $supplier->id }}">{{ $supplier->code }} · {{ $supplier->name }}</option>@endforeach</select>
+<input name="assessment_date" type="date" required value="{{ now()->toDateString() }}" class="rounded-xl bg-slate-100 p-3">
+<input name="customs_assessment_reference" required maxlength="120" placeholder="Customs assessment reference" class="rounded-xl bg-slate-100 p-3">
+<input name="import_declaration_number" required maxlength="120" placeholder="Import declaration / entry number" class="rounded-xl bg-slate-100 p-3">
+<input name="hs_code" required maxlength="30" placeholder="HS tariff code" class="rounded-xl bg-slate-100 p-3">
+<input name="customs_value" type="number" min="0" step="0.01" required placeholder="Customs value (K)" class="rounded-xl bg-slate-100 p-3">
+<input name="customs_duty_amount" type="number" min="0" step="0.01" required placeholder="Actual customs duty assessed (K)" class="rounded-xl bg-slate-100 p-3">
+<input name="verified_duty_rate" type="number" min="0" max="100" step="0.001" placeholder="Tariff rate % (optional audit)" class="rounded-xl bg-slate-100 p-3">
+<input name="excise_amount" type="number" min="0" step="0.01" value="0" placeholder="Excise (K)" class="rounded-xl bg-slate-100 p-3">
+<input name="freight_insurance_amount" type="number" min="0" step="0.01" value="0" placeholder="Freight / insurance not included (K)" class="rounded-xl bg-slate-100 p-3">
+<input name="tariff_verified_on" type="date" required value="{{ now()->toDateString() }}" class="rounded-xl bg-slate-100 p-3">
+<input name="tariff_source_url" type="url" required value="https://www.customs.gov.pg/tev/tariff" placeholder="Tariff source URL" class="rounded-xl bg-slate-100 p-3 md:col-span-2">
+</div>
+<div class="grid gap-3 md:grid-cols-2"><label class="flex items-center gap-2 rounded-xl bg-slate-50 p-3 text-sm"><input type="hidden" name="gst_exempt" value="0"><input type="checkbox" name="gst_exempt" value="1"> Import is GST-exempt under verified Customs/IRC treatment</label>
+<label class="flex items-center gap-2 rounded-xl bg-slate-50 p-3 text-sm"><input type="hidden" name="input_tax_credit_eligible" value="0"><input type="checkbox" name="input_tax_credit_eligible" value="1"> Claim import GST as input credit (registered importer with supporting import documents)</label></div>
+<button class="rounded-full bg-blue-600 px-6 py-3 font-semibold text-white">Calculate & save landed-cost draft</button>
+<p class="text-xs text-slate-500">If input GST is not claimable, it is capitalised into landed cost. If eligible, it is posted separately to GST input tax. This creates a draft landed-cost supplier bill; match it to the received PO before independent approval.</p></form></section>
+<section class="overflow-hidden rounded-2xl bg-white shadow-sm"><div class="p-5"><h2 class="font-semibold">Import assessment register</h2><p class="text-sm text-slate-500">Import assessment values flow into the landed-cost matching and approval process.</p></div><div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="bg-slate-50 text-slate-500"><tr><th class="p-3">Bill / customs reference</th><th class="p-3">Supplier / PO</th><th class="p-3">HS code</th><th class="p-3 text-right">Net / input GST / gross</th><th class="p-3">Status</th></tr></thead><tbody>
+@forelse($bills as $bill)<tr class="border-t"><td class="p-3"><div class="font-semibold">{{ $bill->bill_number }}</div><div class="text-xs text-slate-500">{{ $bill->customs_assessment_reference }} · {{ $bill->import_declaration_number }}</div></td><td class="p-3">{{ $bill->supplier?->name }}<div class="text-xs text-slate-500">PO #{{ $bill->purchase_order_id }}</div></td><td class="p-3">{{ $bill->hs_code }}</td><td class="p-3 text-right tabular-nums"><div>K {{ number_format((float)$bill->net_amount,2) }}</div><div class="text-xs text-slate-500">Input GST K {{ number_format((float)$bill->gst_amount,2) }}</div><div class="font-semibold">K {{ number_format((float)$bill->amount,2) }}</div></td><td class="p-3"><span class="font-semibold capitalize">{{ $bill->status }}</span><div class="text-xs text-slate-500">{{ $bill->match_status }}</div></td></tr>
+@empty<tr><td colspan="5" class="p-8 text-center text-slate-500">No import assessments captured.</td></tr>@endforelse
+</tbody></table></div></section>
+</main></body></html>
