@@ -87,6 +87,18 @@ class SupplierPaymentController extends Controller
         return back()->with('status', 'Supplier payment saved as a draft. A different finance user must post it.');
     }
 
+    public function cancel(Request $request, int $payment)
+    {
+        $this->financeRole($request);
+        $companyId = $this->company($request);
+        DB::transaction(function () use ($payment, $companyId) {
+            $document = SupplierPayment::where('company_id', $companyId)->lockForUpdate()->findOrFail($payment);
+            abort_unless($document->status === 'draft', 409, 'Only draft supplier payments can be cancelled.');
+            $document->update(['status' => 'cancelled']);
+        });
+        return back()->with('status', 'Draft supplier payment cancelled; its bill allocations have been released.');
+    }
+
     public function post(Request $request, int $payment)
     {
         $this->financeRole($request);
