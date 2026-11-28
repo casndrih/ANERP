@@ -136,7 +136,7 @@ class SupplierInvoiceMatchingController extends Controller
         CompanyAuthorizer::requirePermission($request, 'procurement.invoice.approve');
         $companyId = CompanyAuthorizer::activeCompanyId($request);
         $branchId = CompanyAuthorizer::activeBranchId($request);
-        $approvalData = $request->validate(['allocation_basis' => ['nullable', 'in:line_value,quantity,equal']]);
+        $approvalData = $request->validate(['allocation_basis' => ['nullable', 'in:line_value,quantity,equal,weight,volume']]);
 
         DB::transaction(function () use ($bill, $allocator, $companyId, $branchId, $request, $approvalData) {
             $document = SupplierBill::where('company_id', $companyId)
