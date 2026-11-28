@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        Schema::table('supplier_bills', function (Blueprint $table) {
+            $table->string('supply_province', 100)->nullable()->after('supplier_gst_registration_number');
+        });
+
         Schema::create('supplier_gst_withholding_notices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
@@ -136,6 +140,9 @@ return new class extends Migration {
             $table->dropColumn(['cash_amount', 'withheld_amount']);
         });
         Schema::dropIfExists('supplier_gst_notice_suppliers');
+        Schema::table('supplier_bills', function (Blueprint $table) {
+            $table->dropColumn('supply_province');
+        });
         Schema::dropIfExists('supplier_gst_withholding_notices');
     }
 };
