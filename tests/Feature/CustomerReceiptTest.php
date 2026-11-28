@@ -71,11 +71,32 @@ final class CustomerReceiptTest extends TestCase
     public function test_cancelled_draft_releases_invoice_receipt_allocation(): void
     {
         [$company, $branch, $customer, $bank, $invoice, $creator, $approver] = $this->fixture();
-        $draft = $this->createReceipt($company, $branch, $customer, $bank, $invoice, $creator, 'RCPT-CANCEL-1', 60, 60);
+        $payload = [
+            'branch_id' => $branch->id, 'customer_id' => $customer->id, 'bank_account_id' => $bank->id,
+            'receipt_date' => '2026-11-28', 'description' => 'Draft allocation', 'amount' => 60,
+            'allocations' => [['invoice_id' => $invoice->id, 'amount' => 60]],
+        ];
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('finance.receipts.store'), $payload + ['receipt_number' => 'RCPT-CANCEL-1'])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $draft = CustomerReceipt::where('receipt_number', 'RCPT-CANCEL-1')->firstOrFail();
+
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('finance.receipts.store'), $payload + ['receipt_number' => 'RCPT-CANCEL-2'])
+            ->assertSessionHasErrors('allocations');
+
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->post(route('finance.receipts.cancel', $draft->id))->assertRedirect()->assertSessionHasNoErrors();
         $this->assertDatabaseHas('customer_receipts', ['id' => $draft->id, 'status' => 'cancelled']);
-        $replacement = $this->createReceipt($company, $branch, $customer, $bank, $invoice, $creator, 'RCPT-CANCEL-2', 100, 100);
+
+        $replacementPayload = array_merge($payload, [
+            'amount' => 100, 'allocations' => [['invoice_id' => $invoice->id, 'amount' => 100]],
+            'description' => 'Replacement allocation',
+        ]);
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('finance.receipts.store'), $replacementPayload + ['receipt_number' => 'RCPT-CANCEL-3'])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $replacement = CustomerReceipt::where('receipt_number', 'RCPT-CANCEL-3')->firstOrFail();
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->post(route('finance.receipts.post', $replacement->id))->assertRedirect()->assertSessionHasNoErrors();
         $this->assertDatabaseHas('customer_receipts', ['id' => $replacement->id, 'status' => 'posted']);
