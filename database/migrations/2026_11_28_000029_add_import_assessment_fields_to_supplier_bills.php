@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->string('hs_code', 30)->nullable();
             $table->decimal('verified_duty_rate', 7, 3)->nullable();
             $table->decimal('customs_value', 14, 2)->nullable();
+            $table->decimal('gst_base', 14, 2)->nullable();
             $table->decimal('customs_duty_amount', 14, 2)->nullable();
             $table->decimal('excise_amount', 14, 2)->nullable();
             $table->decimal('freight_insurance_amount', 14, 2)->nullable();
@@ -28,7 +29,7 @@ return new class extends Migration {
         Schema::table('supplier_bills', function (Blueprint $table) {
             $table->dropColumn([
                 'gst_source', 'customs_assessment_reference', 'import_declaration_number', 'hs_code',
-                'verified_duty_rate', 'customs_value', 'customs_duty_amount', 'excise_amount',
+                'verified_duty_rate', 'customs_value', 'gst_base', 'customs_duty_amount', 'excise_amount',
                 'freight_insurance_amount', 'import_gst_amount', 'tariff_source_url', 'tariff_verified_on',
             ]);
         });
