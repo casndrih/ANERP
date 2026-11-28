@@ -11,6 +11,7 @@ use App\Http\Controllers\PosSessionController;
 use App\Http\Controllers\PosRefundController;
 use App\Http\Controllers\GstSummaryController;
 use App\Http\Controllers\SupplierPaymentController;
+use App\Http\Controllers\SupplierGstWithholdingController;
 use App\Http\Controllers\CustomerReceiptController;
 use App\Http\Controllers\CustomerCreditNoteController;
 use App\Http\Controllers\CustomerRefundController;
@@ -110,6 +111,16 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::post('/finance/payments', [SupplierPaymentController::class, 'store'])->name('finance.payments.store');
     Route::post('/finance/payments/{payment}/post', [SupplierPaymentController::class, 'post'])->name('finance.payments.post');
     Route::post('/finance/payments/{payment}/cancel', [SupplierPaymentController::class, 'cancel'])->name('finance.payments.cancel');
+    Route::get('/finance/section-65a', [SupplierGstWithholdingController::class, 'index'])->name('finance.section65a.index');
+    Route::post('/finance/section-65a/notices', [SupplierGstWithholdingController::class, 'storeNotice'])->name('finance.section65a.notices.store');
+    Route::post('/finance/section-65a/notices/{notice}/activate', [SupplierGstWithholdingController::class, 'activate'])->name('finance.section65a.notices.activate');
+    Route::post('/finance/section-65a/notices/{notice}/revoke', [SupplierGstWithholdingController::class, 'revoke'])->name('finance.section65a.notices.revoke');
+    Route::post('/finance/section-65a/remittances', [SupplierGstWithholdingController::class, 'storeRemittance'])->name('finance.section65a.remittances.store');
+    Route::post('/finance/section-65a/remittances/{remittance}/post', [SupplierGstWithholdingController::class, 'postRemittance'])->name('finance.section65a.remittances.post');
+    Route::post('/finance/section-65a/remittances/{remittance}/cancel', [SupplierGstWithholdingController::class, 'cancelRemittance'])->name('finance.section65a.remittances.cancel');
+    Route::post('/finance/section-65a/remittances/{remittance}/supplier-advice', [SupplierGstWithholdingController::class, 'markSupplierAdvised'])->name('finance.section65a.remittances.advice');
+    Route::get('/finance/section-65a/remittances/{remittance}/supplier-listing.csv', [SupplierGstWithholdingController::class, 'exportSupplierListing'])->name('finance.section65a.remittances.export');
+
     Route::get('/finance/supplier-credit-notes', [SupplierCreditNoteController::class, 'index'])->name('finance.supplier-credit-notes.index');
     Route::post('/finance/supplier-credit-notes', [SupplierCreditNoteController::class, 'store'])->name('finance.supplier-credit-notes.store');
     Route::post('/finance/supplier-credit-notes/{creditNote}/post', [SupplierCreditNoteController::class, 'post'])->name('finance.supplier-credit-notes.post');
