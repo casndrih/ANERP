@@ -105,6 +105,9 @@ final class Section65AWithholdingTest extends TestCase
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->get(route('finance.section65a.remittances.export', $remittance->id))
             ->assertDownload('ANERP-Section65A-S65A-REMIT-001.csv');
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
+            ->get(route('finance.gst-summary', ['from' => '2026-12-01', 'to' => '2026-12-01']))
+            ->assertOk()->assertSee('Section 65A GST remitted to IRC')->assertSee('9.09');
     }
 
     public function test_overlapping_section_65a_notices_for_the_same_supplier_cannot_both_be_activated(): void
