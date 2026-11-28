@@ -97,6 +97,7 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::get('/finance/receipts', [CustomerReceiptController::class, 'index'])->name('finance.receipts.index');
     Route::post('/finance/receipts', [CustomerReceiptController::class, 'store'])->name('finance.receipts.store');
     Route::post('/finance/receipts/{receipt}/post', [CustomerReceiptController::class, 'post'])->name('finance.receipts.post');
+    Route::post('/finance/receipts/{receipt}/cancel', [CustomerReceiptController::class, 'cancel'])->name('finance.receipts.cancel');
     Route::post('/finance/bank-accounts', [FinanceController::class, 'storeBankAccount'])->name('finance.bank-accounts.store');
     Route::post('/finance/bank-transactions', [FinanceController::class, 'storeBankTransaction'])->name('finance.bank-transactions.store');
     Route::post('/finance/bank-accounts/{bankAccount}/reconcile', [FinanceController::class, 'reconcile'])->name('finance.bank-accounts.reconcile');
