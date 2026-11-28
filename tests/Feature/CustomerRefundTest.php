@@ -50,9 +50,21 @@ final class CustomerRefundTest extends TestCase
                 'description' => 'Cancelled refund', 'amount' => 40,
             ])->assertRedirect()->assertSessionHasNoErrors();
         $refund = \App\Models\CustomerRefund::where('refund_number', 'REF-CANCEL')->firstOrFail();
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('finance.refunds.store'), [
+                'branch_id' => $branch->id, 'receipt_id' => $receipt->id, 'bank_account_id' => $bank->id,
+                'refund_number' => 'REF-RESERVED', 'refund_date' => '2026-11-28',
+                'description' => 'Over reserved balance', 'amount' => 61,
+            ])->assertSessionHasErrors('amount');
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->post(route('finance.refunds.cancel', $refund->id))->assertRedirect()->assertSessionHasNoErrors();
         $this->assertDatabaseHas('customer_refunds', ['id' => $refund->id, 'status' => 'cancelled']);
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('finance.refunds.store'), [
+                'branch_id' => $branch->id, 'receipt_id' => $receipt->id, 'bank_account_id' => $bank->id,
+                'refund_number' => 'REF-REPLACEMENT', 'refund_date' => '2026-11-28',
+                'description' => 'Replacement refund', 'amount' => 100,
+            ])->assertRedirect()->assertSessionHasNoErrors();
     }
 
     private function fixture(): array
