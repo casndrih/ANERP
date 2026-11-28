@@ -57,6 +57,7 @@ final class SupplierCreditNoteTest extends TestCase
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->post(route('finance.supplier-credit-notes.post', $note->id))->assertRedirect()->assertSessionHasNoErrors();
         $note->refresh();
+        $this->assertDatabaseHas('supplier_credit_notes', ['id' => $note->id, 'status' => 'posted', 'net_amount' => '50.00', 'gst_amount' => '5.00']);
         $this->assertDatabaseHas('journal_lines', ['account_id' => $ap->id, 'debit' => '55.00', 'credit' => '0.00']);
         $this->assertDatabaseHas('journal_lines', ['account_id' => $expense->id, 'debit' => '0.00', 'credit' => '50.00']);
         $this->assertDatabaseHas('journal_lines', ['account_id' => $inputTax->id, 'debit' => '0.00', 'credit' => '5.00']);
