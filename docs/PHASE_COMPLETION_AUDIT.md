@@ -6,10 +6,17 @@ This is the working completion register for Phases 1–10. A green workflow prov
 - Repository: `casndrih/ANERP`
 - Default branch: `main` (`cbd3dc5` at the time of this audit).
 - Ten feature branches exist. Pull requests #1–#9 are open; PR #9 is Phase 10 and targets Phase 9. Phase 10 credit-control work is being added to its branch.
+- Phase 2 branch head `dd04175`: CI and container build passed.
+- Phase 3 branch head `33422fe`: CI and container build passed.
+- Phase 4 branch head `fe44b1b`: CI and container build passed.
+- Phase 5 branch head `6abe844`: CI and container build passed.
+- Phase 6 branch head `86937e8`: CI and container build passed.
+- Phase 7 branch head `c3657f8`: CI, container build and security checks passed.
+- Phase 8 branch head `8854f38`: CI, container build and security checks passed.
 - Phase 9 latest tested commit `7c62480`: CI 79 tests / 353 assertions passed, security checks passed, container build passed.
-- Phase 10 latest pre-credit-control tested commit `a23e8eb`: CI 93 tests / 507 assertions passed, container build passed. New customer-credit commits are awaiting their own CI result.
-- Older failed runs on earlier Phase 9/10 commits are historical. They are not the current branch result.
-- Phases 1–8 must not be described as CI-verified until their exact latest branch heads have current successful Actions evidence.
+- Phase 10 customer-credit code commit `7180fc2`: CI 97 tests / 514 assertions passed; container build passed. The current docs-only branch head `1255811` has its CI test job passed (97 tests / 514 assertions); its deployment-image/container build jobs were still running at the time of this update.
+- Phase 1 branch head `8f6bcfe` has no Actions runs and no pull request in the current PR chain; its integration and verification remain unresolved.
+- Older failed runs on earlier Phase 9/10 commits are historical and are not the latest branch results.
 
 ## Phase-by-phase outstanding register
 
@@ -59,7 +66,7 @@ This is the working completion register for Phases 1–10. A green workflow prov
 **Still required:** statutory G1 filing automation and validation; Section 65A notice lifecycle, supplier scope, effective/revocation dates and remittance forms; private-use and exempt-sale input-tax apportionment; GST adjustment/debit notes; invoice document attachments and OCR; verified tariff/HS classification; charge-specific landed-cost allocation; purchase price/quantity tolerance approvals; payment reversals; robust mixed-stock and transfer reconciliation; tax/accountant review. Current GST summary remains a management tool, not a filing-ready return.
 
 ### Phase 10 — Sales, POS and customer receivables
-**Delivered:** sales orders, stock reservation/fulfilment, POS till sessions, customer receipts and allocations, advances, credit notes, refunds and AR ageing. Customer credit limits/holds are now being implemented and await CI verification.
+**Delivered:** sales orders, stock reservation/fulfilment, POS till sessions, customer receipts and allocations, advances, credit notes, refunds and AR ageing. Customer credit limits/holds are implemented; the latest CI test job passed 97 tests / 514 assertions. Final container/deployment-image build verification is pending on the current branch head.
 
 **Still required:** item-level sales returns with stock/valuation/GST reversal; POS refunds and voids; picking/packing, dispatch manifests and proof of delivery; EFTPOS integration and end-of-day settlement; customer statements and automated reminders; price lists and discount approval; multi-currency AR; receipt reversals and advance reallocation; complete GST debit/adjustment-note workflow; feature tests for credit exposure and offset behavior.
 
