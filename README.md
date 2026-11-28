@@ -4,7 +4,7 @@ Multi-company ERP foundation for Papua New Guinea businesses.
 
 **Target:** VMware ESXi 7.0+ | **Guest:** Ubuntu Server 24.04 LTS | **Stack:** Laravel 12 / PHP 8.4, PostgreSQL 17, Redis, Nginx | **Locale:** PGK / Pacific/Port_Moresby.
 
-> This is an actively developed foundation, not a finished production ERP. Payroll/tax calculations, complete financial posting, granular authorization, integrations and production security controls must be completed and tested before live use.
+> This is an actively developed foundation, not a finished production ERP. Payroll special cases, complete accounting workflows, granular authorization, integrations and production security controls must be completed and tested before live use.
 
 ## ESXi host sizing — 128 GB physical RAM
 For the current Compose deployment, start with one Ubuntu VM using 8–12 vCPU, 32 GB RAM and a 500 GB SSD-backed virtual disk. The application, PostgreSQL and Redis currently run together in Docker on this VM. Keep ESXi memory headroom and avoid CPU overcommit until real workload data is available.
@@ -28,7 +28,9 @@ Do not expose the bootstrap system to the public internet. Add HTTPS, firewall/V
 - Session sign-in/sign-out and login throttling; public registration disabled
 - Initial company bootstrap and active company membership context
 - Tenant-scoped product catalogue create/list
-- PostgreSQL schema foundations for stock movements, suppliers, employees and double-entry journal records
+- Inventory and procurement workflows: warehouses, stock ledger, transfers, suppliers and purchase orders
+- HR and payroll: employee records, leave, attendance, PNG 2026 core PAYE and superannuation calculations, maker-checker approval and payslips
+- Finance foundation: company chart of accounts, balanced journals, supplier bills, customer invoices, bank transactions and statement reconciliation
 - Docker Compose deployment and CI container-build workflow
 
-See docs/ROADMAP.md, docs/PNG_LOCALISATION.md, docs/ESXI_DEPLOYMENT.md, docs/SECURITY_BASELINE.md, docs/PHASE_2_AUTH_TENANCY.md and docs/PHASE_3_INVENTORY_PROCUREMENT.md.
+See docs/ROADMAP.md, docs/PNG_LOCALISATION.md, docs/PNG_PAYROLL_STATUTORY_RULES.md, docs/ESXI_DEPLOYMENT.md, docs/SECURITY_BASELINE.md, docs/PHASE_2_AUTH_TENANCY.md, docs/PHASE_3_INVENTORY_PROCUREMENT.md, docs/PHASE_4_HR_PAYROLL.md and docs/PHASE_5_FINANCE_ACCOUNTING.md.
