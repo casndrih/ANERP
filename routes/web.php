@@ -14,6 +14,7 @@ use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\StockCountController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\SupplierInvoiceMatchingController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Middleware\AuditCompanyActivity;
 use App\Http\Middleware\EnsureMfaVerified;
@@ -64,6 +65,9 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::post('/procurement/orders/{order}/submit', [PurchaseOrderController::class, 'submit'])->name('procurement.orders.submit');
     Route::post('/procurement/orders/{order}/approve', [PurchaseOrderController::class, 'approve'])->name('procurement.orders.approve');
     Route::post('/procurement/orders/{order}/lines/{line}/receive', [PurchaseOrderController::class, 'receive'])->name('procurement.orders.receive');
+    Route::get('/procurement/matching', [SupplierInvoiceMatchingController::class, 'index'])->name('procurement.matching.index');
+    Route::post('/procurement/matching/{bill}', [SupplierInvoiceMatchingController::class, 'match'])->name('procurement.matching.match');
+    Route::post('/procurement/matching/{bill}/approve', [SupplierInvoiceMatchingController::class, 'approve'])->name('procurement.matching.approve');
 
     Route::get('/hr', [HumanResourcesController::class, 'index'])->name('hr.index');
     Route::post('/hr/employees', [HumanResourcesController::class, 'storeEmployee'])->name('hr.employees.store');
