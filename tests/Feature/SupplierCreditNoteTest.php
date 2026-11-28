@@ -33,6 +33,39 @@ final class SupplierCreditNoteTest extends TestCase
             ->get(route('reports.index', ['report' => 'payables', 'to' => '2026-11-28']))->assertOk()->assertSee('70.00');
     }
 
+    public function test_gst_bearing_supplier_credit_note_reverses_input_tax_and_g1_summary(): void
+    {
+        [$company, $branch, $supplier, $bill, $creator, $approver, $ap, $expense] = $this->fixture();
+        $company->update(['gst_registered' => true]);
+        $inputTax = Account::create(['company_id' => $company->id, 'account_code' => '1300', 'name' => 'GST input tax', 'account_type' => 'asset', 'normal_balance' => 'debit', 'is_control_account' => true, 'is_active' => true]);
+        $bill->update([
+            'amount' => 110, 'net_amount' => 100, 'gst_treatment' => 'standard', 'gst_rate' => 10,
+            'gst_amount' => 10, 'supplier_gst_registered' => true,
+            'supplier_gst_registration_number' => 'GST-SUP-1', 'tax_invoice_reference' => 'TAX-SUP-1',
+            'input_tax_credit_eligible' => true,
+        ]);
+
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('finance.supplier-credit-notes.store'), [
+                'bill_id' => $bill->id, 'credit_note_number' => 'SCN-GST-001',
+                'credit_note_date' => '2026-11-28', 'description' => 'Supplier GST price adjustment', 'amount' => 55,
+            ])->assertRedirect()->assertSessionHasNoErrors();
+        $note = \App\Models\SupplierCreditNote::where('credit_note_number', 'SCN-GST-001')->firstOrFail();
+        self::assertSame(50.0, (float) $note->net_amount);
+        self::assertSame(5.0, (float) $note->gst_amount);
+
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
+            ->post(route('finance.supplier-credit-notes.post', $note->id))->assertRedirect()->assertSessionHasNoErrors();
+        $note->refresh();
+        $this->assertDatabaseHas('journal_lines', ['account_id' => $ap->id, 'debit' => '55.00', 'credit' => '0.00']);
+        $this->assertDatabaseHas('journal_lines', ['account_id' => $expense->id, 'debit' => '0.00', 'credit' => '50.00']);
+        $this->assertDatabaseHas('journal_lines', ['account_id' => $inputTax->id, 'debit' => '0.00', 'credit' => '5.00']);
+
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
+            ->get(route('finance.gst-summary', ['from' => '2026-11-01', 'to' => '2026-11-30']))
+            ->assertOk()->assertSee('K 50.00')->assertSee('K 5.00');
+    }
+
     public function test_supplier_credit_note_cannot_exceed_bill_and_rejects_inventory_linked_bills(): void
     {
         [$company, $branch, $supplier, $bill, $creator, $approver] = $this->fixture();
