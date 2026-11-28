@@ -25,6 +25,13 @@
 - If legacy movements have negative quantities or missing/inconsistent costs, an authorised accountant/stock controller must resolve the discrepancy before automatic issue costing can proceed.
 - This increment does not yet implement formal stock-count sessions, adjustment maker-checker approvals, barcode/batch/serial tracking, landed-cost allocation, or supplier invoice three-way matching.
 
+## Stock-count controls
+- Draft stock counts capture system quantity and counted quantity for each warehouse/product line, including variance and a cost snapshot.
+- Drafts must be submitted before approval. The creator and submitter cannot approve their own count; the approval permission is restricted to company owner/admin roles.
+- Approval rechecks that system stock has not moved since the count was captured. If it changed, approval is blocked and a fresh count is required.
+- Approved variances post through the existing inventory ledger and automatic inventory GL poster, using adjustment-in or adjustment-out movement types.
+- Counts and warehouses are filtered by active company and assigned branch.
+
 ## Tests
 - FIFO consumes oldest layers and posts the exact issue value to cost of goods sold.
 - Weighted-average issues use the moving average and update remaining inventory value.
