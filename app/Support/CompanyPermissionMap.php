@@ -15,6 +15,7 @@ final class CompanyPermissionMap
         'inventory.view', 'inventory.manage', 'inventory.receive', 'inventory.transfer', 'inventory.adjust.approve',
         'procurement.view', 'procurement.create', 'procurement.submit', 'procurement.receive', 'procurement.approve', 'procurement.invoice.match', 'procurement.invoice.approve',
         'finance.view', 'finance.create', 'finance.post', 'finance.reconcile',
+        'sales.view', 'sales.create', 'sales.approve', 'sales.fulfill',
         'hr.view', 'hr.manage', 'company.settings.manage',
         'payroll.view', 'payroll.create', 'payroll.approve',
         'reports.view', 'reports.export', 'users.manage', 'roles.manage', 'audit.view',
@@ -35,6 +36,8 @@ final class CompanyPermissionMap
         'procurement_approver' => [
             'procurement.view', 'procurement.approve', 'procurement.invoice.approve', 'reports.view',
         ],
+        'sales_manager' => ['sales.view', 'sales.create', 'sales.fulfill', 'inventory.view', 'reports.view'],
+        'sales_approver' => ['sales.view', 'sales.approve', 'reports.view'],
         'finance_manager' => [
             'finance.view', 'finance.create', 'finance.post', 'finance.reconcile', 'procurement.view', 'procurement.invoice.match', 'procurement.invoice.approve',
             'reports.view', 'reports.export',
