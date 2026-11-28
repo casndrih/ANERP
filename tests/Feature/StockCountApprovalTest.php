@@ -20,7 +20,7 @@ final class StockCountApprovalTest extends TestCase
         [$company, $warehouse, $product, $creator, $approver] = $this->fixture();
         InventoryLedger::record($company->id, $warehouse->id, $product->id, 'opening', 10, 5, $creator->id);
 
-        $this->actingAs($creator)->withSession($this->session($company, $creator))
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
             ->post(route('inventory.counts.store'), [
                 'warehouse_id' => $warehouse->id,
                 'count_date' => '2026-11-28',
@@ -102,7 +102,7 @@ final class StockCountApprovalTest extends TestCase
         return $user;
     }
 
-    private function session(Company $company, User $user): array
+    private function sessionData(Company $company, User $user): array
     {
         return ['active_company_id' => $company->id, 'mfa_verified_user_id' => $user->id];
     }
