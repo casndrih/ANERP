@@ -5,6 +5,7 @@ use App\Http\Controllers\CompanySelectionController;
 use App\Http\Controllers\CompanyAdministrationController;
 use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\GstSummaryController;
 use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\CustomerReceiptController;
@@ -111,6 +112,11 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::post('/finance/refunds/{refund}/post', [CustomerRefundController::class, 'post'])->name('finance.refunds.post');
     Route::post('/finance/refunds/{refund}/cancel', [CustomerRefundController::class, 'cancel'])->name('finance.refunds.cancel');
 
+    Route::get('/sales/orders', [SalesOrderController::class, 'index'])->name('sales.orders.index');
+    Route::post('/sales/orders', [SalesOrderController::class, 'store'])->name('sales.orders.store');
+    Route::post('/sales/orders/{order}/approve', [SalesOrderController::class, 'approve'])->name('sales.orders.approve');
+    Route::post('/sales/orders/{order}/fulfill', [SalesOrderController::class, 'fulfill'])->name('sales.orders.fulfill');
+    Route::post('/sales/orders/{order}/cancel', [SalesOrderController::class, 'cancel'])->name('sales.orders.cancel');
     Route::get('/finance/receipts', [CustomerReceiptController::class, 'index'])->name('finance.receipts.index');
     Route::post('/finance/receipts', [CustomerReceiptController::class, 'store'])->name('finance.receipts.store');
     Route::post('/finance/receipts/{receipt}/post', [CustomerReceiptController::class, 'post'])->name('finance.receipts.post');
