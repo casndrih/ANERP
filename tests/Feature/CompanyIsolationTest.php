@@ -84,6 +84,7 @@ final class CompanyIsolationTest extends TestCase
             'email' => 'tenant-' . uniqid() . '@example.test',
             'password' => 'test-password',
         ]);
+        $user->forceFill(['mfa_enabled_at' => now(), 'mfa_secret' => 'test-encrypted-secret'])->save();
         $companyA = Company::create(['name' => 'Company A', 'is_active' => true]);
         $companyB = Company::create(['name' => 'Company B', 'is_active' => true]);
 
