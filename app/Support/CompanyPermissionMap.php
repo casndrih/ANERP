@@ -13,7 +13,7 @@ final class CompanyPermissionMap
 
     private const KNOWN_PERMISSIONS = [
         'inventory.view', 'inventory.manage', 'inventory.receive', 'inventory.transfer', 'inventory.adjust.approve',
-        'procurement.view', 'procurement.create', 'procurement.submit', 'procurement.receive', 'procurement.approve', 'procurement.invoice.approve',
+        'procurement.view', 'procurement.create', 'procurement.submit', 'procurement.receive', 'procurement.approve', 'procurement.invoice.match', 'procurement.invoice.approve',
         'finance.view', 'finance.create', 'finance.post', 'finance.reconcile',
         'hr.view', 'hr.manage', 'company.settings.manage',
         'payroll.view', 'payroll.create', 'payroll.approve',
@@ -30,13 +30,13 @@ final class CompanyPermissionMap
         ],
         'procurement_manager' => [
             'procurement.view', 'procurement.create', 'procurement.submit',
-            'procurement.receive', 'inventory.view', 'reports.view',
+            'procurement.receive', 'procurement.invoice.match', 'inventory.view', 'reports.view',
         ],
         'procurement_approver' => [
             'procurement.view', 'procurement.approve', 'procurement.invoice.approve', 'reports.view',
         ],
         'finance_manager' => [
-            'finance.view', 'finance.create', 'finance.post', 'finance.reconcile', 'procurement.view', 'procurement.invoice.approve',
+            'finance.view', 'finance.create', 'finance.post', 'finance.reconcile', 'procurement.view', 'procurement.invoice.match', 'procurement.invoice.approve',
             'reports.view', 'reports.export',
         ],
         'accountant' => [
