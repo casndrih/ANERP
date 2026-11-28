@@ -68,6 +68,19 @@ final class CustomerReceiptTest extends TestCase
         $this->assertDatabaseHas('customer_receipts', ['id' => $second->id, 'status' => 'draft']);
     }
 
+    public function test_cancelled_draft_releases_invoice_receipt_allocation(): void
+    {
+        [$company, $branch, $customer, $bank, $invoice, $creator, $approver] = $this->fixture();
+        $draft = $this->createReceipt($company, $branch, $customer, $bank, $invoice, $creator, 'RCPT-CANCEL-1', 60, 60);
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
+            ->post(route('finance.receipts.cancel', $draft->id))->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('customer_receipts', ['id' => $draft->id, 'status' => 'cancelled']);
+        $replacement = $this->createReceipt($company, $branch, $customer, $bank, $invoice, $creator, 'RCPT-CANCEL-2', 100, 100);
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
+            ->post(route('finance.receipts.post', $replacement->id))->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('customer_receipts', ['id' => $replacement->id, 'status' => 'posted']);
+    }
+
     private function fixture(): array
     {
         $company = Company::create(['name' => 'Receivables Co', 'is_active' => true]);
