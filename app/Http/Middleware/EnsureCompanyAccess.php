@@ -7,7 +7,7 @@ class EnsureCompanyAccess {
     public function handle(Request $request, Closure $next): Response {
         $user = $request->user();
         if (!$user) return redirect()->route('login');
-        $memberships = $user->companies()->wherePivot('is_active', true)->get();
+        $memberships = $user->companies()->wherePivot('is_active', true)->where('companies.is_active', true)->get();
         if ($memberships->isEmpty()) abort(403, 'Your account is not assigned to an active company.');
         $selected = (int) $request->session()->get('active_company_id', 0);
         $company = $memberships->firstWhere('id', $selected);
