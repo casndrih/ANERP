@@ -12,18 +12,23 @@
 @if($bill->status==='draft' && in_array($bill->match_status ?? 'not_required',['not_required','unmatched','rejected'],true))
 <div class="space-y-3">
 @foreach($orders->where('supplier_id',$bill->supplier_id) as $order)
-@php($line=$order->lines->firstWhere('quantity_received','>',0))
-@if($line)
+@php($receivedLines=$order->lines->filter(fn($candidate)=>(float)$candidate->quantity_received>0)->values())
+@if($receivedLines->isNotEmpty())
 <form method="POST" action="{{ route('procurement.matching.match',$bill->id) }}" class="space-y-2 rounded-xl bg-slate-50 p-3">@csrf
 <input type="hidden" name="purchase_order_id" value="{{ $order->id }}">
 <div class="text-xs font-semibold">{{ $order->order_number }} · {{ $order->warehouse?->name }}</div>
 <select name="invoice_type" class="w-full rounded-lg bg-white p-2 text-xs"><option value="goods">Goods invoice</option><option value="landed_cost">Freight / landed-cost invoice</option></select>
-<div class="grid grid-cols-2 gap-2"><input name="lines[0][purchase_order_line_id]" type="hidden" value="{{ $line->id }}"><input name="lines[0][quantity_billed]" type="number" min="0.001" max="{{ (float)$line->quantity_received }}" step="0.001" placeholder="Billed qty" class="rounded-lg bg-white p-2 text-xs"><input name="lines[0][unit_price]" type="number" min="0" step="0.01" value="{{ number_format((float)$line->unit_cost,2,'.','') }}" class="rounded-lg bg-white p-2 text-xs"></div>
-<p class="text-xs text-slate-500">Received {{ number_format((float)$line->quantity_received,3) }} · PO rate K{{ number_format((float)$line->unit_cost,2) }}</p>
-<button class="rounded-full bg-blue-600 px-3 py-2 text-xs font-semibold text-white">Match to this PO</button>
-</form>
-@endif
+<p class="text-xs text-slate-500">Enter billed quantities for each received PO line. Leave unbilled lines at zero.</p>
+@foreach($receivedLines as $index=>$line)
+<div class="grid grid-cols-1 gap-2 rounded-lg bg-white p-2 md:grid-cols-[2fr_1fr_1fr]">
+<div class="text-xs"><b>{{ $line->product?->name }}</b><div class="text-slate-500">Received {{ number_format((float)$line->quantity_received,3) }} · PO rate K{{ number_format((float)$line->unit_cost,2) }}</div><input name="lines[{{ $index }}][purchase_order_line_id]" type="hidden" value="{{ $line->id }}"></div>
+<input name="lines[{{ $index }}][quantity_billed]" type="number" min="0" max="{{ (float)$line->quantity_received }}" step="0.001" placeholder="Billed qty (0 if none)" class="rounded-lg bg-slate-100 p-2 text-xs">
+<input name="lines[{{ $index }}][unit_price]" type="number" min="0" step="0.01" value="{{ number_format((float)$line->unit_cost,2,'.','') }}" class="rounded-lg bg-slate-100 p-2 text-xs">
+</div>
 @endforeach
+<button class="rounded-full bg-blue-600 px-3 py-2 text-xs font-semibold text-white">Match invoice to PO</button>
+</form>
+
 </div>
 @elseif($bill->status==='draft' && $bill->match_status==='matched')
 <form method="POST" action="{{ route('procurement.matching.approve',$bill->id) }}" class="space-y-2">@csrf@if($bill->invoice_type==='landed_cost')<label class="block text-xs text-slate-600">Allocate landed cost by<select name="allocation_basis" class="mt-1 w-full rounded-lg bg-slate-100 p-2 text-xs"><option value="line_value">Received line value (quantity × PO unit cost)</option><option value="quantity">Received quantity</option><option value="equal">Equal share per received product line</option></select></label>@endif<button class="rounded-full bg-slate-900 px-4 py-2 text-xs text-white">Approve & post invoice</button><p class="mt-1 text-xs text-slate-500">Independent approver required.</p></form>
