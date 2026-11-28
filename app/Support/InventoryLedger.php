@@ -10,7 +10,7 @@ class InventoryLedger {
         $in = ['opening','purchase_receipt','transfer_in','adjustment_in'];
         $out = ['issue','transfer_out','adjustment_out','supplier_return'];
         return (float) $query->selectRaw(
-            'COALESCE(SUM(CASE WHEN movement_type IN (?,?,?,?) THEN quantity WHEN movement_type IN (?,?,?) THEN -quantity ELSE 0 END),0) AS balance',
+            'COALESCE(SUM(CASE WHEN movement_type IN (?,?,?,?) THEN quantity WHEN movement_type IN (?,?,?,?) THEN -quantity ELSE 0 END),0) AS balance',
             [...$in,...$out]
         )->value('balance');
     }
