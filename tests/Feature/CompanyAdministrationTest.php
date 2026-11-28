@@ -26,7 +26,27 @@ final class CompanyAdministrationTest extends TestCase {
   $this->actingAs($owner)->withSession($this->companySession($owner,$company))->patch(route('company.users.update',$owner->id),['role_code'=>'admin','branch_id'=>'','is_active'=>1])->assertStatus(409);
   $this->assertDatabaseHas('company_user',['company_id'=>$company->id,'user_id'=>$owner->id,'role_code'=>'owner','is_active'=>true]);
  }
- private function workspace(): array {
+
+ public function test_invitation_acceptance_creates_tenant_membership_and_audit_record(): void {
+  [$owner,$company,$branch]=$this->workspace();
+  $token='single-use-invitation-token-'.uniqid();
+  $invitationId=DB::table('company_invitations')->insertGetId([
+   'company_id'=>$company->id,'branch_id'=>$branch->id,'email'=>'new-hire-'.uniqid().'@example.test',
+   'role_code'=>'inventory_manager','token_hash'=>hash('sha256',$token),'invited_by'=>$owner->id,
+   'expires_at'=>now()->addDays(7),'created_at'=>now(),'updated_at'=>now(),
+  ]);
+  $email=DB::table('company_invitations')->where('id',$invitationId)->value('email');
+  $this->post(route('invitations.accept.store',$token),[
+   'name'=>'Invited Employee','password'=>'a-strong-password-123','password_confirmation'=>'a-strong-password-123',
+  ])->assertRedirect(route('dashboard'));
+  $user=User::where('email',$email)->firstOrFail();
+  $this->assertNotNull($user->email_verified_at);
+  $this->assertDatabaseHas('company_user',['company_id'=>$company->id,'user_id'=>$user->id,'branch_id'=>$branch->id,'role_code'=>'inventory_manager','is_active'=>true]);
+  $this->assertDatabaseHas('company_invitations',['id'=>$invitationId]);
+  $this->assertNotNull(DB::table('company_invitations')->where('id',$invitationId)->value('accepted_at'));
+  $this->assertDatabaseHas('audit_events',['company_id'=>$company->id,'user_id'=>$user->id,'event'=>'INVITATION ACCEPTED']);
+ }
+\n private function workspace(): array {
   $owner=User::create(['name'=>'Owner','email'=>'owner-'.uniqid().'@example.test','password'=>'test-password']);
   $owner->forceFill(['mfa_enabled_at'=>now(),'mfa_secret'=>'test-encrypted-secret'])->save();
   $company=Company::create(['name'=>'Admin test','is_active'=>true]);
