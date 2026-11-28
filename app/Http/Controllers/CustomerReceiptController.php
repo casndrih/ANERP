@@ -118,7 +118,7 @@ class CustomerReceiptController extends Controller
                 $invoice = CustomerInvoice::where('company_id', $companyId)
                     ->where('customer_id', $data['customer_id'])
                     ->where('status', 'posted')
-                    ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+                    ->when($branchId, fn ($query) => $query->where('branch_id', $branchId), fn ($query) => $query->whereNull('branch_id'))
                     ->findOrFail($allocation['invoice_id']);
                 $allocationTotal += $amount;
                 CustomerReceiptAllocation::create([
@@ -161,7 +161,7 @@ class CustomerReceiptController extends Controller
             foreach ($allocations as $allocation) {
                 $invoice = CustomerInvoice::where('company_id', $companyId)->lockForUpdate()->findOrFail($allocation->customer_invoice_id);
                 abort_unless($invoice->status === 'posted' && (int) $invoice->customer_id === (int) $document->customer_id, 409, 'A receipt can only be allocated to posted invoices belonging to the same customer.');
-                if ($document->branch_id !== null && (int) $invoice->branch_id !== (int) $document->branch_id) {
+                if ((int) ($invoice->branch_id ?? 0) !== (int) ($document->branch_id ?? 0)) {
                     throw ValidationException::withMessages(['allocations' => 'Receipt and invoice branch attribution must match.']);
                 }
                 $alreadyPaid = (float) DB::table('customer_receipt_allocations')
@@ -177,7 +177,13 @@ class CustomerReceiptController extends Controller
                 }
             }
 
-            $ar = Account::where('company_id', $companyId)->where('account_code', '1100')->firstOrFail();
+            $ar = Account::firstOrCreate(
+                ['company_id' => $companyId, 'account_code' => '1100'],
+                ['name' => 'Accounts receivable', 'account_type' => 'asset', 'normal_balance' => 'debit', 'is_control_account' => true, 'is_active' => true]
+            );
+            if ($ar->account_type !== 'asset' || $ar->normal_balance !== 'debit') {
+                throw ValidationException::withMessages(['receipt' => 'Chart account 1100 must be a debit-normal asset account.']);
+            }
             $bankLedger = Account::where('company_id', $companyId)->whereKey($bank->account_id)->firstOrFail();
             if ($bankLedger->account_type !== 'asset' || $ar->account_type !== 'asset') {
                 throw ValidationException::withMessages(['receipt' => 'The bank ledger and accounts receivable control accounts must both be asset accounts.']);
