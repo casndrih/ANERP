@@ -26,6 +26,10 @@ The intended host has 128 GB physical RAM. A sensible initial ANERP VM allocatio
 
 The script preserves an existing `.env` and non-placeholder database password. Back up `.env` securely: losing `APP_KEY` can make encrypted application data unreadable. Do not commit or email `.env`.
 
+## Repeatable upgrade
+
+After deploying a new reviewed release, run `chmod +x deploy/upgrade.sh && ./deploy/upgrade.sh`. It creates restricted-permission PostgreSQL, persistent-storage and `.env` backups before enabling maintenance mode, rebuilding app/web images and applying migrations. Set `ANERP_BACKUP_DIR` to a secure backup location. Copy backups off-host and test restore; this script does not replace a disaster-recovery restore drill.
+
 ## ESXi OVA export
 
 Build and validate the ANERP guest VM first, then power it off. Install VMware govmomi's `govc` on an authorized build host and set:
