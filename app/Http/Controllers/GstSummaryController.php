@@ -32,7 +32,6 @@ class GstSummaryController extends Controller
         $zeroRatedSales = (float) (clone $sales)->where('gst_treatment', 'zero_rated')->sum($netSalesExpression);
         $taxableSales = (float) (clone $sales)->where('gst_treatment', 'standard')->sum($netSalesExpression);
         $outputGst = (float) (clone $sales)->where('gst_treatment', 'standard')->sum('gst_amount');
-
         $creditNotes = DB::table('customer_credit_notes')->where('company_id', $companyId)->where('status', 'posted')
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->whereBetween('credit_note_date', [$from->toDateString(), $to->toDateString()])
@@ -43,18 +42,17 @@ class GstSummaryController extends Controller
         $taxableSales = round($taxableSales - (float) (clone $creditNotes)->where('gst_treatment', 'standard')->sum('net_amount'), 2);
         $outputGst = round($outputGst - (float) (clone $creditNotes)->where('gst_treatment', 'standard')->sum('gst_amount'), 2);
 
+
         $purchases = SupplierBill::where('company_id', $companyId)->where('status', 'posted')
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->whereBetween('bill_date', [$from->toDateString(), $to->toDateString()])
             ->where('input_tax_credit_eligible', true);
         $eligiblePurchases = (float) (clone $purchases)->sum('net_amount');
         $inputCredits = (float) (clone $purchases)->sum('gst_amount');
-
         $supplierCreditNotes = DB::table('supplier_credit_notes')
             ->join('supplier_bills', 'supplier_bills.id', '=', 'supplier_credit_notes.supplier_bill_id')
             ->where('supplier_credit_notes.company_id', $companyId)->where('supplier_credit_notes.status', 'posted')
             ->where('supplier_bills.input_tax_credit_eligible', true)
-            ->where('supplier_credit_notes.gst_rate', '>', 0)
             ->when($branchId, fn ($q) => $q->where('supplier_credit_notes.branch_id', $branchId))
             ->whereBetween('supplier_credit_notes.credit_note_date', [$from->toDateString(), $to->toDateString()]);
         $supplierStockReturns = DB::table('supplier_stock_returns')
