@@ -21,6 +21,13 @@
 - Accounts payable ageing nets posted supplier payment allocations and posted supplier stock returns; accounts receivable ageing nets posted customer receipts and credit notes.
 - Customer credit limits and credit holds are configurable in PGK. Company owners/admins can manage them through the customer credit controls screen. Approval of a sales order and posting of a customer invoice both enforce the policy. Exposure includes posted unpaid invoices and approved unfulfilled sales orders; posted receipt allocations and posted credit notes reduce exposure. An unset credit limit means no numeric limit; a credit hold always blocks new credit commitments.
 
+## Item-level sales returns
+- Posted sales-order invoices support draft item-level returns with per-line quantity, condition (resellable/damaged/defective), return reason and receiving warehouse.
+- Draft returns reserve invoice-line quantities and gross credit value; cancellation releases those reservations. Posting rechecks remaining quantities and value under locks.
+- Resellable goods create a customer-return stock movement using the original issue movement's weighted unit cost. Inventory value is restored and cost of goods sold is credited. Damaged/defective goods are recorded as received but are not added to sellable on-hand stock.
+- Posting creates a GST-adjusted customer credit note, reverses revenue and output GST, reduces open AR, and credits customer deposits for any amount exceeding the invoice's remaining receivable. Maker-checker prevents the return creator from posting.
+- Current valuation limitation: where a FIFO issue consumed multiple cost layers, a partial return uses the original issue movement's weighted unit cost; exact per-layer consumption restoration is still outstanding and requires layer-allocation provenance.
+
 ## Accounting example
 For a K100 customer receipt allocated K80 to posted invoices:
 - Debit bank K100.
@@ -40,7 +47,6 @@ The K20 remains a customer liability until allocated or refunded through a separ
 - Posted receipts are not edited in place; corrections require controlled refund/reversal workflows.
 
 ## Remaining work before Phase 10 acceptance
-- Item-level sales returns with quantity, condition, warehouse receipt, inventory valuation reversal, GST credit adjustment and maker-checker approval.
 - POS refund and void workflows, including safe till cash movements and end-of-day settlement reconciliation.
 - Picking/packing scans, dispatch manifests, delivery runs and proof of delivery.
 - EFTPOS terminal integration and automated settlement matching.
@@ -61,6 +67,11 @@ The K20 remains a customer liability until allocated or refunded through a separ
 - Verify receipt posting creates a bank transaction and balanced journal.
 - Verify branch and tenant isolation for receipt creation, posting, invoice allocation and reports.
 - Verify supplier payments cannot allocate to another supplier/company/branch, cannot over-settle bills, require an independent poster, create a balanced AP/bank journal and reduce AP ageing only after posting.
+- Verify item-level sales returns cannot exceed invoice-line quantities or previously uncredited invoice value, including competing drafts.
+- Verify resellable returns restore stock and inventory value at the original issue movement's weighted unit cost, and credit cost of goods sold.
+- Verify damaged/defective returns are recorded but do not increase sellable on-hand stock.
+- Verify sales-return posting reverses revenue and output GST, creates a posted credit note, reduces AR and credits customer deposits for any overpayment.
+- Verify the return creator cannot post their own return and cancellation releases quantity/value reservations.
 - Verify a customer on credit hold cannot approve a sales order or post an invoice.
 - Verify approved orders plus unpaid posted invoices cannot exceed the customer credit limit, while posted receipts and credit notes release available credit.
 - Verify credit limits and holds cannot be changed by a non-owner/admin or across company boundaries.
