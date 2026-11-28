@@ -43,6 +43,58 @@ final class SupplierInvoiceMatchingTest extends TestCase
         $this->assertDatabaseHas('journal_lines', ['account_id' => Account::where('company_id', $company->id)->where('account_code', '2000')->value('id'), 'debit' => 0, 'credit' => 50]);
     }
 
+    public function test_po_matched_goods_invoice_posts_eligible_input_gst_separately(): void
+    {
+        [$company, $branch, $supplier, $warehouse, $product, $creator, $approver, $po, $line, $expense] = $this->fixture();
+        $company->update(['gst_registered' => true, 'gst_registration_number' => 'GST-CO-001']);
+        $line->update(['quantity_received' => 10]);
+        $bill = $this->bill($company, $supplier, $branch, $creator, $expense, 55);
+        $bill->update([
+            'net_amount' => 50, 'gst_treatment' => 'standard', 'gst_rate' => 10, 'gst_amount' => 5,
+            'supplier_gst_registered' => true, 'supplier_gst_registration_number' => 'GST-SUP-001',
+            'tax_invoice_reference' => 'TAX-INV-001', 'input_tax_credit_eligible' => true,
+        ]);
+
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('procurement.matching.match', $bill->id), [
+                'purchase_order_id' => $po->id,
+                'invoice_type' => 'goods',
+                'lines' => [['purchase_order_line_id' => $line->id, 'quantity_billed' => 10, 'unit_price' => 5]],
+            ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
+            ->post(route('procurement.matching.approve', $bill->id))
+            ->assertRedirect()->assertSessionHasNoErrors();
+
+        $grni = Account::where('company_id', $company->id)->where('account_code', '2600')->value('id');
+        $inputTax = Account::where('company_id', $company->id)->where('account_code', '1300')->value('id');
+        $ap = Account::where('company_id', $company->id)->where('account_code', '2000')->value('id');
+        $this->assertDatabaseHas('journal_lines', ['account_id' => $grni, 'debit' => '50.00', 'credit' => '0.00']);
+        $this->assertDatabaseHas('journal_lines', ['account_id' => $inputTax, 'debit' => '5.00', 'credit' => '0.00']);
+        $this->assertDatabaseHas('journal_lines', ['account_id' => $ap, 'debit' => '0.00', 'credit' => '55.00']);
+    }
+
+    public function test_po_matched_invoice_with_unverified_gst_evidence_is_blocked(): void
+    {
+        [$company, $branch, $supplier, $warehouse, $product, $creator, $approver, $po, $line, $expense] = $this->fixture();
+        $company->update(['gst_registered' => true, 'gst_registration_number' => 'GST-CO-001']);
+        $line->update(['quantity_received' => 10]);
+        $bill = $this->bill($company, $supplier, $branch, $creator, $expense, 55);
+        $bill->update(['net_amount' => 50, 'gst_treatment' => 'standard', 'gst_rate' => 10, 'gst_amount' => 5]);
+
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('procurement.matching.match', $bill->id), [
+                'purchase_order_id' => $po->id,
+                'invoice_type' => 'goods',
+                'lines' => [['purchase_order_line_id' => $line->id, 'quantity_billed' => 10, 'unit_price' => 5]],
+            ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
+            ->post(route('procurement.matching.approve', $bill->id))
+            ->assertSessionHasErrors('bill');
+        $this->assertDatabaseHas('supplier_bills', ['id' => $bill->id, 'status' => 'draft', 'match_status' => 'matched']);
+    }
+
     public function test_landed_cost_is_split_between_stock_on_hand_and_consumed_stock(): void
     {
         [$company, $branch, $supplier, $warehouse, $product, $creator, $approver, $po, $line, $expense] = $this->fixture();
