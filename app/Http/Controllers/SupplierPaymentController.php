@@ -8,6 +8,7 @@ use App\Models\BankTransaction;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use App\Models\Supplier;
+use App\Models\SupplierCreditNote;
 use App\Models\SupplierBill;
 use App\Models\SupplierPayment;
 use App\Models\SupplierPaymentAllocation;
@@ -37,8 +38,14 @@ class SupplierPaymentController extends Controller
                     ->whereColumn('supplier_payments.company_id', 'supplier_bills.company_id')
                     ->selectRaw('COALESCE(SUM(supplier_payment_allocations.amount), 0)');
             }, 'amount_paid')
+            ->selectSub(function ($q) {
+                $q->from('supplier_credit_notes')->whereColumn('supplier_credit_notes.supplier_bill_id', 'supplier_bills.id')
+                    ->whereIn('supplier_credit_notes.status', ['draft', 'posted'])
+                    ->whereColumn('supplier_credit_notes.company_id', 'supplier_bills.company_id')
+                    ->selectRaw('COALESCE(SUM(supplier_credit_notes.amount), 0)');
+            }, 'amount_credited')
             ->orderBy('due_date')->get()
-            ->filter(fn ($bill) => round((float) $bill->amount - (float) $bill->amount_paid, 2) > 0);
+            ->filter(fn ($bill) => round((float) $bill->amount - (float) $bill->amount_paid - (float) $bill->amount_credited, 2) > 0);
 
         $payments = SupplierPayment::with(['supplier', 'bankAccount', 'allocations.bill'])
             ->where('company_id', $companyId)
@@ -111,7 +118,9 @@ class SupplierPaymentController extends Controller
                     ->where('supplier_payments.company_id', $companyId)
                     ->whereIn('supplier_payments.status', ['draft', 'posted'])
                     ->sum('supplier_payment_allocations.amount');
-                $outstanding = round((float) $bill->amount - $alreadyPaid, 2);
+                $alreadyCredited = (float) SupplierCreditNote::where('company_id', $companyId)->where('supplier_bill_id', $bill->id)
+                    ->whereIn('status', ['draft', 'posted'])->sum('amount');
+                $outstanding = round((float) $bill->amount - $alreadyPaid - $alreadyCredited, 2);
                 if ($amount > $outstanding + 0.009) {
                     throw ValidationException::withMessages(['allocations' => 'Allocation exceeds the supplier bill outstanding balance.']);
                 }
@@ -171,11 +180,13 @@ class SupplierPaymentController extends Controller
                 $paid = (float) DB::table('supplier_payment_allocations')
                     ->join('supplier_payments', 'supplier_payments.id', '=', 'supplier_payment_allocations.supplier_payment_id')
                     ->where('supplier_payment_allocations.supplier_bill_id', $bill->id)
-                    ->where('supplier_payments.status', 'posted')
+                    ->whereIn('supplier_payments.status', ['draft', 'posted'])
                     ->where('supplier_payments.id', '!=', $document->id)
                     ->where('supplier_payments.company_id', $companyId)
                     ->sum('supplier_payment_allocations.amount');
-                if ((float) $allocation->amount > round((float) $bill->amount - $paid, 2) + 0.009) {
+                $credited = (float) SupplierCreditNote::where('company_id', $companyId)->where('supplier_bill_id', $bill->id)
+                    ->whereIn('status', ['draft', 'posted'])->sum('amount');
+                if ((float) $allocation->amount > round((float) $bill->amount - $paid - $credited, 2) + 0.009) {
                     throw ValidationException::withMessages(['allocations' => 'Payment would over-settle a supplier bill.']);
                 }
             }
