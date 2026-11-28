@@ -55,7 +55,7 @@ class SupplierGstWithholdingController extends Controller
             'notice_number' => ['required', 'string', 'max:100', Rule::unique('supplier_gst_withholding_notices')->where(fn ($q) => $q->where('company_id', $companyId))],
             'issuing_authority' => ['nullable', 'string', 'max:120'],
             'notice_date' => ['required', 'date'],
-            'effective_from' => ['required', 'date'],
+            'effective_from' => ['required', 'date', 'after_or_equal:notice_date'],
             'effective_to' => ['nullable', 'date', 'after_or_equal:effective_from'],
             'supplier_scope' => ['required', Rule::in(['all_suppliers', 'specified_suppliers'])],
             'remittance_form_code' => ['required', Rule::in(['G2', 'G4', 'G5', 'G6'])],
@@ -65,6 +65,10 @@ class SupplierGstWithholdingController extends Controller
             'supplier_ids' => ['required_if:supplier_scope,specified_suppliers', 'array', 'min:1'],
             'supplier_ids.*' => ['integer', 'distinct', Rule::exists('suppliers', 'id')->where(fn ($q) => $q->where('company_id', $companyId)->where('is_active', true))],
         ]);
+
+        if (!$request->hasFile('notice_document') && blank($data['document_reference'] ?? null)) {
+            throw ValidationException::withMessages(['document_reference' => 'Attach the written IRC notice or record its official document reference before saving.']);
+        }
 
         DB::transaction(function () use ($data, $companyId, $request) {
             $documentPath = $request->file('notice_document')?->store("section65a/notices/{$companyId}", 'local');
@@ -103,6 +107,7 @@ class SupplierGstWithholdingController extends Controller
         DB::transaction(function () use ($notice, $companyId, $request) {
             $document = SupplierGstWithholdingNotice::where('company_id', $companyId)->lockForUpdate()->findOrFail($notice);
             abort_unless($document->status === 'draft', 409, 'Only draft Section 65A notices can be activated.');
+            abort_if(blank($document->document_reference), 409, 'Written notice evidence must be attached or referenced before activation.');
             if ($document->supplier_scope === 'specified_suppliers' && !$document->suppliers()->exists()) {
                 throw ValidationException::withMessages(['supplier_ids' => 'A specified-supplier notice must contain at least one supplier.']);
             }
