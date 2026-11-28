@@ -158,7 +158,7 @@ class CustomerRefundController extends Controller
                 'reference' => $document->reference, 'description' => 'Customer refund '.$document->refund_number.' · '.$document->description,
                 'direction' => 'out', 'amount' => $document->amount, 'is_reconciled' => false, 'created_by' => $document->created_by,
             ]);
-            $document->update(['status' => 'posted', 'journal_entry_id' => $journal->id, 'posted_by' => $request->user()->id, 'posted_at' => now()]);
+            $document->forceFill(['status' => 'posted', 'journal_entry_id' => $journal->id, 'posted_by' => $request->user()->id, 'posted_at' => now()])->saveOrFail();
         });
         return back()->with('status', 'Customer refund posted against customer deposits and the bank ledger.');
     }
