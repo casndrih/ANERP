@@ -52,14 +52,17 @@ class CompanyAdministrationController extends Controller {
   $company=$this->company($r);
   $d=$r->validate(['role_code'=>['required',Rule::in(array_merge(['owner'],self::ROLES))],'branch_id'=>['nullable','integer',Rule::exists('branches','id')->where(fn($q)=>$q->where('company_id',$company->id)->where('is_active',true))],'is_active'=>['required','boolean']]);
   $target=$company->users()->where('users.id',$user)->firstOrFail();
-  if($target->pivot->role_code==='owner'&&!$this->isOwner($r)) abort(403,'Only a company owner can change an owner membership.');
+  if(in_array($target->pivot->role_code,['owner','admin'],true)&&!$this->isOwner($r)) abort(403,'Only a company owner can change an owner or administrator membership.');
   if(in_array($d['role_code'],['owner','admin'],true)&&!$this->isOwner($r)) abort(403,'Only a company owner can grant owner or administrator access.');
   if($target->pivot->role_code==='owner'&&($d['role_code']!=='owner'||!$d['is_active'])) {
    $others=$company->users()->wherePivot('is_active',true)->wherePivot('role_code','owner')->where('users.id','!=',$target->id)->count();
    abort_if($others===0,409,'A company must retain at least one active owner.');
   }
   if((int)$target->id===(int)$r->user()->id&&!$d['is_active']) abort(409,'You cannot suspend your own active company membership.');
-  DB::table('company_user')->where('company_id',$company->id)->where('user_id',$target->id)->update(['role_code'=>$d['role_code'],'branch_id'=>$d['branch_id']??null,'is_active'=>(bool)$d['is_active'],'updated_at'=>now()]);
+  $before=['role_code'=>$target->pivot->role_code,'branch_id'=>$target->pivot->branch_id,'is_active'=>(bool)$target->pivot->is_active];
+  $after=['role_code'=>$d['role_code'],'branch_id'=>$d['branch_id']??null,'is_active'=>(bool)$d['is_active']];
+  DB::table('company_user')->where('company_id',$company->id)->where('user_id',$target->id)->update($after+['updated_at'=>now()]);
+  DB::table('audit_events')->insert(['company_id'=>$company->id,'user_id'=>$r->user()->id,'event'=>'COMPANY MEMBERSHIP UPDATED','auditable_type'=>'users','auditable_id'=>$target->id,'before_data'=>json_encode($before),'after_data'=>json_encode($after),'ip_address'=>$r->ip(),'created_at'=>now()]);
   return back()->with('status','Company membership updated.');
  }
  public function revokeInvitation(Request $r,int $invitation) {
