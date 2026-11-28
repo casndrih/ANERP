@@ -179,6 +179,12 @@ class CustomerReceiptController extends Controller
 
             $ar = Account::where('company_id', $companyId)->where('account_code', '1100')->firstOrFail();
             $bankLedger = Account::where('company_id', $companyId)->whereKey($bank->account_id)->firstOrFail();
+            if ($bankLedger->account_type !== 'asset' || $ar->account_type !== 'asset') {
+                throw ValidationException::withMessages(['receipt' => 'The bank ledger and accounts receivable control accounts must both be asset accounts.']);
+            }
+            if ($bank->branch_id !== $document->branch_id) {
+                throw ValidationException::withMessages(['receipt' => 'The receipt branch no longer matches the selected bank account.']);
+            }
             $advances = Account::firstOrCreate(
                 ['company_id' => $companyId, 'account_code' => '2500'],
                 ['name' => 'Customer deposits and advances', 'account_type' => 'liability', 'normal_balance' => 'credit', 'is_control_account' => true, 'is_active' => true]
