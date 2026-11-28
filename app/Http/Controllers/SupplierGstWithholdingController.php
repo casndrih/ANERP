@@ -323,17 +323,18 @@ class SupplierGstWithholdingController extends Controller
         $document = SupplierGstRemittance::where('company_id', $companyId)->where('status', 'posted')->findOrFail($remittance);
         $rows = DB::table('supplier_gst_remittance_lines as lines')
             ->join('supplier_gst_withholdings as w', 'w.id', '=', 'lines.withholding_id')
+            ->join('supplier_gst_remittances as remittances', 'remittances.id', '=', 'lines.remittance_id')
             ->where('lines.remittance_id', $document->id)
             ->select('w.supplier_name_snapshot', 'w.supplier_tin_snapshot', 'w.supplier_gst_registration_snapshot',
                 'w.bill_number_snapshot', 'w.bill_date', 'w.payment_date', 'w.supply_description',
-                'w.gross_settlement', 'w.gst_withheld', 'w.supplier_province', 'w.supplier_advised_at', 'w.supplier_advice_reference')
+                'w.gross_settlement', 'w.gst_withheld', 'w.supplier_province', 'w.supplier_advised_at', 'w.supplier_advice_reference', 'remittances.remittance_date', 'remittances.reference as remittance_reference')
             ->orderBy('w.supplier_name_snapshot')->get();
         $filename = 'ANERP-Section65A-'.$document->remittance_number.'.csv';
         return response()->streamDownload(function () use ($rows, $document) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['Remittance number', 'Form code', 'Supplier name', 'Supplier TIN', 'Supplier GST registration number', 'Supplier invoice', 'Invoice date', 'Payment date', 'Supply description', 'Gross amount incurred', 'GST remitted for supplier', 'Province of supply', 'Supplier advised at', 'Supplier advice reference']);
+            fputcsv($out, ['Remittance number', 'Form code', 'Remittance date', 'IRC payment reference', 'Supplier name', 'Supplier TIN', 'Supplier GST registration number', 'Supplier invoice', 'Invoice date', 'Payment date', 'Supply description', 'Gross amount incurred', 'GST remitted for supplier', 'Province of supply', 'Supplier advised at', 'Supplier advice reference']);
             foreach ($rows as $row) {
-                fputcsv($out, [$document->remittance_number, $document->form_code, $row->supplier_name_snapshot, $row->supplier_tin_snapshot, $row->supplier_gst_registration_snapshot,
+                fputcsv($out, [$document->remittance_number, $document->form_code, $row->remittance_date, $row->remittance_reference, $row->supplier_name_snapshot, $row->supplier_tin_snapshot, $row->supplier_gst_registration_snapshot,
                     $row->bill_number_snapshot, $row->bill_date, $row->payment_date, $row->supply_description,
                     $row->gross_settlement, $row->gst_withheld, $row->supplier_province, $row->supplier_advised_at, $row->supplier_advice_reference]);
             }
