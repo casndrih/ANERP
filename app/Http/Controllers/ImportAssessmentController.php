@@ -63,6 +63,13 @@ class ImportAssessmentController extends Controller
             'tariff_verified_on' => ['required', 'date'],
         ]);
 
+        $tariffHost = strtolower((string) parse_url($data['tariff_source_url'], PHP_URL_HOST));
+        if (!in_array($tariffHost, ['customs.gov.pg', 'www.customs.gov.pg'], true)) {
+            throw ValidationException::withMessages(['tariff_source_url' => 'Use the official Papua New Guinea Customs tariff source for the verified HS classification.']);
+        }
+        if ($data['tariff_verified_on'] > $data['assessment_date']) {
+            throw ValidationException::withMessages(['tariff_verified_on' => 'Tariff verification date cannot be after the customs assessment date.']);
+        }
         $company = Company::findOrFail($companyId);
         $eligible = (bool) ($data['input_tax_credit_eligible'] ?? false);
         $gstExempt = (bool) ($data['gst_exempt'] ?? false);
