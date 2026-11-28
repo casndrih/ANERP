@@ -68,7 +68,7 @@ final class PngGstAccountingTest extends TestCase
 
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->get(route('finance.gst-summary', ['from' => '2026-11-01', 'to' => '2026-11-30']))
-            ->assertOk()->assertSee('K 10.00')->assertSee('K 0.00');
+            ->assertOk()->assertSee('K 100.00')->assertSee('K 10.00')->assertSee('K 0.00');
     }
 
     public function test_supplier_gst_without_registration_or_tax_invoice_cannot_be_claimed(): void
