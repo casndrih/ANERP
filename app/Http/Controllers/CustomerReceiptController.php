@@ -213,6 +213,20 @@ class CustomerReceiptController extends Controller
                     'description' => 'Unallocated customer deposit', 'debit' => 0, 'credit' => $unallocated,
                 ]);
             }
+            BankTransaction::create([
+                'company_id' => $companyId,
+                'branch_id' => $document->branch_id,
+                'bank_account_id' => $bank->id,
+                'journal_entry_id' => $journal->id,
+                'transaction_date' => $document->receipt_date,
+                'reference' => $document->reference,
+                'description' => 'Customer receipt '.$document->receipt_number.' · '.$document->description,
+                'direction' => 'in',
+                'amount' => $document->amount,
+                'is_reconciled' => false,
+                'created_by' => $document->created_by,
+            ]);
+
             $document->update([
                 'status' => 'posted',
                 'journal_entry_id' => $journal->id,
