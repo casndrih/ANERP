@@ -58,7 +58,7 @@ final class SupplierCreditNoteTest extends TestCase
                 'credit_note_date' => '2026-11-28', 'description' => 'Cancelled draft', 'amount' => 40,
             ])->assertRedirect()->assertSessionHasNoErrors();
         $note = \App\Models\SupplierCreditNote::where('credit_note_number', 'SCN-CANCEL-1')->firstOrFail();
-        $this->actingAs(approver)->withSession($this->sessionData($company, $approver))
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->post(route('finance.supplier-credit-notes.cancel', $note->id))->assertRedirect()->assertSessionHasNoErrors();
         $this->assertDatabaseHas('supplier_credit_notes', ['id' => $note->id, 'status' => 'cancelled']);
         $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
