@@ -27,7 +27,7 @@ final class SupplierInvoiceMatchingTest extends TestCase
         $line->update(['quantity_received' => 10]);
         $bill = $this->bill($company, $supplier, $branch, $creator, $expense, 50);
 
-        $this->actingAs($creator)->withSession($this->session($company, $creator))
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
             ->post(route('procurement.matching.match', $bill->id), [
                 'purchase_order_id' => $po->id,
                 'invoice_type' => 'goods',
@@ -117,7 +117,7 @@ final class SupplierInvoiceMatchingTest extends TestCase
         ]);
     }
 
-    private function session(Company $company, User $user): array
+    private function sessionData(Company $company, User $user): array
     {
         return ['active_company_id' => $company->id, 'mfa_verified_user_id' => $user->id];
     }
