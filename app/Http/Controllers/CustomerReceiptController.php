@@ -37,7 +37,7 @@ class CustomerReceiptController extends Controller
                 $query->from('customer_receipt_allocations')
                     ->join('customer_receipts', 'customer_receipts.id', '=', 'customer_receipt_allocations.customer_receipt_id')
                     ->whereColumn('customer_receipt_allocations.customer_invoice_id', 'customer_invoices.id')
-                    ->where('customer_receipts.status', 'posted')
+                    ->whereIn('customer_receipts.status', ['draft', 'posted'])
                     ->whereColumn('customer_receipts.company_id', 'customer_invoices.company_id')
                     ->selectRaw('COALESCE(SUM(customer_receipt_allocations.amount), 0)');
             }, 'amount_paid')
@@ -142,6 +142,21 @@ class CustomerReceiptController extends Controller
         });
 
         return back()->with('status', 'Customer receipt saved as a draft. Another finance user must post it.');
+    }
+
+    public function cancel(Request $request, int $receipt)
+    {
+        CompanyAuthorizer::requirePermission($request, 'finance.create');
+        $companyId = CompanyAuthorizer::activeCompanyId($request);
+        $branchId = CompanyAuthorizer::activeBranchId($request);
+        DB::transaction(function () use ($receipt, $companyId, $branchId) {
+            $document = CustomerReceipt::where('company_id', $companyId)
+                ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+                ->lockForUpdate()->findOrFail($receipt);
+            abort_unless($document->status === 'draft', 409, 'Only draft customer receipts can be cancelled.');
+            $document->update(['status' => 'cancelled']);
+        });
+        return back()->with('status', 'Draft customer receipt cancelled; its invoice allocations have been released.');
     }
 
     public function post(Request $request, int $receipt)
