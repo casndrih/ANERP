@@ -37,6 +37,21 @@ final class PngProcurementTaxCalculatorTest extends TestCase
         self::assertSame(0.0, $result['import_gst']);
     }
 
+    public function test_import_gst_can_use_actual_customs_duty_assessment(): void
+    {
+        $result = (new PngProcurementTaxCalculator())->importAssessmentFromCustomsEntry(100, 10, 2, 3);
+
+        self::assertSame(10.0, $result['customs_duty']);
+        self::assertSame(115.0, $result['gst_base']);
+        self::assertSame(11.5, $result['import_gst']);
+    }
+
+    public function test_actual_customs_assessment_rejects_negative_amounts(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        (new PngProcurementTaxCalculator())->importAssessmentFromCustomsEntry(100, -1);
+    }
+
     public function test_invalid_tariff_rate_is_rejected(): void
     {
         $this->expectException(InvalidArgumentException::class);
