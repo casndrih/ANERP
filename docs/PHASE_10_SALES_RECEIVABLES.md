@@ -15,7 +15,7 @@
 - Customer credit notes support invoice-linked drafts, outstanding-balance controls, independent posting, balanced revenue/AR reversals, cancellation and AR ageing integration. Draft receipts and draft credit notes reserve the same invoice balance so they cannot collectively exceed the invoice.
 - Customer deposit refunds support receipt-linked unallocated-balance checks, maker-checker posting, balanced customer-deposit/bank journals, outgoing bank transactions and draft cancellation.
 - Supplier credit notes support posted PGK general expense bills, outstanding AP controls, maker-checker posting, expense/AP reversal, cancellation and AP ageing. Matched inventory/GRNI bills are blocked until stock-return accounting is implemented.
-- Domestic PNG GST is posted on general supplier bills and customer invoices with company registration settings, supplier registration/tax-invoice evidence for input credits, GST input/output control accounts and a G1-style management summary.
+- Domestic PNG GST is posted on general supplier bills, customer invoices and eligible PO-matched goods/landed-cost invoices with company registration settings, supplier registration/tax-invoice evidence for input credits, GST input/output control accounts and a G1-style management summary. The summary reports sales bases net of output GST.
 - Accounts payable ageing nets posted supplier payment allocations; draft payments do not reduce reported AP.
 
 ## Accounting example
@@ -38,11 +38,11 @@ The K20 remains a customer liability until allocated or refunded through a separ
 ## Not included in this increment
 - Sales order capture, order approval, picking/packing, dispatch and delivery.
 - POS till sessions, cash drawer reconciliation, EFTPOS terminal integrations, refunds and end-of-day close.
-- Product-level invoice lines, price lists, discounts, GST calculation, credit notes and customer credit limits.
+- Product-level customer invoice lines, price lists, discount controls and customer credit limits. GST calculation and invoice-level credit notes are available for supported general invoices; GST-bearing adjustment notes remain outstanding.
 - Customer statement PDF/email delivery and automated reminders.
 - Customer advance allocation changes, refunds and receipt reversals.
 - Multi-currency receipts and foreign exchange gains/losses.
-- Supplier payment drafts, multi-bill allocations, maker-checker posting, AP/bank journal posting and outgoing bank transaction capture are now implemented; posted allocations reduce AP ageing. Supplier advances and payment reversals remain out of scope.
+- Supplier payment drafts, multi-bill allocations, maker-checker posting, AP/bank journal posting and outgoing bank transaction capture are implemented; posted allocations reduce AP ageing. Supplier advances and payment reversals remain out of scope.
 
 ## Acceptance checks
 - Apply all migrations to a clean PostgreSQL database.
