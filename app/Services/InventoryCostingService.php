@@ -64,6 +64,8 @@ class InventoryCostingService
         if ($this->isInbound($movement->movement_type)) {
             $unitCost = (float) $movement->unit_cost;
             $costValue = round($quantity * $unitCost, 2);
+            $movement->cost_value = $costValue;
+            $movement->save();
             $newQty = round($currentQty + $quantity, 3);
             $newValue = round($currentValue + $costValue, 2);
             if ($method === 'fifo') {
@@ -138,7 +140,7 @@ class InventoryCostingService
             $unitCost = (float) $old->unit_cost;
             if ($this->isInbound($old->movement_type)) {
                 $qty += $movementQty;
-                $value += $movementQty * $unitCost;
+                $value += (float) ($old->cost_value ?? ($movementQty * $unitCost));
                 if ($method === 'fifo') {
                     DB::table('inventory_cost_layers')->updateOrInsert(
                         ['source_movement_id' => $old->id],
