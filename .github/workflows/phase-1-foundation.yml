@@ -42,7 +42,7 @@ jobs:
           exit 2
           MOCK
           chmod +x "$RUNNER_TEMP/mock-bin/govc"
-          PATH="$RUNNER_TEMP/mock-bin:$PATH" GOVC_URL='https://esxi-ci.invalid/sdk' GOVC_USERNAME=ci GOVC_PASSWORD=ci ANERP_ESXI_VM=ANERP-CI ./deploy/export-esxi-ova.sh "$RUNNER_TEMP/ova"
+          PATH="$RUNNER_TEMP/mock-bin:$PATH" GOVC_URL='https://esxi-ci.invalid/sdk' GOVC_USERNAME=ci GOVC_PASSWORD=ci ANERP_ESXI_VM=ANERP-CI bash deploy/export-esxi-ova.sh "$RUNNER_TEMP/ova"
           test -s "$RUNNER_TEMP/ova/ANERP-CI.ova"
           (cd "$RUNNER_TEMP/ova" && sha256sum -c ANERP-CI.ova.sha256)
 
