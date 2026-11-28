@@ -24,7 +24,7 @@ Establish repeatable security, operational and acceptance controls before ANERP 
 2. Restrict the application, PostgreSQL and Redis to trusted networks. Never publish database/cache ports.
 3. Use unique production secrets; keep .env and credentials out of source control; rotate any exposed credentials.
 4. Set production APP_ENV=production, APP_DEBUG=false, secure session cookies and trusted proxy settings.
-5. Enforce MFA for privileged users before external access is enabled.
+5. MFA is enforced for privileged company roles; confirm the policy and recovery procedure during UAT before external access is enabled.
 6. Apply least-privilege roles and verify each controller, export and object route checks the active company and record ownership.
 7. Require independent approval for sensitive postings and retain immutable audit events.
 8. Patch the guest OS, Docker engine, base images, PHP/Laravel dependencies and extensions.
@@ -47,7 +47,7 @@ Establish repeatable security, operational and acceptance controls before ANERP 
 - [ ] Independent security review and penetration test completed; findings triaged.
 - [ ] Tenant-isolation and authorization tests pass.
 - [ ] Audit-event append-only migration is applied and verified on the production PostgreSQL version.
-- [ ] MFA and privileged-role policy enabled.
+- [x] TOTP MFA enforcement for privileged company roles implemented; production enrollment and recovery drill still required.
 - [ ] TLS, firewall/VPN and private database/cache networking verified.
 - [ ] Encrypted off-host backup configured and restore drill witnessed.
 - [ ] Monitoring, alerting, incident contacts and escalation documented.
