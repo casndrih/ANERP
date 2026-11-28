@@ -8,7 +8,7 @@ class InventoryLedger {
             ->where('company_id',$companyId)->where('warehouse_id',$warehouseId)->where('product_id',$productId);
         if ($lock) $query->lockForUpdate();
         $in = ['opening','purchase_receipt','transfer_in','adjustment_in'];
-        $out = ['issue','transfer_out','adjustment_out'];
+        $out = ['issue','transfer_out','adjustment_out','supplier_return'];
         return (float) $query->selectRaw(
             'COALESCE(SUM(CASE WHEN movement_type IN (?,?,?,?) THEN quantity WHEN movement_type IN (?,?,?) THEN -quantity ELSE 0 END),0) AS balance',
             [...$in,...$out]
