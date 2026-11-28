@@ -14,7 +14,7 @@ class LandedCostAllocator
      *
      * @return array{inventory: float, cogs: float, allocations: array<int, array<string, mixed>>}
      */
-    public function allocate(int $companyId, int $billId, PurchaseOrder $order, float $amount): array
+    public function allocate(int $companyId, int $billId, PurchaseOrder $order, float $amount, string $basis = 'line_value'): array
     {
         if ($amount <= 0) {
             throw ValidationException::withMessages(['amount' => 'Landed cost must be greater than zero.']);
@@ -23,7 +23,8 @@ class LandedCostAllocator
         $lines = $order->lines()->with('product')->lockForUpdate()->get()
             ->filter(fn ($line) => (float) $line->quantity_received > 0 && $line->product?->track_stock);
 
-        $basisTotal = $lines->sum(fn ($line) => (float) $line->quantity_received * (float) $line->unit_cost);
+        if (!in_array($basis, ['line_value', 'quantity', 'equal'], true)) { throw ValidationException::withMessages(['allocation_basis' => 'Unsupported landed-cost allocation basis.']); }
+        $basisTotal = $lines->sum(fn ($line) => match ($basis) { 'quantity' => (float) $line->quantity_received, 'equal' => 1.0, default => (float) $line->quantity_received * (float) $line->unit_cost });
         if ($lines->isEmpty() || $basisTotal <= 0) {
             throw ValidationException::withMessages(['purchase_order_id' => 'The selected purchase order has no received stock to allocate landed costs against.']);
         }
@@ -35,10 +36,10 @@ class LandedCostAllocator
         $lastIndex = $lines->count() - 1;
 
         foreach ($lines->values() as $index => $line) {
-            $basis = (float) $line->quantity_received * (float) $line->unit_cost;
+            $lineBasis = match ($basis) { 'quantity' => (float) $line->quantity_received, 'equal' => 1.0, default => (float) $line->quantity_received * (float) $line->unit_cost };
             $allocated = $index === $lastIndex
                 ? $remainingAmount
-                : round($amount * ($basis / $basisTotal), 2);
+                : round($amount * ($lineBasis / $basisTotal), 2);
             $remainingAmount = round($remainingAmount - $allocated, 2);
 
             $ledgerReceived = (float) DB::table('stock_movements')
@@ -144,6 +145,7 @@ class LandedCostAllocator
                 'purchase_order_line_id' => $line->id,
                 'product_id' => $line->product_id,
                 'warehouse_id' => $order->warehouse_id,
+                'allocation_basis' => $basis,
                 'allocated_amount' => $allocated,
                 'inventory_amount' => $inventoryShare,
                 'cogs_amount' => $cogsShare,
