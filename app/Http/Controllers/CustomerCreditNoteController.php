@@ -60,6 +60,7 @@ class CustomerCreditNoteController extends Controller
             $invoice = CustomerInvoice::where('company_id', $companyId)
                 ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
                 ->lockForUpdate()->findOrFail($data['invoice_id']);
+            if ($invoice->currency !== 'PGK') throw ValidationException::withMessages(['invoice_id' => 'Customer invoices must be in PGK until multi-currency settlement is implemented.']);
             abort_unless($invoice->status === 'posted', 409, 'Credit notes can only reference posted invoices.');
             if ($data['credit_note_date'] < $invoice->invoice_date->toDateString()) {
                 throw ValidationException::withMessages(['credit_note_date' => 'Credit note date cannot be earlier than the original invoice date.']);
@@ -115,6 +116,7 @@ class CustomerCreditNoteController extends Controller
             abort_if((int) $note->created_by === (int) $request->user()->id, 403, 'The credit note creator cannot post their own credit note.');
 
             $invoice = CustomerInvoice::where('company_id', $companyId)->lockForUpdate()->findOrFail($note->customer_invoice_id);
+            abort_unless($invoice->currency === 'PGK', 422, 'Customer invoices must be in PGK until multi-currency settlement is implemented.');
             abort_unless($invoice->status === 'posted' && (int) $invoice->customer_id === (int) $note->customer_id, 409, 'Credit note must reference a posted invoice for the same customer.');
             abort_unless((int) ($invoice->branch_id ?? 0) === (int) ($note->branch_id ?? 0), 409, 'Credit note and invoice branch attribution must match.');
 
