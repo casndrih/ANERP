@@ -15,18 +15,20 @@ class PurchaseOrderController extends Controller {
     public function index(Request $request) {
         CompanyAuthorizer::requirePermission($request,'procurement.view');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
-        $orders=PurchaseOrder::where('company_id',$companyId)->with(['supplier','warehouse','lines.product'])->latest('order_date')->paginate(25);
+        $branchId=CompanyAuthorizer::activeBranchId($request);
+        $orders=PurchaseOrder::where('company_id',$companyId)->when($branchId,fn($q)=>$q->whereHas('warehouse',fn($w)=>$w->where('branch_id',$branchId)))->with(['supplier','warehouse','lines.product'])->latest('order_date')->paginate(25);
         $suppliers=Supplier::where('company_id',$companyId)->where('is_active',true)->orderBy('name')->get();
-        $warehouses=Warehouse::where('company_id',$companyId)->where('is_active',true)->orderBy('name')->get();
+        $warehouses=Warehouse::where('company_id',$companyId)->where('is_active',true)->when($branchId,fn($q)=>$q->where('branch_id',$branchId))->orderBy('name')->get();
         $products=Product::where('company_id',$companyId)->where('is_active',true)->orderBy('name')->get();
         return view('procurement.orders.index',compact('orders','suppliers','warehouses','products'));
     }
     public function store(Request $request) {
         CompanyAuthorizer::requirePermission($request,'procurement.create');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
+        $branchId=CompanyAuthorizer::activeBranchId($request);
         $data=$request->validate([
             'supplier_id'=>['required','integer',Rule::exists('suppliers','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true))],
-            'warehouse_id'=>['required','integer',Rule::exists('warehouses','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true))],
+            'warehouse_id'=>['required','integer',Rule::exists('warehouses','id')->where(fn($q)=>$q->where('company_id',$companyId)->where('is_active',true)->when($branchId,fn($w)=>$w->where('branch_id',$branchId)))],
             'order_date'=>['required','date'],'expected_date'=>['nullable','date','after_or_equal:order_date'],
             'notes'=>['nullable','string','max:2000'],
             'lines'=>['required','array','min:1'],
@@ -56,7 +58,8 @@ class PurchaseOrderController extends Controller {
     public function submit(Request $request, int $order) {
         CompanyAuthorizer::requirePermission($request,'procurement.submit');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
-        $po=PurchaseOrder::where('company_id',$companyId)->findOrFail($order);
+        $branchId=CompanyAuthorizer::activeBranchId($request);
+        $po=PurchaseOrder::where('company_id',$companyId)->when($branchId,fn($q)=>$q->whereHas('warehouse',fn($w)=>$w->where('branch_id',$branchId)))->findOrFail($order);
         abort_unless($po->status==='draft',409,'Only draft purchase orders can be submitted.');
         $po->update(['status'=>'submitted']);
         return back()->with('status','Purchase order submitted for approval.');
@@ -64,7 +67,8 @@ class PurchaseOrderController extends Controller {
     public function approve(Request $request, int $order) {
         CompanyAuthorizer::requirePermission($request,'procurement.approve');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
-        $po=PurchaseOrder::where('company_id',$companyId)->findOrFail($order);
+        $branchId=CompanyAuthorizer::activeBranchId($request);
+        $po=PurchaseOrder::where('company_id',$companyId)->when($branchId,fn($q)=>$q->whereHas('warehouse',fn($w)=>$w->where('branch_id',$branchId)))->findOrFail($order);
         abort_unless($po->status==='submitted',409,'Only submitted purchase orders can be approved.');
         abort_unless((int)$po->created_by !== (int)$request->user()->id,403,'The purchase order creator cannot approve their own order.');
         $po->update(['status'=>'approved','approved_by'=>$request->user()->id,'approved_at'=>now()]);
@@ -73,9 +77,10 @@ class PurchaseOrderController extends Controller {
     public function receive(Request $request, int $order, int $line) {
         CompanyAuthorizer::requirePermission($request,'procurement.receive');
         $companyId=CompanyAuthorizer::activeCompanyId($request);
+        $branchId=CompanyAuthorizer::activeBranchId($request);
         $data=$request->validate(['quantity'=>['required','numeric','gt:0']]);
-        DB::transaction(function() use($request,$order,$line,$companyId,$data) {
-            $po=PurchaseOrder::where('company_id',$companyId)->lockForUpdate()->findOrFail($order);
+        DB::transaction(function() use($request,$order,$line,$companyId,$data,$branchId) {
+            $po=PurchaseOrder::where('company_id',$companyId)->when($branchId,fn($q)=>$q->whereHas('warehouse',fn($w)=>$w->where('branch_id',$branchId)))->lockForUpdate()->findOrFail($order);
             if(!in_array($po->status,['approved','partially_received'],true)) throw ValidationException::withMessages(['quantity'=>'This purchase order is not approved for receiving.']);
             $poLine=PurchaseOrderLine::where('purchase_order_id',$po->id)->lockForUpdate()->findOrFail($line);
             $remaining=(float)$poLine->quantity_ordered-(float)$poLine->quantity_received;
