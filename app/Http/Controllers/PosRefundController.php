@@ -50,7 +50,12 @@ class PosRefundController extends Controller
 
             $reserved = (float) DB::table('pos_refunds')->where('company_id', $companyId)
                 ->where('customer_credit_note_id', $note->id)->whereIn('status', ['draft', 'posted'])->sum('amount');
-            $available = round((float) $note->deposit_amount - $reserved, 2);
+            $reservedForSale = (float) DB::table('pos_refunds')->where('company_id', $companyId)
+                ->where('original_pos_transaction_id', $transaction->id)->whereIn('status', ['draft', 'posted'])->sum('amount');
+            $available = min(
+                round((float) $note->deposit_amount - $reserved, 2),
+                round((float) $transaction->amount - $reservedForSale, 2)
+            );
             if ((float) $data['amount'] > $available + 0.009) {
                 throw ValidationException::withMessages(['amount' => 'Cash refund exceeds the unrefunded customer deposit available on this credit note (K'.number_format(max(0, $available), 2).').']);
             }
@@ -85,11 +90,21 @@ class PosRefundController extends Controller
             abort_unless($till && $till->status === 'open' && (int) $till->branch_id === (int) $document->branch_id, 409, 'The refund till must still be open in the original branch.');
             $note = CustomerCreditNote::where('company_id', $companyId)->lockForUpdate()->findOrFail($document->customer_credit_note_id);
             abort_unless($note->status === 'posted' && $note->source_sales_return_id, 409, 'Refund source credit note is not posted from a sales return.');
+            $transaction = DB::table('pos_transactions')->where('company_id', $companyId)
+                ->lockForUpdate()->find($document->original_pos_transaction_id);
+            abort_unless($transaction && $transaction->status === 'posted'
+                && (int) $transaction->customer_invoice_id === (int) $note->customer_invoice_id, 409, 'Original POS cash sale is no longer eligible for a refund.');
 
             $reservedOther = (float) DB::table('pos_refunds')->where('company_id', $companyId)
                 ->where('customer_credit_note_id', $note->id)->whereIn('status', ['draft', 'posted'])
                 ->where('id', '!=', $document->id)->sum('amount');
-            $available = round((float) $note->deposit_amount - $reservedOther, 2);
+            $reservedForSale = (float) DB::table('pos_refunds')->where('company_id', $companyId)
+                ->where('original_pos_transaction_id', $transaction->id)->whereIn('status', ['draft', 'posted'])
+                ->where('id', '!=', $document->id)->sum('amount');
+            $available = min(
+                round((float) $note->deposit_amount - $reservedOther, 2),
+                round((float) $transaction->amount - $reservedForSale, 2)
+            );
             if ((float) $document->amount > $available + 0.009) {
                 throw ValidationException::withMessages(['refund' => 'The remaining customer deposit is no longer sufficient to post this refund.']);
             }
