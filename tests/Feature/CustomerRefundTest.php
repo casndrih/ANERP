@@ -29,7 +29,7 @@ final class CustomerRefundTest extends TestCase
         $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
             ->post(route('finance.refunds.post', $refund->id))->assertRedirect()->assertSessionHasNoErrors();
         $this->assertDatabaseHas('customer_refunds', ['id' => $refund->id, 'status' => 'posted']);
-        $this->assertDatabaseHas('bank_transactions', ['bank_account_id' => $bank->id, 'journal_entry_id' => $refund->journal_entry_id, 'direction' => 'out', 'amount' => 40]);
+        $this->assertDatabaseHas('bank_transactions', ['bank_account_id' => $bank->id, 'journal_entry_id' => $refund->journal_entry_id, 'direction' => 'out', 'amount' => '40.00']);
         $this->assertDatabaseHas('journal_lines', ['account_id' => $depositAccount->id, 'debit' => 40, 'credit' => 0]);
         $this->assertDatabaseHas('journal_lines', ['account_id' => $bankLedger->id, 'debit' => 0, 'credit' => 40]);
     }
