@@ -12,9 +12,9 @@
 <tr class="border-b"><td class="p-3">Less zero-rated sales</td><td class="p-3 text-right">K {{ number_format($zeroRatedSales,2) }}</td></tr>
 <tr class="border-b font-semibold"><td class="p-3">Taxable sales</td><td class="p-3 text-right">K {{ number_format($taxableSales,2) }}</td></tr>
 <tr class="border-b"><td class="p-3">Output GST</td><td class="p-3 text-right">K {{ number_format($outputGst,2) }}</td></tr>
-<tr class="border-b"><td class="p-3">Eligible domestic input purchases (net)</td><td class="p-3 text-right">K {{ number_format($eligiblePurchases,2) }}</td></tr>
+<tr class="border-b"><td class="p-3">Eligible input purchases (net)</td><td class="p-3 text-right">K {{ number_format($eligiblePurchases,2) }}</td></tr>
 <tr class="border-b"><td class="p-3">Input tax credits recorded</td><td class="p-3 text-right">K {{ number_format($inputCredits,2) }}</td></tr>
 <tr class="font-semibold"><td class="p-3">Net GST payable / (refundable)</td><td class="p-3 text-right">K {{ number_format($netGst,2) }}</td></tr>
 </tbody></table></section>
-<div class="rounded-xl bg-amber-50 p-4 text-sm text-amber-900"><b>Not an official GST return.</b> This management summary covers domestic customer invoices and supplier bills recorded in ANERP. It does not yet include import GST/customs assessments, GST withholding under section 65A, private-use adjustments, exempt-sale input-credit apportionment, credit/debit adjustment notes for GST invoices, or tax-agent validation. Confirm the figures against the current IRC G1 return and supporting tax invoices before filing.</div>
+<div class="rounded-xl bg-amber-50 p-4 text-sm text-amber-900"><b>Not an official GST return.</b> This management summary covers posted domestic customer invoices, supplier bills and import assessments recorded in ANERP. It does not yet include GST withholding under section 65A, private-use adjustments, exempt-sale input-credit apportionment, GST-bearing credit/debit adjustment notes, or tax-agent validation. Confirm the figures against the current IRC G1 return and supporting tax invoices before filing.</div>
 </main></body></html>
