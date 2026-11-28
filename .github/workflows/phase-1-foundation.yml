@@ -1,0 +1,80 @@
+name: ANERP Phase 1 Foundation
+
+on:
+  push:
+    branches: [feature/phase-1-erp-foundation]
+  pull_request:
+    branches: [main, feature/phase-1-erp-foundation, feature/phase-2-auth-tenancy]
+
+permissions:
+  contents: read
+
+jobs:
+  foundation-validation:
+    name: Clean install, migrations and deployment smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate deployment scripts
+        run: |
+          bash -n deploy/bootstrap.sh
+          bash -n deploy/upgrade.sh
+          bash -n deploy/export-esxi-ova.sh
+
+      - name: Smoke-test OVF to OVA packaging with a mock ESXi export
+        run: |
+          mkdir -p "$RUNNER_TEMP/mock-bin"
+          cat > "$RUNNER_TEMP/mock-bin/govc" <<'MOCK'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          if [[ "$1" == "vm.info" ]]; then exit 0; fi
+          if [[ "$1" == "export.ovf" ]]; then
+            shift
+            while [[ $# -gt 0 ]]; do
+              if [[ "$1" == "-o" ]]; then out="$2"; shift 2; else shift; fi
+            done
+            mkdir -p "$out"
+            printf '<Envelope></Envelope>\n' > "$out/ANERP-CI.ovf"
+            printf 'mock disk bytes\n' > "$out/ANERP-CI-disk1.vmdk"
+            exit 0
+          fi
+          exit 2
+          MOCK
+          chmod +x "$RUNNER_TEMP/mock-bin/govc"
+          PATH="$RUNNER_TEMP/mock-bin:$PATH" GOVC_URL='https://esxi-ci.invalid/sdk' GOVC_USERNAME=ci GOVC_PASSWORD=ci ANERP_ESXI_VM=ANERP-CI bash deploy/export-esxi-ova.sh "$RUNNER_TEMP/ova"
+          test -s "$RUNNER_TEMP/ova/ANERP-CI.ova"
+          (cd "$RUNNER_TEMP/ova" && sha256sum -c ANERP-CI.ova.sha256)
+
+      - name: Validate Docker Compose configuration
+        run: |
+          cp .env.example .env
+          sed -i 's/REPLACE_WITH_A_LONG_RANDOM_SECRET/ci-only-placeholder-secret/g' .env
+          docker compose config --quiet
+          rm -f .env
+
+      - name: Clean-install ANERP and migrate a fresh database
+        run: |
+          chmod +x deploy/bootstrap.sh
+          docker compose down --volumes --remove-orphans || true
+          if ! ./deploy/bootstrap.sh; then
+            docker compose logs --no-color app web db redis || true
+            exit 1
+          fi
+          chmod +x deploy/upgrade.sh
+          ANERP_BACKUP_DIR="$RUNNER_TEMP/anerp-backups" ./deploy/upgrade.sh
+          test -s "$RUNNER_TEMP/anerp-backups"/anerp-db-*.dump
+          test -s "$RUNNER_TEMP/anerp-backups"/anerp-storage-*.tar.gz
+          docker compose exec -T app php artisan migrate:status
+          docker compose ps
+
+      - name: HTTP application health check
+        run: |
+          if ! curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 2 http://127.0.0.1/up; then
+            docker compose logs --no-color app web db redis
+            exit 1
+          fi
+
+      - name: Tear down test stack
+        if: always()
+        run: docker compose down --volumes --remove-orphans
