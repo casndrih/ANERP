@@ -24,12 +24,19 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 - Supplier stock-return credit note: debit AP for gross credit, credit eligible GST input tax, credit inventory at FIFO/weighted-average carrying value, and post any difference to purchase-price variance. Stock issue and journal links are atomic and branch-attributed.
 - All journals are posted in the supplier bill's branch and retain the bill's creator and the independent approver.
 
+## Section 65A notice handling
+
+Section 65A is not a blanket withholding percentage. The Commissioner General issues a written notice directing a registered buyer to pay all GST payable to all suppliers or a specified supplier; the notice remains effective until revoked. The IRC fact sheet states that notified buyers file G1 plus the applicable G2/G4/G5/G6 remittance form and provide supplier-level remittance details. ANERP now records the written notice, all-supplier or specified-supplier scope, effective/revocation dates, selected remittance form, supplier payment withholding, separate cash/liability journal, IRC remittance batch, supplier-level listing export and manual supplier-advice confirmation. It never applies withholding without a recorded active notice.
+
+Official reference: https://static.irc.gov.pg/2021/December/5ExWcL-media-GST-Section-65A-Fact-Sheet.pdf
+
 ## Current limitations
 - Purchase orders now support multiple product lines in the authoring screen and the controller validates each submitted line.
-- Full statutory GST return automation and tax adjustment notes, withholding under section 65A, private-use and exempt-sale input-credit adjustments, invoice attachments/OCR and payment reversals remain outstanding. The GST summary is a management estimate, not a filing-ready G1 return. Supplier payment allocation and inventory credit notes are implemented; general expense credit notes remain separate from stock returns.
+- Full statutory G1/G2/G4/G5/G6 form generation and electronic filing, GST debit/adjustment notes, private-use and exempt-sale input-credit adjustments, invoice attachments/OCR and payment reversals remain outstanding. Section 65A notice, payment withholding, remittance accounting and supplier listing are implemented, but the forms are not submitted to IRC and supplier advice is not sent automatically. The GST summary is a management estimate, not a filing-ready return. Supplier payment allocation, GST-bearing general expense credit notes and inventory credit notes are implemented. Credit notes reverse the original GST input amount where it was claimed; inventory returns additionally adjust stock at carrying value.
 - Goods price variance beyond K0.01 is blocked for manual resolution; tolerance approval workflows are not yet available.
 - Landed costs are only capitalised when the product/warehouse cost pool is isolated and reconciled. Mixed stock pools and transferred stock require manual reconciliation before this feature can proceed.
 - Landed costs support received line value, received quantity, equal-share, product weight and product volume allocation. Import customs assessments are captured as landed-cost supplier bills and use the same allocation/approval workflow; charge-specific allocation rules are not yet implemented.
+- Section 65A remittance due dates are entered from the written notice/current IRC instructions rather than assumed. The selected G2/G4/G5/G6 form must match the notice; supplier advice must be manually sent and recorded. ANERP does not lodge official forms or certify statutory compliance.
 - Supplier invoice matching is not an external tax or statutory compliance certification.
 
 ## Acceptance checks
@@ -46,6 +53,9 @@ Landed-cost allocation is deliberately conservative. It blocks when the selected
 - Verify supplier payment drafts allocate only to posted bills for the same supplier and branch, prevent overpayment, enforce maker-checker, create a balanced AP/bank journal and outgoing bank transaction, and reduce AP ageing.
 - Verify general supplier credit notes remain limited to posted PGK expense bills. Verify inventory returns are limited to received quantities on posted, PO-matched goods bills, cannot exceed available stock or outstanding AP, enforce maker-checker, update valuation layers, reverse eligible input GST, post AP/inventory/variance journals and reduce AP ageing.
 - Confirm mixed inbound sources and transfer history block unsafe landed-cost capitalisation.
+- Create an actual written Section 65A notice with all-supplier and specified-supplier scopes; verify effective/revocation dates, overlap blocking and no withholding before notice activation.
+- Verify supplier payment gross settlement equals net cash plus GST withheld; verify actual bill GST is apportioned to partial payments, prior drafts reserve tax, supplier TIN/GST registration/province are required, and the posting journals AP/bank/withholding liability correctly.
+- Verify remittance batches only include unremitted withholding records, maker-checker posting debits the withholding liability and creates an outgoing bank transaction, supplier advice can be recorded, and the CSV contains supplier name/registration/TIN, gross amount, GST remitted, supply nature and province.
 - Review all postings and stock valuation effects with an accountant before live use.
 
 This phase is a draft implementation candidate. It is not merged or deployed and must pass CI, migration tests, stock reconciliation and accountant review before production use.

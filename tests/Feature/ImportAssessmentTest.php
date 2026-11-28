@@ -23,7 +23,7 @@ final class ImportAssessmentTest extends TestCase
     public function test_import_assessment_uses_actual_customs_duty_and_posts_eligible_import_gst_through_landed_cost(): void
     {
         [$company, $branch, $warehouse, $supplier, $product, $creator, $approver, $po, $line] = $this->fixture();
-        InventoryLedger::record($company->id, $warehouse->id, $product->id, 'purchase_receipt', 10, 10, $creator->id, 'import_test_receipt');
+        InventoryLedger::record($company->id, $warehouse->id, $product->id, 'purchase_receipt', 10, 10, $creator->id, 'purchase_order', $po->id, 'Import assessment test goods receipt');
 
         $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
             ->post(route('procurement.import-assessments.store'), [

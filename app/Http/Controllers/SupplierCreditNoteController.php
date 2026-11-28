@@ -24,7 +24,7 @@ class SupplierCreditNoteController extends Controller
         $branchId = CompanyAuthorizer::activeBranchId($request);
         $expenseAccountIds = Account::where('company_id', $companyId)->where('account_type', 'expense')->where('normal_balance', 'debit')->pluck('id');
         $bills = SupplierBill::with('supplier')->where('company_id', $companyId)->where('status', 'posted')
-            ->where('invoice_type', 'general')->where('match_status', 'not_required')->where('gst_amount', 0)->whereIn('expense_account_id', $expenseAccountIds)
+            ->where('invoice_type', 'general')->where('match_status', 'not_required')->whereIn('expense_account_id', $expenseAccountIds)
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->select('supplier_bills.*')
             ->selectSub(function ($q) {
@@ -50,7 +50,7 @@ class SupplierCreditNoteController extends Controller
         $companyId = CompanyAuthorizer::activeCompanyId($request);
         $branchId = CompanyAuthorizer::activeBranchId($request);
         $data = $request->validate([
-            'bill_id' => ['required', 'integer', Rule::exists('supplier_bills', 'id')->where(fn ($q) => $q->where('company_id', $companyId)->where('status', 'posted')->where('invoice_type', 'general')->where('match_status', 'not_required')->where('gst_amount', 0))],
+            'bill_id' => ['required', 'integer', Rule::exists('supplier_bills', 'id')->where(fn ($q) => $q->where('company_id', $companyId)->where('status', 'posted')->where('invoice_type', 'general')->where('match_status', 'not_required'))],
             'credit_note_number' => ['required', 'string', 'max:80', Rule::unique('supplier_credit_notes')->where(fn ($q) => $q->where('company_id', $companyId))],
             'credit_note_date' => ['required', 'date'], 'description' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'gt:0'],
@@ -60,7 +60,6 @@ class SupplierCreditNoteController extends Controller
                 ->where('invoice_type', 'general')->where('match_status', 'not_required')
                 ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))->lockForUpdate()->findOrFail($data['bill_id']);
             if ($bill->currency !== 'PGK') throw ValidationException::withMessages(['bill_id' => 'Supplier credit notes currently support PGK bills only.']);
-            if ((float)$bill->gst_amount > 0) throw ValidationException::withMessages(['bill_id' => 'GST-bearing supplier bills require a GST adjustment-note workflow before they can be credited.']);
             if ($data['credit_note_date'] < $bill->bill_date->toDateString()) {
                 throw ValidationException::withMessages(['credit_note_date' => 'Credit note date cannot be earlier than the original supplier bill date.']);
             }
@@ -77,11 +76,19 @@ class SupplierCreditNoteController extends Controller
             if ($expense->account_type !== 'expense' || $expense->normal_balance !== 'debit') {
                 throw ValidationException::withMessages(['bill_id' => 'This bill is not a general expense bill. Inventory and GRNI credit notes require a stock-return workflow.']);
             }
+            $rate = (bool) $bill->input_tax_credit_eligible ? (float) ($bill->gst_rate ?? 0) : 0.0;
+            $netAmount = $rate > 0 ? round($amount / (1 + $rate / 100), 2) : $amount;
+            $gstAmount = $rate > 0 ? round($amount - $netAmount, 2) : 0.0;
+            if ($netAmount > (float) ($bill->net_amount ?? $bill->amount) + 0.009) {
+                throw ValidationException::withMessages(['amount' => 'Credit note net value cannot exceed the original supplier bill net value.']);
+            }
             SupplierCreditNote::create([
                 'company_id' => $companyId, 'branch_id' => $bill->branch_id, 'supplier_id' => $bill->supplier_id,
                 'supplier_bill_id' => $bill->id, 'credit_note_number' => $data['credit_note_number'],
                 'credit_note_date' => $data['credit_note_date'], 'description' => $data['description'],
-                'amount' => $amount, 'currency' => 'PGK', 'status' => 'draft', 'created_by' => $request->user()->id,
+                'amount' => $amount, 'net_amount' => $netAmount, 'gst_amount' => $gstAmount,
+                'gst_rate' => $rate, 'gst_treatment' => $bill->gst_treatment ?? 'out_of_scope',
+                'currency' => 'PGK', 'status' => 'draft', 'created_by' => $request->user()->id,
             ]);
         });
         return back()->with('status', 'Supplier credit note saved as a draft. A different finance user must post it.');
@@ -113,7 +120,7 @@ class SupplierCreditNoteController extends Controller
             abort_if((int) $note->created_by === (int) $request->user()->id, 403, 'The credit note creator cannot post their own credit note.');
             $bill = SupplierBill::where('company_id', $companyId)->lockForUpdate()->findOrFail($note->supplier_bill_id);
             abort_unless($bill->status === 'posted' && $bill->invoice_type === 'general' && $bill->match_status === 'not_required', 409, 'Credit note must reference a posted non-inventory general bill.');
-            abort_unless($bill->currency === 'PGK' && (int) $bill->supplier_id === (int) $note->supplier_id && (float)$bill->gst_amount === 0.0, 409, 'Credit note supplier, currency and GST treatment must match an eligible original bill.');
+            abort_unless($bill->currency === 'PGK' && $bill->invoice_type === 'general' && $bill->match_status === 'not_required' && (int) $bill->supplier_id === (int) $note->supplier_id, 409, 'Credit note must match an original PGK general expense bill and supplier.');
             abort_unless((int) ($bill->branch_id ?? 0) === (int) ($note->branch_id ?? 0), 409, 'Credit note and bill branch attribution must match.');
             $paid = (float) SupplierPaymentAllocation::query()->join('supplier_payments', 'supplier_payments.id', '=', 'supplier_payment_allocations.supplier_payment_id')
                 ->where('supplier_payment_allocations.supplier_bill_id', $bill->id)->where('supplier_payments.company_id', $companyId)
@@ -122,6 +129,12 @@ class SupplierCreditNoteController extends Controller
                 ->whereIn('status', ['draft', 'posted'])->where('id', '!=', $note->id)->sum('amount');
             if ((float) $note->amount > round((float) $bill->amount - $paid - $otherCredits, 2) + 0.009) {
                 throw ValidationException::withMessages(['credit_note' => 'Posting would credit more than the supplier bill outstanding balance.']);
+            }
+            if (abs(round((float) $note->net_amount + (float) $note->gst_amount, 2) - (float) $note->amount) > 0.009) {
+                throw ValidationException::withMessages(['credit_note' => 'Credit note net, GST and gross amounts do not reconcile.']);
+            }
+            if (abs((float) $note->gst_rate - ((bool) $bill->input_tax_credit_eligible ? (float) ($bill->gst_rate ?? 0) : 0.0)) > 0.009 || ($note->gst_treatment ?? 'out_of_scope') !== ($bill->gst_treatment ?? 'out_of_scope')) {
+                throw ValidationException::withMessages(['credit_note' => 'Credit note GST treatment must match the original supplier bill.']);
             }
             $ap = Account::where('company_id', $companyId)->where('account_code', '2000')->firstOrFail();
             $expense = Account::where('company_id', $companyId)->whereKey($bill->expense_account_id)->firstOrFail();
@@ -135,7 +148,12 @@ class SupplierCreditNoteController extends Controller
                 'created_by' => $note->created_by, 'posted_by' => $request->user()->id, 'posted_at' => now(),
             ]);
             JournalLine::create(['journal_entry_id' => $journal->id, 'account_id' => $ap->id, 'description' => 'Supplier credit note '.$note->credit_note_number, 'debit' => $note->amount, 'credit' => 0]);
-            JournalLine::create(['journal_entry_id' => $journal->id, 'account_id' => $expense->id, 'description' => 'Reversal of supplier expense', 'debit' => 0, 'credit' => $note->amount]);
+            JournalLine::create(['journal_entry_id' => $journal->id, 'account_id' => $expense->id, 'description' => 'Reversal of supplier expense', 'debit' => 0, 'credit' => $note->net_amount]);
+            if ((float) $note->gst_amount > 0) {
+                $inputTax = Account::where('company_id', $companyId)->where('account_code', '1300')->firstOrFail();
+                abort_unless($inputTax->account_type === 'asset' && $inputTax->normal_balance === 'debit', 422, 'GST input account 1300 must be a debit-normal asset.');
+                JournalLine::create(['journal_entry_id' => $journal->id, 'account_id' => $inputTax->id, 'description' => 'Reverse supplier input GST', 'debit' => 0, 'credit' => $note->gst_amount]);
+            }
             $note->update(['status' => 'posted', 'journal_entry_id' => $journal->id, 'posted_by' => $request->user()->id, 'posted_at' => now()]);
         });
         return back()->with('status', 'Supplier credit note posted to accounts payable and the original expense account.');

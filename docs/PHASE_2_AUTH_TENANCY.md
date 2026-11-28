@@ -12,6 +12,6 @@ The exact command name is `anerp:install-admin`. Create the first company and ow
 - Active company is selected only from the authenticated user's active memberships.
 - Future business tables must carry company_id and authorize every read/write against the active company.
 - Branch access must be checked independently for branch-scoped operations.
-- Current role_code is a foundation only; granular permissions and maker-checker workflows are still required.
+- The original role_code foundation has since been extended with a deny-by-default permission matrix, company invitations and membership administration, branch-scoped access, TOTP MFA for privileged roles, append-only audit events and maker-checker controls across finance, payroll and procurement.
 
-Not yet included: MFA, password reset, complete RBAC, full audit coverage, automated cross-tenant tests or a security certification. Complete these before production.
+## Remaining acceptance work\n- Password reset and account recovery workflows are not implemented.\n- Complete route-by-route authorization coverage and automated tests for every sensitive object, export and mutation.\n- Verify session revocation, MFA recovery-code lifecycle, invitation expiry/replay protection and account suspension behavior.\n- Run the acceptance checklist on the exact integrated release commit.\n- Independent penetration testing and security certification are not provided by CI.

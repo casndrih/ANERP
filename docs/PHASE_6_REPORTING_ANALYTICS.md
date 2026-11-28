@@ -16,11 +16,11 @@
 - Trial balance and balance sheet include posted entries through the selected end date; profit/loss uses the selected period.
 - Balance sheet earnings are calculated from posted income and expense entries; year-end close journals are not generated.
 - Bank cash movement is not a classified operating/investing/financing cash-flow statement.
-- AP/AR ageing uses full posted bill/invoice amounts because receipts, payment allocation, settlements, credits and refunds are not yet available.
+- AP/AR ageing now nets posted supplier payments, supplier/customer credit notes, posted customer receipts and eligible posted refunds; verify all edge cases against controlled ledger fixtures.
 - Payroll includes approved runs only.
-- Inventory reports quantities and recorded unit costs; no FIFO or weighted-average valuation is claimed.
+- Inventory valuation now supports FIFO and moving weighted average with per-warehouse/product balances and layers; reporting must be reconciled against the valuation ledger and GL.
 - Finance reports filter journal and source documents by branch attribution for branch-restricted users; payroll filters employee lines and inventory filters warehouse movements. Unassigned legacy finance records remain company-wide only.
-- CSV only; XLSX/PDF and scheduled distribution remain future work.
+- CSV only; XLSX/PDF exports, scheduled distribution, saved filters, dashboard drill-through and consolidated reporting remain future work.
 - These are management reports, not audited financial statements or statutory filings.
 
 ## Acceptance checklist
