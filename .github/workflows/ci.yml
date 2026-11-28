@@ -9,10 +9,14 @@ on:
       - feature/phase-4-hr-payroll
       - feature/phase-5-finance-accounting
       - feature/phase-6-reporting-analytics
+      - feature/phase-7-production-readiness
+      - feature/phase-8-inventory-controls
   push:
     branches:
       - main
       - feature/phase-6-reporting-analytics
+      - feature/phase-7-production-readiness
+      - feature/phase-8-inventory-controls
 
 permissions:
   contents: read
