@@ -18,6 +18,7 @@ use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\StockCountController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\SupplierInvoiceMatchingController;
+use App\Http\Controllers\SupplierCreditNoteController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Middleware\AuditCompanyActivity;
 use App\Http\Middleware\EnsureMfaVerified;
@@ -91,6 +92,11 @@ Route::middleware(['auth', EnsureCompanyAccess::class, EnsureMfaVerified::class,
     Route::post('/finance/payments', [SupplierPaymentController::class, 'store'])->name('finance.payments.store');
     Route::post('/finance/payments/{payment}/post', [SupplierPaymentController::class, 'post'])->name('finance.payments.post');
     Route::post('/finance/payments/{payment}/cancel', [SupplierPaymentController::class, 'cancel'])->name('finance.payments.cancel');
+    Route::get('/finance/supplier-credit-notes', [SupplierCreditNoteController::class, 'index'])->name('finance.supplier-credit-notes.index');
+    Route::post('/finance/supplier-credit-notes', [SupplierCreditNoteController::class, 'store'])->name('finance.supplier-credit-notes.store');
+    Route::post('/finance/supplier-credit-notes/{creditNote}/post', [SupplierCreditNoteController::class, 'post'])->name('finance.supplier-credit-notes.post');
+    Route::post('/finance/supplier-credit-notes/{creditNote}/cancel', [SupplierCreditNoteController::class, 'cancel'])->name('finance.supplier-credit-notes.cancel');
+
     Route::get('/finance/credit-notes', [CustomerCreditNoteController::class, 'index'])->name('finance.credit-notes.index');
     Route::post('/finance/credit-notes', [CustomerCreditNoteController::class, 'store'])->name('finance.credit-notes.store');
     Route::post('/finance/credit-notes/{creditNote}/post', [CustomerCreditNoteController::class, 'post'])->name('finance.credit-notes.post');
