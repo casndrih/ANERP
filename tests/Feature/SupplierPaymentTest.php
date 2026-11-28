@@ -68,6 +68,29 @@ final class SupplierPaymentTest extends TestCase
         $this->assertDatabaseHas('supplier_payments', ['id' => $payment->id, 'status' => 'draft']);
     }
 
+    public function test_cancelled_draft_releases_its_supplier_bill_allocation(): void
+    {
+        [$company, $branch, $supplier, $bank, $bill, $creator, $approver] = $this->fixture();
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('finance.payments.store'), [
+                'branch_id' => $branch->id, 'supplier_id' => $supplier->id, 'bank_account_id' => $bank->id,
+                'payment_number' => 'PAY-CANCEL-1', 'payment_date' => '2026-11-28',
+                'description' => 'Cancelled draft', 'amount' => 60,
+                'allocations' => [['bill_id' => $bill->id, 'amount' => 60]],
+            ])->assertRedirect()->assertSessionHasNoErrors();
+        $payment = SupplierPayment::where('payment_number', 'PAY-CANCEL-1')->firstOrFail();
+        $this->actingAs($approver)->withSession($this->sessionData($company, $approver))
+            ->post(route('finance.payments.cancel', $payment->id))->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('supplier_payments', ['id' => $payment->id, 'status' => 'cancelled']);
+        $this->actingAs($creator)->withSession($this->sessionData($company, $creator))
+            ->post(route('finance.payments.store'), [
+                'branch_id' => $branch->id, 'supplier_id' => $supplier->id, 'bank_account_id' => $bank->id,
+                'payment_number' => 'PAY-CANCEL-2', 'payment_date' => '2026-11-28',
+                'description' => 'Replacement draft', 'amount' => 100,
+                'allocations' => [['bill_id' => $bill->id, 'amount' => 100]],
+            ])->assertRedirect()->assertSessionHasNoErrors();
+    }
+
     private function fixture(): array
     {
         $company = Company::create(['name' => 'Payables Co', 'is_active' => true]);
