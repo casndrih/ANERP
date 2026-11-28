@@ -127,7 +127,19 @@ class CustomerReceiptController extends Controller
                     ->where('customer_id', $data['customer_id'])
                     ->where('status', 'posted')
                     ->when($branchId, fn ($query) => $query->where('branch_id', $branchId), fn ($query) => $query->whereNull('branch_id'))
-                    ->findOrFail($allocation['invoice_id']);
+                    ->lockForUpdate()->findOrFail($allocation['invoice_id']);
+                $reservedReceipts = (float) DB::table('customer_receipt_allocations')
+                    ->join('customer_receipts', 'customer_receipts.id', '=', 'customer_receipt_allocations.customer_receipt_id')
+                    ->where('customer_receipt_allocations.customer_invoice_id', $invoice->id)
+                    ->where('customer_receipts.company_id', $companyId)
+                    ->whereIn('customer_receipts.status', ['draft', 'posted'])
+                    ->sum('customer_receipt_allocations.amount');
+                $reservedCredits = (float) CustomerCreditNote::where('company_id', $companyId)
+                    ->where('customer_invoice_id', $invoice->id)->whereIn('status', ['draft', 'posted'])->sum('amount');
+                $outstanding = round((float) $invoice->amount - $reservedReceipts - $reservedCredits, 2);
+                if ($amount > $outstanding + 0.009) {
+                    throw ValidationException::withMessages(['allocations' => 'Receipt allocation exceeds the invoice balance remaining after existing receipt and credit-note drafts.']);
+                }
                 $allocationTotal += $amount;
                 CustomerReceiptAllocation::create([
                     'customer_receipt_id' => $receipt->id,
